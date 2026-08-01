@@ -1,0 +1,27 @@
+# Contoh konfigurasi Cloudflare Tunnel untuk Orkay.
+# Simpan di ~/.cloudflared/config.yml pada VPS.
+#
+# Prasyarat:
+#   1. Punya akun Cloudflare + domain yang sudah ditambahkan ke Cloudflare.
+#   2. Install cloudflared, lalu:
+#        cloudflared tunnel login
+#        cloudflared tunnel create orkay
+#        cloudflared tunnel route dns orkay orkay.domainkamu.com
+#   3. Ganti <TUNNEL_ID> dan hostname di bawah.
+
+tunnel: <TUNNEL_ID>
+credentials-file: /root/.cloudflared/<TUNNEL_ID>.json
+
+ingress:
+  # Semua trafik ke hostname ini diteruskan ke Nginx lokal (port 80)
+  - hostname: orkay.domainkamu.com
+    service: http://localhost:80
+  # Wajib: catch-all penolak di akhir
+  - service: http_status:404
+
+# Jalankan sebagai service:
+#   cloudflared service install
+#   systemctl start cloudflared
+#
+# Alternatif tanpa Nginx (langsung ke Express):
+#   service: http://localhost:3001

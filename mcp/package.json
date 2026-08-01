@@ -1,0 +1,21 @@
+{
+  "name": "orkay-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "MCP server untuk Orkay — jembatan AI/WhatsApp ke API keuangan pribadi.",
+  "main": "src/index.js",
+  "bin": {
+    "orkay-mcp": "src/index.js"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "inspect": "npx @modelcontextprotocol/inspector node src/index.js",
+    "test:tools": "node test/smoke.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "dotenv": "^16.4.5",
+    "zod": "^3.23.8"
+  }
+}
