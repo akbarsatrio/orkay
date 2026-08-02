@@ -59,7 +59,7 @@ npm run test:tools  # smoke test read-only lawan API lokal
 Nanti di **Fase 2 (Brain service)**, server ini di-spawn otomatis oleh Brain sebagai
 subprocess stdio — konfigurasi env diambil dari Brain.
 
-## Tools (19)
+## Tools (27)
 
 ### Transaksi
 | Tool | Fungsi |
@@ -83,15 +83,27 @@ subprocess stdio — konfigurasi env diambil dari Brain.
 |---|---|
 | `list_bills` | Tagihan pay later belum lunas (sudah closing) |
 | `list_installments` | Cicilan aktif + termin berikutnya |
+| `add_installment` | Buat cicilan baru (tenor + bunga Rp/%) |
 | `pay_bill` | Bayar tagihan statement pay later |
 | `pay_installment` | Bayar 1 termin cicilan |
 
-### Laporan
+### Tagihan rutin / langganan
+| Tool | Fungsi |
+|---|---|
+| `list_recurring` | Daftar langganan + status bulan ini |
+| `add_recurring` | Buat tagihan rutin (nama, nominal, tgl jatuh tempo) |
+| `confirm_recurring` | Konfirmasi/bayar langganan bulan ini |
+| `update_recurring` | Ubah nominal/tanggal/aktif |
+| `delete_recurring` | Hapus langganan |
+
+### Laporan & budget
 | Tool | Fungsi |
 |---|---|
 | `spending_by_category` | Pengeluaran per kategori (per bulan) |
 | `monthly_summary` | Pemasukan vs pengeluaran + top kategori |
 | `budget_status` | Status budget tiap kategori |
+| `set_budget` | Set/ubah budget kategori |
+| `delete_budget` | Hapus budget kategori |
 
 ### Master data
 | Tool | Fungsi |
@@ -126,8 +138,21 @@ src/
 ├── balances.js       kalkulasi saldo & kekayaan (port dari DataContext)
 ├── paylater.js       COPY billing cycle (A1)
 ├── installments.js   COPY jadwal cicilan (A1)
-└── tools/            transactions, accounts, bills, reports, master
+├── recurring.js      COPY logic recurring (A1)
+└── tools/            transactions, accounts, bills, reports, master, recurring
 test/
 ├── smoke.js          list + panggil tool read-only
-└── write.js          test add_expense/add_transfer + error handling
+├── write.js          test add_expense/add_transfer + error handling
+└── batch2.js         test cicilan/recurring/budget tools
 ```
+
+## Backlog (belum di-expose ke MCP)
+
+Fungsi ini didukung backend tapi belum ada tool-nya — jarang dilakukan via chat,
+biasanya diatur di web app. Tambahkan bila perlu:
+
+- **Akun**: `add_account`, `update_account`, `delete_account` (`POST/PUT/DELETE /accounts`)
+- **Income source**: `add/list/delete_income_source` (`/income-sources`)
+- **Kategori**: `update_category`, `delete_category` (`PUT/DELETE /categories`)
+- **Settings**: `get_settings`, `update_settings` — payDay/theme/currency (`/settings`)
+- **Cicilan**: `update_installment`, `delete_installment` (`PUT/DELETE /installments/:id`)

@@ -10,6 +10,7 @@ import { registerAccountTools } from './tools/accounts.js'
 import { registerBillTools } from './tools/bills.js'
 import { registerReportTools } from './tools/reports.js'
 import { registerMasterTools } from './tools/master.js'
+import { registerRecurringTools } from './tools/recurring.js'
 
 const server = new McpServer({
   name: 'orkay',
@@ -21,6 +22,7 @@ registerAccountTools(server)
 registerBillTools(server)
 registerReportTools(server)
 registerMasterTools(server)
+registerRecurringTools(server)
 
 async function main() {
   const transport = new StdioServerTransport()

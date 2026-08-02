@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { client } from '../client.js'
-import { resolveAccount, resolveInstallment } from '../resolve.js'
+import { resolveAccount, resolveCategory, resolveInstallment } from '../resolve.js'
 import { text, safeTool, parseAmount, resolveDate } from '../util.js'
 import { formatRupiah, formatDate, periodLabel } from '../format.js'
 import { getUnpaidStatements } from '../paylater.js'
@@ -122,6 +122,65 @@ export function registerBillTools(server) {
       let line = `✅ Bayar cicilan ${inst.name} termin ${termin}/${inst.tenor} — ${formatRupiah(inst.monthlyAmount)} dari ${from.name}.`
       if (termin >= inst.tenor) line += `\n🎉 Cicilan ${inst.name} LUNAS!`
       line += `\nSaldo ${from.name} sekarang: ${formatRupiah(bal)}.`
+      return text(line)
+    })
+  )
+
+  server.tool(
+    'add_installment',
+    'Buat cicilan baru (pembelian dicicil) di akun pay later. ' +
+      'Contoh: "nyicil iPhone 15jt 12x di gopaylater bunga 2%". Bunga bisa nominal Rp/bulan ' +
+      'atau persen flat dari pokok. Pembelian ini TIDAK dihitung sebagai pengeluaran; ' +
+      'yang dihitung adalah pembayaran tiap termin (lewat pay_installment).',
+    {
+      paylater: z.string().describe('Nama akun pay later tempat mencicil'),
+      name: z.string().describe('Nama barang/cicilan, mis. "iPhone 15"'),
+      total: z.union([z.number(), z.string()]).describe('Total harga pokok, mis. 15000000, "15jt"'),
+      tenor: z.number().describe('Jumlah termin (bulan), mis. 12'),
+      interestRp: z.union([z.number(), z.string()]).optional()
+        .describe('Bunga nominal per bulan (Rp). Pakai ini ATAU interestPercent.'),
+      interestPercent: z.number().optional()
+        .describe('Bunga persen flat dari pokok per bulan, mis. 2 untuk 2%. Dikonversi ke Rp.'),
+      category: z.string().optional().describe('Kategori pengeluaran (buat pembayaran termin nanti)'),
+      date: z.string().optional().describe('Tanggal beli YYYY-MM-DD (default hari ini)'),
+    },
+    safeTool(async (a) => {
+      const { accounts, categories } = await client.bootstrap()
+      const pl = resolveAccount(a.paylater, accounts, { paylaterOnly: true })
+      const principal = parseAmount(a.total)
+      if (!(principal > 0)) throw new Error('Total harga harus lebih dari 0.')
+      const tenor = Math.max(1, Math.round(Number(a.tenor) || 1))
+      const cat = a.category ? resolveCategory(a.category, categories, 'expense') : null
+      const date = resolveDate(a.date)
+
+      // Hitung bunga per bulan (nominal Rp). Persen = flat dari pokok.
+      let interestPerMonth = 0
+      if (a.interestPercent !== undefined && a.interestPercent !== null) {
+        interestPerMonth = Math.round(principal * (Number(a.interestPercent) / 100))
+      } else if (a.interestRp !== undefined && a.interestRp !== null) {
+        interestPerMonth = parseAmount(a.interestRp)
+      }
+      const monthlyAmount = Math.round(principal / tenor) + interestPerMonth
+
+      const res = await client.post('/api/installments', {
+        accountId: pl.id,
+        categoryId: cat?.id ?? null,
+        name: a.name,
+        purchaseDate: date,
+        principalTotal: principal,
+        tenor,
+        monthlyAmount,
+        interestPerMonth,
+      })
+      client.invalidate()
+
+      const inst = res.installment || res
+      let line = `✅ Cicilan dibuat: *${inst.name}* di ${pl.name}` +
+        `\nPokok: ${formatRupiah(principal)} — ${tenor}x` +
+        (interestPerMonth > 0 ? `\nBunga: ${formatRupiah(interestPerMonth)}/bln` : '') +
+        `\nCicilan per bulan: *${formatRupiah(inst.monthlyAmount || monthlyAmount)}*` +
+        `\nTotal bayar: ${formatRupiah((inst.monthlyAmount || monthlyAmount) * tenor)}`
+      if (cat) line += `\nKategori: ${cat.name}`
       return text(line)
     })
   )

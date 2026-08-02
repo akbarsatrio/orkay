@@ -85,3 +85,8 @@ export function resolveInstallment(query, installments) {
   const active = installments.filter((i) => i.active && i.paidCount < i.tenor)
   return resolveOne(query, active, 'cicilan')
 }
+
+// Cari recurring/langganan by nama.
+export function resolveRecurring(query, recurring) {
+  return resolveOne(query, recurring, 'langganan/tagihan rutin')
+}

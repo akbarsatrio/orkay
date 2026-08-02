@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { client } from '../client.js'
-import { text, safeTool } from '../util.js'
+import { resolveCategory } from '../resolve.js'
+import { text, safeTool, parseAmount } from '../util.js'
 import { formatRupiah, periodLabel, currentPeriod } from '../format.js'
 
 // Filter transaksi berdasarkan periode "YYYY-MM".
@@ -109,6 +110,43 @@ export function registerReportTools(server) {
           `${flag}\n  Sisa: ${formatRupiah(sisa)}`
       }
       return text(out)
+    })
+  )
+
+  server.tool(
+    'set_budget',
+    'Set/ubah budget bulanan untuk sebuah kategori pengeluaran (mis. "budget makan 2jt"). ' +
+      'Kalau kategori sudah punya budget, nilainya diperbarui.',
+    {
+      category: z.string().describe('Nama kategori pengeluaran'),
+      limit: z.union([z.number(), z.string()]).describe('Batas budget per bulan, mis. 2000000, "2jt"'),
+    },
+    safeTool(async (a) => {
+      const boot = await client.bootstrap()
+      const cat = resolveCategory(a.category, boot.categories, 'expense')
+      const limit = parseAmount(a.limit)
+      if (!(limit > 0)) throw new Error('Batas budget harus lebih dari 0.')
+
+      await client.post('/api/budgets', { categoryId: cat.id, limit })
+      client.invalidate()
+      return text(`✅ Budget ${cat.name} diset ${formatRupiah(limit)}/bulan.`)
+    })
+  )
+
+  server.tool(
+    'delete_budget',
+    'Hapus budget sebuah kategori. Konfirmasi dulu ke user sebelum menghapus.',
+    {
+      category: z.string().describe('Nama kategori yang budgetnya mau dihapus'),
+    },
+    safeTool(async (a) => {
+      const boot = await client.bootstrap()
+      const cat = resolveCategory(a.category, boot.categories, 'expense')
+      const budget = boot.budgets.find((b) => b.categoryId === cat.id)
+      if (!budget) return text(`Kategori ${cat.name} belum punya budget.`)
+      await client.del(`/api/budgets/${budget.id}`)
+      client.invalidate()
+      return text(`🗑️ Budget ${cat.name} dihapus.`)
     })
   )
 }
