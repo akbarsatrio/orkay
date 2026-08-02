@@ -124,7 +124,11 @@ export default function Accounts() {
                       ) : (
                         <span className="text-muted">Tidak ada tagihan tertunda</span>
                       )}
-                      <p className="text-2xs text-muted mt-1">Closing tgl {acc.closingDay} · jatuh tempo tgl {acc.dueDay}</p>
+                      <p className="text-2xs text-muted mt-1">
+                        {acc.billingModel === 'anniversary'
+                          ? 'Cicilan jatuh tempo di tanggal transaksi tiap bulan'
+                          : `Closing tgl ${acc.closingDay} · jatuh tempo tgl ${acc.dueDay}`}
+                      </p>
                     </div>
                   </CardBody>
                 </Card>

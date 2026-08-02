@@ -3,11 +3,41 @@
 import { toISODate } from './format.js'
 import { statementOf, dueDateOf } from './paylater.js'
 
-// Jadwal cicilan: N termin dengan due date mengikuti billing cycle akun paylater.
-// Termin ke-1 masuk statement dari purchaseDate, termin berikutnya +1 bulan, dst.
-// Return [{ termin, dueDate, amount, paid }]
+// Tambah N bulan ke sebuah tanggal ISO, clamp ke akhir bulan bila tanggalnya tidak ada.
+// Contoh: 31 Jan + 1 bln -> 28/29 Feb.
+export function addMonthsClamp(dateISO, months) {
+  const d = new Date(dateISO + 'T00:00:00')
+  const day = d.getDate()
+  let year = d.getFullYear()
+  let month = d.getMonth() + months
+  year += Math.floor(month / 12)
+  month = ((month % 12) + 12) % 12
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  return toISODate(new Date(year, month, Math.min(day, lastDay)))
+}
+
+// Jadwal cicilan: N termin dengan due date mengikuti model billing akun paylater.
+// - model 'anniversary' : jatuh tempo = tanggal beli + (i+1) bulan (bayar di tanggal yang sama).
+// - model 'statement'   : mengikuti siklus statement (closingDay/dueDay/dueMonthOffset).
+// Return [{ termin, period, dueDate, amount, paid }]
 export function installmentSchedule(inst, account) {
   const schedule = []
+
+  if (account?.billingModel === 'anniversary') {
+    for (let i = 0; i < inst.tenor; i++) {
+      const dueDate = addMonthsClamp(inst.purchaseDate, i + 1)
+      schedule.push({
+        termin: i + 1,
+        period: dueDate.slice(0, 7),
+        dueDate,
+        amount: inst.monthlyAmount,
+        paid: i < inst.paidCount,
+      })
+    }
+    return schedule
+  }
+
+  // Model 'statement' (default) — perilaku existing.
   const closingDay = account?.closingDay || 1
   const dueDay = account?.dueDay || 1
   const offset = account?.dueMonthOffset ?? 1

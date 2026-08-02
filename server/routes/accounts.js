@@ -5,16 +5,19 @@ import { uid, wrap } from './helpers.js'
 const router = Router()
 
 const INSERT_SQL = `INSERT INTO accounts
-  (id,name,type,openingBalance,color,icon,kind,creditLimit,closingDay,dueDay,dueMonthOffset)
-  VALUES (:id,:name,:type,:openingBalance,:color,:icon,:kind,:creditLimit,:closingDay,:dueDay,:dueMonthOffset)`
+  (id,name,type,openingBalance,color,icon,kind,creditLimit,closingDay,dueDay,dueMonthOffset,billingModel)
+  VALUES (:id,:name,:type,:openingBalance,:color,:icon,:kind,:creditLimit,:closingDay,:dueDay,:dueMonthOffset,:billingModel)`
 
 const UPDATE_SQL = `UPDATE accounts SET
   name=:name, type=:type, openingBalance=:openingBalance, color=:color, icon=:icon,
-  kind=:kind, creditLimit=:creditLimit, closingDay=:closingDay, dueDay=:dueDay, dueMonthOffset=:dueMonthOffset
+  kind=:kind, creditLimit=:creditLimit, closingDay=:closingDay, dueDay=:dueDay, dueMonthOffset=:dueMonthOffset,
+  billingModel=:billingModel
   WHERE id=:id`
 
 function normalizeAccount(a) {
   const kind = a.kind === 'paylater' ? 'paylater' : 'cash'
+  // billingModel: 'anniversary' (jatuh tempo = tgl beli + N bulan) atau 'statement' (default).
+  const billingModel = a.billingModel === 'anniversary' ? 'anniversary' : 'statement'
   return {
     id: a.id,
     name: a.name,
@@ -27,6 +30,7 @@ function normalizeAccount(a) {
     closingDay: Math.min(31, Math.max(1, Number(a.closingDay) || 1)),
     dueDay: Math.min(31, Math.max(1, Number(a.dueDay) || 1)),
     dueMonthOffset: Math.max(0, Number(a.dueMonthOffset ?? 1)),
+    billingModel,
   }
 }
 

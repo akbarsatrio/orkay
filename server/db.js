@@ -73,6 +73,7 @@ async function migrateSchema() {
     ['accounts', 'closingDay', 'INT NOT NULL DEFAULT 1'],
     ['accounts', 'dueDay', 'INT NOT NULL DEFAULT 1'],
     ['accounts', 'dueMonthOffset', 'INT NOT NULL DEFAULT 1'],
+    ['accounts', 'billingModel', "VARCHAR(20) NOT NULL DEFAULT 'statement'"],
     ['transactions', 'installmentId', 'VARCHAR(40)'],
     ['transactions', 'statementPeriod', 'VARCHAR(7)'],
   ]

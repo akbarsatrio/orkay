@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, Button, Input, Select } from '../ui/index.jsx'
+import { Modal, Button, Input, Select, Segmented } from '../ui/index.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber } from '../../lib/format.js'
 
@@ -14,7 +14,7 @@ const COLORS = ['#1d4ed8', '#0ea5e9', '#16a34a', '#f97316', '#8b5cf6', '#ec4899'
 
 const emptyForm = () => ({
   name: '', type: 'bank', kind: 'cash', openingBalance: 0, color: '#1d4ed8', icon: 'Landmark',
-  creditLimit: 0, closingDay: 15, dueDay: 1, dueMonthOffset: 1,
+  creditLimit: 0, closingDay: 15, dueDay: 1, dueMonthOffset: 1, billingModel: 'statement',
 })
 
 export default function AccountForm({ open, onClose, editing }) {
@@ -68,6 +68,7 @@ export default function AccountForm({ open, onClose, editing }) {
       closingDay: Number(form.closingDay) || 1,
       dueDay: Number(form.dueDay) || 1,
       dueMonthOffset: Number(form.dueMonthOffset) || 1,
+      billingModel: form.billingModel === 'anniversary' ? 'anniversary' : 'statement',
     }
     if (editing) updateAccount(editing.id, payload)
     else addAccount(payload)
@@ -127,15 +128,34 @@ export default function AccountForm({ open, onClose, editing }) {
 
         {isPaylater && (
           <div className="rounded-lg border border-border bg-surface-2/40 p-3 space-y-3">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-muted">Siklus Tagihan (Billing Cycle)</p>
-            <div className="grid grid-cols-3 gap-2">
-              <Input type="number" min={1} max={31} label="Closing tgl" value={form.closingDay} onChange={(e) => set({ closingDay: e.target.value })} />
-              <Input type="number" min={1} max={31} label="Jatuh tempo tgl" value={form.dueDay} onChange={(e) => set({ dueDay: e.target.value })} />
-              <Input type="number" min={0} max={3} label="Due +bulan" value={form.dueMonthOffset} onChange={(e) => set({ dueMonthOffset: e.target.value })} />
-            </div>
-            <p className="text-2xs text-muted leading-relaxed">
-              Transaksi setelah tanggal closing masuk tagihan bulan berikutnya. Jatuh tempo = tanggal jatuh tempo pada {form.dueMonthOffset} bulan setelah closing.
-            </p>
+            <p className="text-2xs font-semibold uppercase tracking-wide text-muted">Model Tagihan Cicilan</p>
+            <Segmented
+              className="w-full"
+              options={[
+                { value: 'statement', label: 'Statement' },
+                { value: 'anniversary', label: 'Tanggal sama' },
+              ]}
+              value={form.billingModel}
+              onChange={(v) => set({ billingModel: v })}
+            />
+
+            {form.billingModel === 'anniversary' ? (
+              <p className="text-2xs text-muted leading-relaxed">
+                Cicilan jatuh tempo di <b>tanggal yang sama</b> dengan tanggal transaksi, tiap bulan berikutnya
+                sampai lunas. Contoh: kredit tgl 15 Mei, 3x → 15 Jun, 15 Jul, 15 Agu.
+              </p>
+            ) : (
+              <>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input type="number" min={1} max={31} label="Closing tgl" value={form.closingDay} onChange={(e) => set({ closingDay: e.target.value })} />
+                  <Input type="number" min={1} max={31} label="Jatuh tempo tgl" value={form.dueDay} onChange={(e) => set({ dueDay: e.target.value })} />
+                  <Input type="number" min={0} max={3} label="Due +bulan" value={form.dueMonthOffset} onChange={(e) => set({ dueMonthOffset: e.target.value })} />
+                </div>
+                <p className="text-2xs text-muted leading-relaxed">
+                  Transaksi setelah tanggal closing masuk tagihan bulan berikutnya. Jatuh tempo = tanggal jatuh tempo pada {form.dueMonthOffset} bulan setelah closing.
+                </p>
+              </>
+            )}
           </div>
         )}
 

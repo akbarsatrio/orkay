@@ -17,7 +17,8 @@ CREATE TABLE IF NOT EXISTS accounts (
   creditLimit    BIGINT NOT NULL DEFAULT 0,
   closingDay     INT NOT NULL DEFAULT 1,
   dueDay         INT NOT NULL DEFAULT 1,
-  dueMonthOffset INT NOT NULL DEFAULT 1
+  dueMonthOffset INT NOT NULL DEFAULT 1,
+  billingModel   VARCHAR(20) NOT NULL DEFAULT 'statement'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS income_sources (
