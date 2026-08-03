@@ -84,12 +84,12 @@ export default function Accounts() {
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {accounts.map((acc) => {
             const editBtns = (
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => setForm({ open: true, editing: acc })} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2">
-                  <Pencil size={13} />
+              <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                <button onClick={() => setForm({ open: true, editing: acc })} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2">
+                  <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
                 </button>
-                <button onClick={() => handleDelete(acc)} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10">
-                  <Trash2 size={13} />
+                <button onClick={() => handleDelete(acc)} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
+                  <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
                 </button>
               </div>
             )

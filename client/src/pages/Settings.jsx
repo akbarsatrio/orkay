@@ -280,11 +280,11 @@ function CategoryRow({ cat, onEdit, onDelete }) {
     <div className="group flex items-center gap-3 px-3 h-12 rounded-lg border border-border bg-surface hover:bg-surface-2 transition-colors">
       <CategoryIcon name={cat.icon} color={cat.color} size={16} />
       <span className="text-sm text-fg flex-1 truncate">{cat.name}</span>
-      <button onClick={onEdit} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Pencil size={13} />
+      <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
       </button>
-      <button onClick={onDelete} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Trash2 size={13} />
+      <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
       </button>
     </div>
   )

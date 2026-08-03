@@ -53,7 +53,7 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
     <button
       className={cx(
         'inline-flex items-center justify-center rounded-lg font-medium transition-colors',
-        'disabled:opacity-50 disabled:pointer-events-none select-none',
+        'disabled:opacity-50 disabled:pointer-events-none select-none active:scale-[0.97]',
         btnVariants[variant],
         btnSizes[size],
         className
@@ -170,10 +170,10 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
 
   if (!open) return null
 
-  const sizes = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' }
+  const sizes = { sm: 'sm:max-w-sm', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-[fadeIn_.15s_ease]"
         onClick={onClose}
@@ -181,8 +181,10 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       <div
         ref={ref}
         className={cx(
-          'relative w-full bg-surface border border-border rounded-card shadow-pop',
-          'animate-[popIn_.15s_ease]',
+          'relative w-full bg-surface border border-border shadow-pop',
+          'rounded-t-2xl sm:rounded-card',
+          'animate-[slideUp_.2s_ease] sm:animate-[popIn_.15s_ease]',
+          'pb-[env(safe-area-inset-bottom)] sm:pb-0',
           sizes[size]
         )}
       >
@@ -190,12 +192,13 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
           <h3 className="text-sm font-semibold text-fg">{title}</h3>
           <button
             onClick={onClose}
-            className="text-muted hover:text-fg h-7 w-7 flex items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
+            className="text-muted hover:text-fg h-9 w-9 sm:h-7 sm:w-7 flex items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
           >
-            <X size={16} />
+            <X size={18} className="sm:hidden" />
+            <X size={16} className="hidden sm:block" />
           </button>
         </div>
-        <div className="px-5 py-4 max-h-[70vh] overflow-y-auto">{children}</div>
+        <div className="px-5 py-4 max-h-[75vh] sm:max-h-[70vh] overflow-y-auto">{children}</div>
         {footer && (
           <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
             {footer}
@@ -225,13 +228,13 @@ export function Empty({ icon: Icon, title, description, action }) {
 // ---------- Segmented control ----------
 export function Segmented({ options, value, onChange, className }) {
   return (
-    <div className={cx('inline-flex p-0.5 bg-surface-2 rounded-lg border border-border', className)}>
+    <div className={cx('inline-flex max-w-full overflow-x-auto no-scrollbar p-0.5 bg-surface-2 rounded-lg border border-border', className)}>
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={cx(
-            'px-3 h-7 text-xs font-medium rounded-md transition-colors',
+            'px-3 h-8 sm:h-7 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0',
             value === opt.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'
           )}
         >

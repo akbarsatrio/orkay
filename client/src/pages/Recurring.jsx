@@ -195,15 +195,15 @@ export default function Recurring() {
                       <button
                         onClick={() => updateRecurring(r.id, { active: !r.active })}
                         title={r.active ? 'Nonaktifkan' : 'Aktifkan'}
-                        className={`h-7 w-7 flex items-center justify-center rounded-md hover:bg-surface-2 ${r.active ? 'text-positive' : 'text-muted'}`}
+                        className={`h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md hover:bg-surface-2 active:bg-surface-2 ${r.active ? 'text-positive' : 'text-muted'}`}
                       >
-                        <Power size={13} />
+                        <Power size={15} className="lg:hidden" /><Power size={13} className="hidden lg:block" />
                       </button>
-                      <button onClick={() => setForm({ open: true, editing: r })} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Pencil size={13} />
+                      <button onClick={() => setForm({ open: true, editing: r })} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                        <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
                       </button>
-                      <button onClick={() => confirm(`Hapus tagihan "${r.name}"?`) && deleteRecurring(r.id)} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 size={13} />
+                      <button onClick={() => confirm(`Hapus tagihan "${r.name}"?`) && deleteRecurring(r.id)} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                        <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
                       </button>
                     </div>
                   </div>
@@ -233,8 +233,8 @@ export default function Recurring() {
                       <p className="text-2xs text-muted">{acc?.name} · {formatRupiah(inst.monthlyAmount)}/bln</p>
                     </div>
                     <span className="text-xs tnum text-muted">{inst.paidCount}/{inst.tenor}x</span>
-                    <button onClick={() => confirm(`Hapus cicilan "${inst.name}"? Transaksi terkait ikut terhapus.`) && deleteInstallment(inst.id)} className="h-6 w-6 flex items-center justify-center rounded-md text-muted hover:text-negative opacity-0 group-hover:opacity-100">
-                      <Trash2 size={12} />
+                    <button onClick={() => confirm(`Hapus cicilan "${inst.name}"? Transaksi terkait ikut terhapus.`) && deleteInstallment(inst.id)} className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                      <Trash2 size={15} className="lg:hidden" /><Trash2 size={12} className="hidden lg:block" />
                     </button>
                   </div>
                   <Progress value={inst.paidCount} max={inst.tenor} color="rgb(var(--accent))" />

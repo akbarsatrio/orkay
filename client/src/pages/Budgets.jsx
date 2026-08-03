@@ -74,11 +74,11 @@ export default function Budgets() {
                   ) : r.pct >= 85 ? (
                     <Badge className="text-warning border-warning/30 bg-warning/10">Hampir habis</Badge>
                   ) : null}
-                  <button onClick={() => setModal({ open: true, editing: r })} className="h-6 w-6 flex items-center justify-center rounded-md text-muted hover:text-fg opacity-0 group-hover:opacity-100">
-                    <Pencil size={12} />
+                  <button onClick={() => setModal({ open: true, editing: r })} className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-fg active:bg-surface-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                    <Pencil size={15} className="lg:hidden" /><Pencil size={12} className="hidden lg:block" />
                   </button>
-                  <button onClick={() => deleteBudget(r.id)} className="h-6 w-6 flex items-center justify-center rounded-md text-muted hover:text-negative opacity-0 group-hover:opacity-100">
-                    <Trash2 size={12} />
+                  <button onClick={() => deleteBudget(r.id)} className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                    <Trash2 size={15} className="lg:hidden" /><Trash2 size={12} className="hidden lg:block" />
                   </button>
                 </div>
                 <Progress value={r.spent} max={r.limit} />

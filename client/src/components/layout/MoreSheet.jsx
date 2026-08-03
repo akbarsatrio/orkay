@@ -30,7 +30,7 @@ export default function MoreSheet({ open, onClose }) {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-[fadeIn_.15s_ease]"
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 bg-surface border-t border-border rounded-t-2xl shadow-pop animate-[popIn_.15s_ease] pb-[env(safe-area-inset-bottom)]">
+      <div className="absolute inset-x-0 bottom-0 bg-surface border-t border-border rounded-t-2xl shadow-pop animate-[slideUp_.2s_ease] pb-[env(safe-area-inset-bottom)]">
         <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <h3 className="text-sm font-semibold text-fg">Menu Lainnya</h3>
           <button

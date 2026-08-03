@@ -37,7 +37,7 @@ function NavItem({ item }) {
 
 export default function Sidebar() {
   return (
-    <aside className="hidden lg:flex sticky top-0 z-40 h-screen w-64 shrink-0 bg-surface border-r border-border flex-col">
+    <aside className="hidden lg:flex sticky top-0 z-20 h-screen w-64 shrink-0 bg-surface border-r border-border flex-col">
       <div className="flex items-center h-16 px-5 border-b border-border">
         <div className="flex items-center gap-2.5">
           <div className="h-8 w-8 rounded-lg flex items-center justify-center">

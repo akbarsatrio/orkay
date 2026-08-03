@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react'
 import {
-  Search, Plus, Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ArrowRight, X,
+  Search, Plus, Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ArrowRight, X, SlidersHorizontal,
 } from 'lucide-react'
-import { Card, Button, Input, Select, Badge, Empty, Segmented } from '../components/ui/index.jsx'
+import { Card, Button, Input, Select, Badge, Empty, Segmented, cx } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import TransactionForm from '../components/transactions/TransactionForm.jsx'
 import { useData } from '../context/DataContext.jsx'
@@ -17,6 +17,7 @@ export default function Transactions() {
   const [accFilter, setAccFilter] = useState('all')
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
+  const [showFilters, setShowFilters] = useState(false)
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
@@ -61,6 +62,7 @@ export default function Transactions() {
   }, [filtered])
 
   const hasActiveFilter = q || type !== 'all' || catFilter !== 'all' || accFilter !== 'all' || from || to
+  const activeFilterCount = [type !== 'all', catFilter !== 'all', accFilter !== 'all', !!from, !!to].filter(Boolean).length
   const clearFilters = () => { setQ(''); setType('all'); setCatFilter('all'); setAccFilter('all'); setFrom(''); setTo('') }
 
   return (
@@ -78,6 +80,7 @@ export default function Transactions() {
             />
           </div>
           <Segmented
+            className="hidden lg:inline-flex"
             options={[
               { value: 'all', label: 'Semua' },
               { value: 'income', label: 'Masuk' },
@@ -87,22 +90,47 @@ export default function Transactions() {
             value={type}
             onChange={setType}
           />
-          <Button onClick={() => setForm({ open: true, editing: null })}>
-            <Plus size={16} /> Tambah
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              className="lg:hidden flex-1 relative"
+              onClick={() => setShowFilters((s) => !s)}
+            >
+              <SlidersHorizontal size={16} /> Filter
+              {activeFilterCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-accent text-accent-fg text-2xs font-bold flex items-center justify-center">{activeFilterCount}</span>
+              )}
+            </Button>
+            <Button className="flex-1 lg:flex-none" onClick={() => setForm({ open: true, editing: null })}>
+              <Plus size={16} /> Tambah
+            </Button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 mt-3">
-          <Select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
-            <option value="all">Semua kategori</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </Select>
-          <Select value={accFilter} onChange={(e) => setAccFilter(e.target.value)}>
-            <option value="all">Semua rekening</option>
-            {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-          </Select>
-          <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-          <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+        <div className={cx('mt-3', showFilters ? 'block' : 'hidden lg:block')}>
+          <Segmented
+            className="lg:hidden w-full mb-2"
+            options={[
+              { value: 'all', label: 'Semua' },
+              { value: 'income', label: 'Masuk' },
+              { value: 'expense', label: 'Keluar' },
+              { value: 'transfer', label: 'Transfer' },
+            ]}
+            value={type}
+            onChange={setType}
+          />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+            <Select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+              <option value="all">Semua kategori</option>
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </Select>
+            <Select value={accFilter} onChange={(e) => setAccFilter(e.target.value)}>
+              <option value="all">Semua rekening</option>
+              {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </Select>
+            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </div>
         </div>
 
         {hasActiveFilter && (
@@ -136,7 +164,7 @@ export default function Transactions() {
               }, 0)
               return (
                 <div key={date}>
-                  <div className="flex items-center justify-between px-5 py-2 bg-surface-2/50 sticky top-16 backdrop-blur-sm">
+                  <div className="flex items-center justify-between px-4 sm:px-5 py-2 bg-surface-2 sticky top-16 z-10">
                     <span className="text-xs font-medium text-muted">
                       {dayName(date)}, {formatDate(date)}
                     </span>
@@ -200,12 +228,12 @@ function TxRow({ tx, cat, acc, accountMap, onEdit, onDelete }) {
             {formatRupiah(tx.amount)}
           </span>
         </div>
-        <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={onEdit} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50">
-            <Pencil size={13} />
+        <div className="flex gap-1 shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+          <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50">
+            <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
           </button>
-          <button onClick={onDelete} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10">
-            <Trash2 size={13} />
+          <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
+            <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
           </button>
         </div>
       </div>
@@ -236,12 +264,12 @@ function TxRow({ tx, cat, acc, accountMap, onEdit, onDelete }) {
           {isIncome ? '+' : '−'}{formatRupiah(tx.amount)}
         </span>
       </div>
-      <div className="flex gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={onEdit} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50">
-          <Pencil size={13} />
+      <div className="flex gap-1 shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50">
+          <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
         </button>
-        <button onClick={onDelete} className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10">
-          <Trash2 size={13} />
+        <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
+          <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
         </button>
       </div>
     </div>
