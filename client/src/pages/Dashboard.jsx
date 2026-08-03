@@ -71,7 +71,7 @@ export default function Dashboard({ onAddTransaction }) {
   return (
     <div className="space-y-6">
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Saldo" value={totalBalance} icon={Wallet} hidden={hidden} />
         <StatCard label={`Pemasukan ${monthNamesID[now.getMonth()]}`} value={thisMonth.income} icon={ArrowDownLeft} tone="positive" delta={incomeDelta} />
         <StatCard label={`Pengeluaran ${monthNamesID[now.getMonth()]}`} value={thisMonth.expense} icon={ArrowUpRight} tone="negative" delta={expenseDelta} deltaInverse />
