@@ -74,7 +74,7 @@ export default function Dashboard({ onAddTransaction }) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Total Saldo" value={totalBalance} icon={Wallet} hidden={hidden} />
         <StatCard label={`Pemasukan ${monthNamesID[now.getMonth()]}`} value={thisMonth.income} icon={ArrowDownLeft} tone="positive" delta={incomeDelta} />
-        <StatCard label={`Pengeluaran ${monthNamesID[now.getMonth()]}`} value={thisMonth.expense} icon={ArrowUpRight} tone="negative" delta={expenseDelta} />
+        <StatCard label={`Pengeluaran ${monthNamesID[now.getMonth()]}`} value={thisMonth.expense} icon={ArrowUpRight} tone="negative" delta={expenseDelta} deltaInverse />
         <StatCard label="Selisih (Net)" value={thisMonth.net} icon={Sparkles} tone={thisMonth.net >= 0 ? 'positive' : 'negative'} />
       </div>
 
@@ -100,7 +100,7 @@ export default function Dashboard({ onAddTransaction }) {
           </CardBody>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 min-w-0">
           <CardHeader
             title="Tagihan Akan Datang"
             subtitle="14 hari ke depan"
@@ -116,7 +116,7 @@ export default function Dashboard({ onAddTransaction }) {
                   const dueD = new Date(u.dueDate + 'T00:00:00')
                   const period = periodKey(dueD.getFullYear(), dueD.getMonth())
                   return (
-                    <div key={i} className="flex items-center gap-3 px-5 py-3">
+                    <div key={i} className="flex items-center gap-3 px-4 sm:px-5 py-3">
                       <CategoryIcon name={cat?.icon || 'ReceiptText'} color={cat?.color || '#71717a'} size={16} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-medium text-fg truncate">{u.recurring.name}</p>
@@ -124,14 +124,16 @@ export default function Dashboard({ onAddTransaction }) {
                           {u.daysAway === 0 ? 'Jatuh tempo hari ini' : `${u.daysAway} hari lagi`} · {formatDate(u.dueDate, { short: true })}
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-fg tnum">{formatRupiah(u.recurring.amount)}</span>
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => setConfirmItem({ recurring: u.recurring, dueDate: u.dueDate, period, isDue: u.daysAway === 0 })}
-                      >
-                        <Check size={13} /> Bayar
-                      </Button>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <span className="text-sm font-semibold text-fg tnum whitespace-nowrap">{formatRupiah(u.recurring.amount)}</span>
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setConfirmItem({ recurring: u.recurring, dueDate: u.dueDate, period, isDue: u.daysAway === 0 })}
+                        >
+                          <Check size={13} /> Bayar
+                        </Button>
+                      </div>
                     </div>
                   )
                 })}
@@ -144,10 +146,12 @@ export default function Dashboard({ onAddTransaction }) {
                       <p className="text-sm font-medium text-fg truncate">Tagihan {st.account.name}</p>
                       <p className="text-2xs text-muted">Statement {st.period} · jatuh tempo {formatDate(st.dueDate, { short: true })}</p>
                     </div>
-                    <span className="text-sm font-semibold text-fg tnum">{formatRupiah(st.unpaid)}</span>
-                    <Button size="sm" variant="secondary" onClick={() => setPayItem({ kind: 'statement', account: st.account, period: st.period, dueDate: st.dueDate, unpaid: st.unpaid })}>
-                      <Check size={13} /> Bayar
-                    </Button>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span className="text-sm font-semibold text-fg tnum whitespace-nowrap">{formatRupiah(st.unpaid)}</span>
+                      <Button size="sm" variant="secondary" onClick={() => setPayItem({ kind: 'statement', account: st.account, period: st.period, dueDate: st.dueDate, unpaid: st.unpaid })}>
+                        <Check size={13} /> Bayar
+                      </Button>
+                    </div>
                   </div>
                 ))}
                 {pendingInstallments.slice(0, 2).map((it) => (
@@ -159,10 +163,12 @@ export default function Dashboard({ onAddTransaction }) {
                       <p className="text-sm font-medium text-fg truncate">{it.installment.name} · cicilan {it.termin}/{it.installment.tenor}</p>
                       <p className="text-2xs text-muted">{it.account?.name} · jatuh tempo {formatDate(it.dueDate, { short: true })}</p>
                     </div>
-                    <span className="text-sm font-semibold text-fg tnum">{formatRupiah(it.amount)}</span>
-                    <Button size="sm" variant="secondary" onClick={() => setPayItem({ kind: 'installment', installment: it.installment, account: it.account, termin: it.termin, dueDate: it.dueDate, amount: it.amount })}>
-                      <Check size={13} /> Bayar
-                    </Button>
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <span className="text-sm font-semibold text-fg tnum whitespace-nowrap">{formatRupiah(it.amount)}</span>
+                      <Button size="sm" variant="secondary" onClick={() => setPayItem({ kind: 'installment', installment: it.installment, account: it.account, termin: it.termin, dueDate: it.dueDate, amount: it.amount })}>
+                        <Check size={13} /> Bayar
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -173,13 +179,13 @@ export default function Dashboard({ onAddTransaction }) {
 
       {/* Charts */}
       <div className="grid lg:grid-cols-2 gap-4">
-        <Card>
+        <Card className="min-w-0">
           <CardHeader title="Pengeluaran per Kategori" subtitle={`${monthNamesID[now.getMonth()]} ${now.getFullYear()}`} />
-          <CardBody><CategoryDonut data={breakdown} /></CardBody>
+          <CardBody className="min-w-0"><CategoryDonut data={breakdown} /></CardBody>
         </Card>
-        <Card>
+        <Card className="min-w-0">
           <CardHeader title="Tren Pengeluaran Harian" subtitle={`${monthNamesID[now.getMonth()]} ${now.getFullYear()}`} />
-          <CardBody><SpendingTrend data={trend} /></CardBody>
+          <CardBody className="min-w-0"><SpendingTrend data={trend} /></CardBody>
         </Card>
       </div>
 

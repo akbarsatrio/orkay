@@ -40,14 +40,14 @@ export default function Reports() {
   const totalExpense = summary.expense || 1
   const netDelta = prevSummary.net !== 0 ? ((summary.net - prevSummary.net) / Math.abs(prevSummary.net)) * 100 : null
 
-  const compareRow = (label, cur, prev) => {
+  const compareRow = (label, cur, prev, inverse = false) => {
     const diff = cur - prev
     const pct = prev ? (diff / prev) * 100 : null
-    return { label, cur, prev, diff, pct }
+    return { label, cur, prev, diff, pct, inverse }
   }
   const comparisons = [
     compareRow('Pemasukan', summary.income, prevSummary.income),
-    compareRow('Pengeluaran', summary.expense, prevSummary.expense),
+    compareRow('Pengeluaran', summary.expense, prevSummary.expense, true),
     compareRow('Selisih (Net)', summary.net, prevSummary.net),
   ]
 
@@ -94,8 +94,8 @@ export default function Reports() {
           {/* Comparison table */}
           <Card>
             <CardHeader title="Perbandingan dengan Bulan Lalu" subtitle={`${monthNamesID[prevDate.getMonth()]} ${prevDate.getFullYear()} → ${monthNamesID[cursor.m]} ${cursor.y}`} />
-            <CardBody className="p-0">
-              <table className="w-full text-sm">
+            <CardBody className="p-0 overflow-x-auto">
+              <table className="w-full text-sm min-w-[420px]">
                 <thead>
                   <tr className="text-2xs text-muted uppercase tracking-wide border-b border-border">
                     <th className="text-left font-medium px-5 py-2.5">Metrik</th>
@@ -105,19 +105,23 @@ export default function Reports() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {comparisons.map((c) => (
-                    <tr key={c.label}>
-                      <td className="px-5 py-3 text-fg font-medium">{c.label}</td>
-                      <td className="px-5 py-3 text-right text-muted tnum">{formatRupiah(c.prev)}</td>
-                      <td className="px-5 py-3 text-right text-fg font-medium tnum">{formatRupiah(c.cur)}</td>
-                      <td className="px-5 py-3 text-right">
-                        <span className={`inline-flex items-center gap-1 tnum ${c.diff > 0 ? 'text-positive' : c.diff < 0 ? 'text-negative' : 'text-muted'}`}>
-                          {c.diff > 0 ? <TrendingUp size={13} /> : c.diff < 0 ? <TrendingDown size={13} /> : <Minus size={13} />}
-                          {c.pct != null ? `${Math.abs(c.pct).toFixed(0)}%` : '—'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {comparisons.map((c) => {
+                    const good = c.inverse ? c.diff < 0 : c.diff > 0
+                    const colorClass = c.diff === 0 ? 'text-muted' : good ? 'text-positive' : 'text-negative'
+                    return (
+                      <tr key={c.label}>
+                        <td className="px-5 py-3 text-fg font-medium">{c.label}</td>
+                        <td className="px-5 py-3 text-right text-muted tnum">{formatRupiah(c.prev)}</td>
+                        <td className="px-5 py-3 text-right text-fg font-medium tnum">{formatRupiah(c.cur)}</td>
+                        <td className="px-5 py-3 text-right">
+                          <span className={`inline-flex items-center gap-1 tnum ${colorClass}`}>
+                            {c.diff > 0 ? <TrendingUp size={13} /> : c.diff < 0 ? <TrendingDown size={13} /> : <Minus size={13} />}
+                            {c.pct != null ? `${Math.abs(c.pct).toFixed(0)}%` : '—'}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  })}
                 </tbody>
               </table>
             </CardBody>

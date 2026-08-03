@@ -83,10 +83,12 @@ export default function Recurring() {
                     </p>
                     <p className="text-2xs text-muted">Jatuh tempo {formatDate(p.dueDate)} · {acc?.name}</p>
                   </div>
-                  <span className="text-sm font-semibold text-fg tnum">{formatRupiah(p.recurring.amount)}</span>
-                  <Button size="sm" onClick={() => setConfirmItem(p)}>
-                    <Check size={14} /> Konfirmasi
-                  </Button>
+                  <div className="flex flex-col items-end gap-1.5 shrink-0">
+                    <span className="text-sm font-semibold text-fg tnum whitespace-nowrap">{formatRupiah(p.recurring.amount)}</span>
+                    <Button size="sm" onClick={() => setConfirmItem(p)}>
+                      <Check size={14} /> Konfirmasi
+                    </Button>
+                  </div>
                 </div>
               )
             })}
@@ -111,10 +113,12 @@ export default function Recurring() {
                   <p className="text-sm font-medium text-fg truncate">Tagihan {st.account.name}</p>
                   <p className="text-2xs text-muted">Statement {st.period} · jatuh tempo {formatDate(st.dueDate, { short: true })}</p>
                 </div>
-                <span className="text-sm font-semibold text-fg tnum">{formatRupiah(st.unpaid)}</span>
-                <Button size="sm" onClick={() => setPayItem({ kind: 'statement', account: st.account, period: st.period, dueDate: st.dueDate, unpaid: st.unpaid })}>
-                  <Check size={14} /> Bayar
-                </Button>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className="text-sm font-semibold text-fg tnum whitespace-nowrap">{formatRupiah(st.unpaid)}</span>
+                  <Button size="sm" onClick={() => setPayItem({ kind: 'statement', account: st.account, period: st.period, dueDate: st.dueDate, unpaid: st.unpaid })}>
+                    <Check size={14} /> Bayar
+                  </Button>
+                </div>
               </div>
             ))}
             {pendingInstallments.map((it) => (
@@ -130,10 +134,12 @@ export default function Recurring() {
                   </p>
                   <p className="text-2xs text-muted">{it.account?.name} · jatuh tempo {formatDate(it.dueDate, { short: true })}</p>
                 </div>
-                <span className="text-sm font-semibold text-fg tnum">{formatRupiah(it.amount)}</span>
-                <Button size="sm" onClick={() => setPayItem({ kind: 'installment', installment: it.installment, account: it.account, termin: it.termin, dueDate: it.dueDate, amount: it.amount })}>
-                  <Check size={14} /> Bayar
-                </Button>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <span className="text-sm font-semibold text-fg tnum whitespace-nowrap">{formatRupiah(it.amount)}</span>
+                  <Button size="sm" onClick={() => setPayItem({ kind: 'installment', installment: it.installment, account: it.account, termin: it.termin, dueDate: it.dueDate, amount: it.amount })}>
+                    <Check size={14} /> Bayar
+                  </Button>
+                </div>
               </div>
             ))}
           </CardBody>

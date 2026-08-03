@@ -5,6 +5,7 @@ import { useData } from './context/DataContext.jsx'
 import { Button } from './components/ui/index.jsx'
 import Sidebar from './components/layout/Sidebar.jsx'
 import Topbar from './components/layout/Topbar.jsx'
+import BottomNav from './components/layout/BottomNav.jsx'
 import TransactionForm from './components/transactions/TransactionForm.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Transactions from './pages/Transactions.jsx'
@@ -25,7 +26,6 @@ const meta = {
 }
 
 export default function App() {
-  const [mobileNav, setMobileNav] = useState(false)
   const [txOpen, setTxOpen] = useState(false)
   const { pathname } = useLocation()
   const { loading, error, bootstrap } = useData()
@@ -63,16 +63,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex bg-bg theme-transition">
-      <Sidebar mobileOpen={mobileNav} onClose={() => setMobileNav(false)} />
+      <Sidebar />
 
       <div className="flex-1 min-w-0 flex flex-col">
         <Topbar
           title={m.title}
           subtitle={m.subtitle}
-          onMenu={() => setMobileNav(true)}
           onQuickAdd={() => setTxOpen(true)}
         />
-        <main className="flex-1 px-4 sm:px-6 py-6 max-w-[1400px] w-full mx-auto">
+        <main className="flex-1 px-4 sm:px-6 py-6 pb-24 lg:pb-6 max-w-[1400px] w-full mx-auto overflow-x-hidden">
           <Routes>
             <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
             <Route path="/transactions" element={<Transactions />} />
@@ -85,6 +84,7 @@ export default function App() {
         </main>
       </div>
 
+      <BottomNav onQuickAdd={() => setTxOpen(true)} />
       <TransactionForm open={txOpen} onClose={() => setTxOpen(false)} />
     </div>
   )
