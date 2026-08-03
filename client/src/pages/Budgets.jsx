@@ -148,7 +148,7 @@ function BudgetModal({ open, onClose, editing, categories, existing, onSave }) {
               value={limitStr}
               onChange={(e) => { const v = parseNumber(e.target.value); setLimitStr(v ? formatNumber(v) : '') }}
               placeholder="0"
-              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-sm font-medium text-fg tnum focus:border-accent outline-none"
+              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm font-medium text-fg tnum focus:border-accent outline-none"
             />
           </div>
         </div>

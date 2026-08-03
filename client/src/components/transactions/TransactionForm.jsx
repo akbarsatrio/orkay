@@ -244,7 +244,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                     value={feeStr}
                     onChange={handleFee}
                     placeholder="0"
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
                   />
                 </div>
               </div>
@@ -323,7 +323,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                             value={form.customTenor}
                             onChange={(e) => set({ customTenor: e.target.value.replace(/[^\d]/g, '') })}
                             placeholder="mis. 15"
-                            className="w-full h-9 pl-3 pr-8 rounded-lg bg-surface border border-border text-sm text-fg tnum focus:border-accent outline-none"
+                            className="w-full h-9 pl-3 pr-8 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum focus:border-accent outline-none"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">x</span>
                         </div>
@@ -361,7 +361,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                               value={interestStr}
                               onChange={handleInterest}
                               placeholder="0"
-                              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-sm text-fg tnum focus:border-accent outline-none"
+className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum focus:border-accent outline-none"
                             />
                           </div>
                         ) : (
@@ -372,7 +372,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                                 value={form.interestPct}
                                 onChange={(e) => set({ interestPct: e.target.value.replace(/[^\d.,]/g, '') })}
                                 placeholder="0"
-                                className="w-full h-9 pl-3 pr-8 rounded-lg bg-surface border border-border text-sm text-fg tnum focus:border-accent outline-none"
+                                className="w-full h-9 pl-3 pr-8 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum focus:border-accent outline-none"
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">%</span>
                             </div>

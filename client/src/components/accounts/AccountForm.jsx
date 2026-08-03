@@ -105,7 +105,7 @@ export default function AccountForm({ open, onClose, editing }) {
                   value={limitStr}
                   onChange={handleLimit}
                   placeholder="0"
-                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
                 />
               </div>
             </div>
@@ -119,7 +119,7 @@ export default function AccountForm({ open, onClose, editing }) {
                   value={balStr}
                   onChange={handleBal}
                   placeholder="0"
-                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
                 />
               </div>
             </div>

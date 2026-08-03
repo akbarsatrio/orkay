@@ -76,7 +76,7 @@ export default function Transactions() {
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Cari catatan, kategori, rekening…"
-              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface-2 border border-border text-sm text-fg placeholder:text-muted/70 focus:border-accent outline-none"
+              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface-2 border border-border text-base sm:text-sm text-fg placeholder:text-muted/70 focus:border-accent outline-none"
             />
           </div>
           <Segmented
@@ -128,8 +128,8 @@ export default function Transactions() {
               <option value="all">Semua rekening</option>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </Select>
-            <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-            <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+            <Input type="date" label="Dari tanggal" value={from} onChange={(e) => setFrom(e.target.value)} />
+            <Input type="date" label="Sampai tanggal" value={to} onChange={(e) => setTo(e.target.value)} />
           </div>
         </div>
 

@@ -161,7 +161,7 @@ export default function Settings() {
               <select
                 value={holidayYear}
                 onChange={(e) => setHolidayYear(Number(e.target.value))}
-                className="h-8 px-2 rounded-lg bg-surface border border-border text-xs text-fg outline-none"
+                className="h-8 px-2 rounded-lg bg-surface border border-border text-base sm:text-xs text-fg outline-none"
               >
                 {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
                   <option key={y} value={y}>{y}</option>

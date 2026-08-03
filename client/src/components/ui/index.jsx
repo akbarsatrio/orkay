@@ -66,13 +66,14 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
 }
 
 // ---------- Input ----------
-export function Input({ className, label, hint, ...props }) {
+export function Input({ className, label, hint, autoComplete = 'off', ...props }) {
   return (
     <label className="block">
       {label && <span className="block text-xs font-medium text-muted mb-1.5">{label}</span>}
       <input
+        autoComplete={autoComplete}
         className={cx(
-          'w-full h-9 px-3 rounded-lg bg-surface border border-border text-sm text-fg',
+          'w-full h-9 px-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg',
           'placeholder:text-muted/70 focus:border-accent focus:ring-0 outline-none transition-colors',
           className
         )}
@@ -89,7 +90,7 @@ export function Select({ className, label, children, ...props }) {
       {label && <span className="block text-xs font-medium text-muted mb-1.5">{label}</span>}
       <select
         className={cx(
-          'w-full h-9 px-3 rounded-lg bg-surface border border-border text-sm text-fg',
+          'w-full h-9 px-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg',
           'focus:border-accent outline-none transition-colors appearance-none cursor-pointer',
           'bg-[length:16px] bg-[right_0.6rem_center] bg-no-repeat',
           className
@@ -112,7 +113,7 @@ export function Textarea({ className, label, ...props }) {
       {label && <span className="block text-xs font-medium text-muted mb-1.5">{label}</span>}
       <textarea
         className={cx(
-          'w-full px-3 py-2 rounded-lg bg-surface border border-border text-sm text-fg',
+          'w-full px-3 py-2 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg',
           'placeholder:text-muted/70 focus:border-accent outline-none transition-colors resize-none',
           className
         )}
@@ -157,6 +158,7 @@ export function Progress({ value, max = 100, color }) {
 // ---------- Modal ----------
 export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
   const ref = useRef(null)
+  const bodyRef = useRef(null)
   useEffect(() => {
     if (!open) return
     const onKey = (e) => e.key === 'Escape' && onClose()
@@ -167,6 +169,20 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       document.body.style.overflow = ''
     }
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) return
+    const body = bodyRef.current
+    if (!body) return
+    const onFocusIn = (e) => {
+      const el = e.target
+      if (!el.matches?.('input, select, textarea')) return
+      // Biar field yg lagi difokus gak ketutup keyboard iOS.
+      setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 300)
+    }
+    body.addEventListener('focusin', onFocusIn)
+    return () => body.removeEventListener('focusin', onFocusIn)
+  }, [open])
 
   if (!open) return null
 
@@ -181,14 +197,14 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       <div
         ref={ref}
         className={cx(
-          'relative w-full bg-surface border border-border shadow-pop',
+          'relative w-full flex flex-col bg-surface border border-border shadow-pop',
           'rounded-t-2xl sm:rounded-card',
           'animate-[slideUp_.2s_ease] sm:animate-[popIn_.15s_ease]',
-          'pb-[env(safe-area-inset-bottom)] sm:pb-0',
+          'max-h-[90dvh] sm:max-h-[85vh]',
           sizes[size]
         )}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
           <h3 className="text-sm font-semibold text-fg">{title}</h3>
           <button
             onClick={onClose}
@@ -198,9 +214,9 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
             <X size={16} className="hidden sm:block" />
           </button>
         </div>
-        <div className="px-5 py-4 max-h-[75vh] sm:max-h-[70vh] overflow-y-auto">{children}</div>
+        <div ref={bodyRef} className="px-5 py-4 overflow-y-auto overscroll-contain flex-1">{children}</div>
         {footer && (
-          <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border">
+          <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {footer}
           </div>
         )}

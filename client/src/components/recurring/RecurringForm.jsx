@@ -67,7 +67,7 @@ export default function RecurringForm({ open, onClose, editing }) {
               value={amtStr}
               onChange={handleAmt}
               placeholder="0"
-              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-sm font-medium text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm font-medium text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
             />
           </div>
         </div>
