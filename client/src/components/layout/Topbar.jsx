@@ -1,5 +1,6 @@
 import { Menu, Plus } from 'lucide-react'
 import ThemeToggle from './ThemeToggle.jsx'
+import BalanceToggle from './BalanceToggle.jsx'
 import { Button } from '../ui/index.jsx'
 
 export default function Topbar({ title, subtitle, onMenu, onQuickAdd }) {
@@ -30,6 +31,7 @@ export default function Topbar({ title, subtitle, onMenu, onQuickAdd }) {
               <Plus size={18} />
             </Button>
           )}
+          <BalanceToggle />
           <ThemeToggle />
         </div>
       </div>

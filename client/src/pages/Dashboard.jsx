@@ -12,6 +12,7 @@ import CategoryIcon from '../components/CategoryIcon.jsx'
 import ConfirmRecurringModal from '../components/recurring/ConfirmRecurringModal.jsx'
 import PayBillModal from '../components/paylater/PayBillModal.jsx'
 import { useData } from '../context/DataContext.jsx'
+import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
 import { formatRupiah, formatDate, monthNamesID } from '../lib/format.js'
 import {
   monthlySummary, categoryBreakdown, dailySpendingTrend, cashflowByMonth,
@@ -26,6 +27,7 @@ export default function Dashboard({ onAddTransaction }) {
   const {
     transactions, recurring, accounts, installments, categoryMap, accountMap, totalBalance, totalDebt, settings,
   } = useData()
+  const { hidden } = useBalanceVisibility()
 
   const now = new Date()
   const [holidaySet, setHolidaySet] = useState(new Set())
@@ -70,7 +72,7 @@ export default function Dashboard({ onAddTransaction }) {
     <div className="space-y-6">
       {/* Stat cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Saldo" value={totalBalance} icon={Wallet} />
+        <StatCard label="Total Saldo" value={totalBalance} icon={Wallet} hidden={hidden} />
         <StatCard label={`Pemasukan ${monthNamesID[now.getMonth()]}`} value={thisMonth.income} icon={ArrowDownLeft} tone="positive" delta={incomeDelta} />
         <StatCard label={`Pengeluaran ${monthNamesID[now.getMonth()]}`} value={thisMonth.expense} icon={ArrowUpRight} tone="negative" delta={expenseDelta} />
         <StatCard label="Selisih (Net)" value={thisMonth.net} icon={Sparkles} tone={thisMonth.net >= 0 ? 'positive' : 'negative'} />

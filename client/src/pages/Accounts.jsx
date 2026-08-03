@@ -1,16 +1,18 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Wallet, ArrowDownLeft, ArrowUpRight, CreditCard } from 'lucide-react'
+import { Plus, Pencil, Trash2, Wallet, ArrowDownLeft, ArrowUpRight, CreditCard, Eye, EyeOff } from 'lucide-react'
 import { Card, CardBody, Button, Empty, Progress, Badge } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import AccountForm from '../components/accounts/AccountForm.jsx'
 import { useData } from '../context/DataContext.jsx'
-import { formatRupiah, formatDate } from '../lib/format.js'
+import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
+import { formatRupiah, maskRupiah, formatDate } from '../lib/format.js'
 import { computeStatements } from '../lib/paylater.js'
 
 const typeLabels = { bank: 'Bank', ewallet: 'E-Wallet', cash: 'Tunai', paylater: 'Pay Later', other: 'Lainnya' }
 
 export default function Accounts() {
   const { accounts, accountBalances, totalBalance, totalDebt, payLaterInfo, transactions, deleteAccount } = useData()
+  const { hidden, toggle } = useBalanceVisibility()
   const [form, setForm] = useState({ open: false, editing: null })
 
   const now = new Date()
@@ -47,10 +49,20 @@ export default function Accounts() {
         <CardBody className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <p className="text-xs text-muted">Kekayaan bersih (saldo − utang pay later)</p>
-            <p className="text-3xl font-bold text-fg tnum mt-1">{formatRupiah(totalBalance)}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-3xl font-bold text-fg tnum">{maskRupiah(totalBalance, hidden)}</p>
+              <button
+                onClick={toggle}
+                title={hidden ? 'Tampilkan saldo' : 'Sembunyikan saldo'}
+                aria-label={hidden ? 'Tampilkan saldo' : 'Sembunyikan saldo'}
+                className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 transition-colors"
+              >
+                {hidden ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
             <p className="text-2xs text-muted mt-1">
               {accounts.length} rekening
-              {totalDebt > 0 && <span className="text-negative"> · utang pay later {formatRupiah(totalDebt)}</span>}
+              {totalDebt > 0 && <span className="text-negative"> · utang pay later {maskRupiah(totalDebt, hidden)}</span>}
             </p>
           </div>
           <Button onClick={() => setForm({ open: true, editing: null })}>
@@ -106,20 +118,20 @@ export default function Accounts() {
                     {header}
                     <div className="mt-4">
                       <p className="text-2xs text-muted">Sisa limit</p>
-                      <p className="text-2xl font-bold tnum text-fg">{formatRupiah(info.available)}</p>
+                      <p className="text-2xl font-bold tnum text-fg">{maskRupiah(info.available, hidden)}</p>
                     </div>
                     <div className="mt-3">
                       <Progress value={info.used} max={info.limit || 1} color={pct >= 90 ? 'rgb(var(--negative))' : pct >= 70 ? 'rgb(var(--warning))' : 'rgb(var(--accent))'} />
                       <div className="flex justify-between mt-1.5 text-2xs">
-                        <span className="text-muted tnum">Terpakai {formatRupiah(info.used)}</span>
-                        <span className="text-muted tnum">Limit {formatRupiah(info.limit)}</span>
+                        <span className="text-muted tnum">Terpakai {maskRupiah(info.used, hidden)}</span>
+                        <span className="text-muted tnum">Limit {maskRupiah(info.limit, hidden)}</span>
                       </div>
                     </div>
                     <div className="mt-3 pt-3 border-t border-border text-xs">
                       {currentUnpaid ? (
                         <div className="flex items-center justify-between">
                           <span className="text-muted">Tagihan belum lunas</span>
-                          <span className="tnum font-medium text-fg">{formatRupiah(currentUnpaid.unpaid)}</span>
+                          <span className="tnum font-medium text-fg">{maskRupiah(currentUnpaid.unpaid, hidden)}</span>
                         </div>
                       ) : (
                         <span className="text-muted">Tidak ada tagihan tertunda</span>
@@ -143,7 +155,7 @@ export default function Accounts() {
                 <CardBody>
                   {header}
                   <p className={`text-2xl font-bold tnum mt-4 ${balance < 0 ? 'text-negative' : 'text-fg'}`}>
-                    {formatRupiah(balance)}
+                    {maskRupiah(balance, hidden)}
                   </p>
                   <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
                     <div className="flex items-center gap-1.5 text-xs">

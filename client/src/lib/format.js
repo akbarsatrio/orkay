@@ -15,6 +15,11 @@ export function formatRupiah(value) {
   return idr.format(Math.round(value || 0))
 }
 
+// Saldo yang bisa disembunyikan. Kalau hidden, tampilkan mask; kalau tidak, format biasa.
+export function maskRupiah(value, hidden) {
+  return hidden ? 'Rp ••••••' : formatRupiah(value)
+}
+
 // "Rp1,2 jt" untuk axis chart / ruang sempit
 export function formatRupiahCompact(value) {
   return 'Rp' + idrCompact.format(Math.round(value || 0)).replace('rb', 'rb').replace('jt', 'jt')

@@ -1,8 +1,8 @@
 import { Card, CardBody } from '../ui/index.jsx'
 import { TrendingUp, TrendingDown } from 'lucide-react'
-import { formatRupiah } from '../../lib/format.js'
+import { maskRupiah } from '../../lib/format.js'
 
-export default function StatCard({ label, value, icon: Icon, tone = 'default', delta }) {
+export default function StatCard({ label, value, icon: Icon, tone = 'default', delta, hidden = false }) {
   const tones = {
     default: 'text-fg',
     positive: 'text-positive',
@@ -19,7 +19,7 @@ export default function StatCard({ label, value, icon: Icon, tone = 'default', d
             </span>
           )}
         </div>
-        <p className={`text-2xl font-bold tnum mt-2 ${tones[tone]}`}>{formatRupiah(value)}</p>
+        <p className={`text-2xl font-bold tnum mt-2 ${tones[tone]}`}>{maskRupiah(value, hidden)}</p>
         {delta != null && Number.isFinite(delta) && (
           <div className={`flex items-center gap-1 mt-1.5 text-xs ${delta >= 0 ? 'text-positive' : 'text-negative'}`}>
             {delta >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
