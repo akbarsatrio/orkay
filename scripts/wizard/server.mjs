@@ -13,6 +13,7 @@ import { existsSync } from 'node:fs'
 import { spawn, spawnSync } from 'node:child_process'
 import { join, extname, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { randomBytes, timingSafeEqual } from 'node:crypto'
 
 import { ROOT, SERVER_DIR, CLIENT_DIR, MCP_DIR, BRAIN_DIR, DEPLOY_OUT_DIR } from '../lib/paths.mjs'
 import {
@@ -33,6 +34,18 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const PUBLIC_DIR = join(__dirname, 'public')
 const PORT = Number(process.env.ORKAY_WIZARD_PORT) || 7777
 const isWin = process.platform === 'win32'
+
+// Token sekali-jalan untuk auth wizard (dibuat baru tiap start server).
+const TOKEN = randomBytes(24).toString('hex')
+
+// Perbandingan token constant-time; aman kalau panjang beda.
+function tokenValid(given) {
+  if (typeof given !== 'string') return false
+  const a = Buffer.from(given)
+  const b = Buffer.from(TOKEN)
+  if (a.length !== b.length) return false
+  return timingSafeEqual(a, b)
+}
 
 // Lazy import mysql-setup & docker-setup: keduanya butuh mysql2 (dari
 // server/node_modules). Kalau belum terpasang, fungsi tetap ada tapi akan
@@ -187,7 +200,7 @@ async function handleInstances(res) {
       slot: cfg.slot,
       mode: cfg.mode,
       dbProvider: cfg.dbProvider || 'host',
-      pin: cfg.pin,
+      hasPin: !!cfg.pin,
       ports,
       running: running.has(cfg.name),
       url: `http://localhost:${ports.vite}`,
@@ -401,6 +414,15 @@ const server = createServer(async (req, res) => {
   const path = url.pathname
 
   try {
+    // Auth: semua endpoint /api/* butuh token (header x-orkay-token atau ?token=).
+    // Static file (GET non-/api) dibiarkan bebas supaya halaman + app.js kebuka.
+    if (path.startsWith('/api/')) {
+      const given = req.headers['x-orkay-token'] || url.searchParams.get('token')
+      if (!tokenValid(given)) {
+        return sendJson(res, 401, { error: 'unauthorized' })
+      }
+    }
+
     if (req.method === 'GET' && path === '/api/preflight') {
       return sendJson(res, 200, preflight())
     }
@@ -438,10 +460,10 @@ const server = createServer(async (req, res) => {
   }
 })
 
-server.listen(PORT, () => {
-  const uiUrl = `http://localhost:${PORT}`
+server.listen(PORT, '127.0.0.1', () => {
+  const uiUrl = `http://127.0.0.1:${PORT}/?token=${TOKEN}`
   process.stdout.write(`\n  Orkay Installer siap di: ${uiUrl}\n`)
-  process.stdout.write('  (Jendela browser akan terbuka otomatis. Kalau tidak, buka URL di atas.)\n\n')
+  process.stdout.write('  (Jendela browser akan terbuka otomatis. Kalau tidak, salin URL di atas — lengkap dengan token.)\n\n')
   openBrowser(uiUrl)
 })
 

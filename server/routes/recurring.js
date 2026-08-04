@@ -43,27 +43,49 @@ router.delete('/:id', wrap(async (req, res) => {
 // Konfirmasi: buat transaksi + tandai periode sudah digenerate (1 DB transaction)
 router.post('/:id/confirm', wrap(async (req, res) => {
   const { dueDate, period } = req.body
-  const rec = parseRecurring(await queryOne('SELECT * FROM recurring WHERE id = :id', { id: req.params.id }))
-  if (!rec) return res.status(404).json({ error: 'not found' })
-  if ((rec.generatedPeriods || []).includes(period)) {
-    return res.status(409).json({ error: 'periode ini sudah dikonfirmasi' })
+
+  // Cek keberadaan dulu di luar TX untuk balas 404 rapi.
+  const pre = await queryOne('SELECT id FROM recurring WHERE id = :id', { id: req.params.id })
+  if (!pre) return res.status(404).json({ error: 'not found' })
+
+  // Seluruh cek+insert+update dalam SATU transaksi dengan FOR UPDATE
+  // supaya bebas race (TOCTOU) — row recurring dikunci selama transaksi.
+  let result
+  try {
+    result = await withTransaction(async ({ run }) => {
+      const [rows] = await run('SELECT * FROM recurring WHERE id = :id FOR UPDATE', { id: req.params.id })
+      const rec = parseRecurring(rows[0])
+      if (!rec) {
+        const e = new Error('not found')
+        e.code = 'REC_NOT_FOUND'
+        throw e
+      }
+      if ((rec.generatedPeriods || []).includes(period)) {
+        const e = new Error('periode ini sudah dikonfirmasi')
+        e.code = 'REC_DUP_PERIOD'
+        throw e
+      }
+
+      const tx = normalizeTx({
+        id: uid('tx'), type: 'expense', date: dueDate, amount: rec.amount,
+        categoryId: rec.categoryId, accountId: rec.accountId,
+        note: rec.name + ' (recurring)', recurringId: rec.id,
+      })
+      const updated = { ...rec, generatedPeriods: [...(rec.generatedPeriods || []), period] }
+
+      await run(TX_INSERT_SQL, tx)
+      await run('UPDATE recurring SET generatedPeriods=:generatedPeriods WHERE id=:id', {
+        generatedPeriods: JSON.stringify(updated.generatedPeriods), id: rec.id,
+      })
+      return { transaction: tx, recurring: updated }
+    })
+  } catch (err) {
+    if (err.code === 'REC_NOT_FOUND') return res.status(404).json({ error: 'not found' })
+    if (err.code === 'REC_DUP_PERIOD') return res.status(409).json({ error: 'periode ini sudah dikonfirmasi' })
+    throw err
   }
 
-  const tx = normalizeTx({
-    id: uid('tx'), type: 'expense', date: dueDate, amount: rec.amount,
-    categoryId: rec.categoryId, accountId: rec.accountId,
-    note: rec.name + ' (recurring)', recurringId: rec.id,
-  })
-  const updated = { ...rec, generatedPeriods: [...(rec.generatedPeriods || []), period] }
-
-  await withTransaction(async ({ run }) => {
-    await run(TX_INSERT_SQL, tx)
-    await run('UPDATE recurring SET generatedPeriods=:generatedPeriods WHERE id=:id', {
-      generatedPeriods: JSON.stringify(updated.generatedPeriods), id: rec.id,
-    })
-  })
-
-  res.json({ transaction: tx, recurring: updated })
+  res.json(result)
 }))
 
 export default router

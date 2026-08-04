@@ -44,7 +44,15 @@ CREATE TABLE IF NOT EXISTS transactions (
   statementPeriod VARCHAR(7),
   note           TEXT,
   INDEX idx_tx_date (date),
-  INDEX idx_tx_account (accountId)
+  INDEX idx_tx_account (accountId),
+  -- FK referensi mundur (tabel target sudah didefinisikan di atas). Semua nullable -> SET NULL.
+  -- FK ke recurring & installments (referensi maju) ditambahkan via migrateSchema() di db.js.
+  CONSTRAINT fk_tx_category     FOREIGN KEY (categoryId)     REFERENCES categories(id)     ON DELETE SET NULL,
+  CONSTRAINT fk_tx_account      FOREIGN KEY (accountId)      REFERENCES accounts(id)       ON DELETE SET NULL,
+  CONSTRAINT fk_tx_income       FOREIGN KEY (incomeSourceId) REFERENCES income_sources(id) ON DELETE SET NULL,
+  CONSTRAINT fk_tx_from_account FOREIGN KEY (fromAccountId)  REFERENCES accounts(id)       ON DELETE SET NULL,
+  CONSTRAINT fk_tx_to_account   FOREIGN KEY (toAccountId)    REFERENCES accounts(id)       ON DELETE SET NULL,
+  CONSTRAINT fk_tx_fee_category FOREIGN KEY (feeCategoryId)  REFERENCES categories(id)     ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS recurring (
@@ -55,13 +63,20 @@ CREATE TABLE IF NOT EXISTS recurring (
   amount           BIGINT NOT NULL,
   dueDay           INT NOT NULL DEFAULT 1,
   active           TINYINT(1) NOT NULL DEFAULT 1,
-  generatedPeriods JSON NOT NULL
+  generatedPeriods JSON NOT NULL,
+  -- categoryId/accountId nullable -> SET NULL saat target dihapus.
+  CONSTRAINT fk_rec_category FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE SET NULL,
+  CONSTRAINT fk_rec_account  FOREIGN KEY (accountId)  REFERENCES accounts(id)   ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS budgets (
   id         VARCHAR(40) PRIMARY KEY,
   categoryId VARCHAR(40) NOT NULL,
-  `limit`    BIGINT NOT NULL
+  `limit`    BIGINT NOT NULL,
+  -- Satu kategori satu budget (dipakai upsert ON DUPLICATE KEY).
+  UNIQUE KEY uq_budget_cat (categoryId),
+  -- categoryId NOT NULL -> budget tak berguna tanpa kategori, ikut terhapus.
+  CONSTRAINT fk_budget_category FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS settings (
@@ -83,5 +98,9 @@ CREATE TABLE IF NOT EXISTS installments (
   interestPerMonth BIGINT NOT NULL DEFAULT 0,
   paidCount        INT NOT NULL DEFAULT 0,
   active           TINYINT(1) NOT NULL DEFAULT 1,
-  INDEX idx_inst_account (accountId)
+  INDEX idx_inst_account (accountId),
+  -- accountId NOT NULL -> jangan biarkan rekening dihapus kalau masih ada cicilan.
+  CONSTRAINT fk_inst_account  FOREIGN KEY (accountId)  REFERENCES accounts(id)   ON DELETE RESTRICT,
+  -- categoryId nullable -> SET NULL saat kategori dihapus.
+  CONSTRAINT fk_inst_category FOREIGN KEY (categoryId) REFERENCES categories(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

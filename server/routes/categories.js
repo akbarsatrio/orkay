@@ -10,6 +10,7 @@ router.get('/', wrap(async (req, res) => {
 
 router.post('/', wrap(async (req, res) => {
   const { name, type, icon, color } = req.body
+  if (!name || !String(name).trim()) return res.status(400).json({ error: 'name wajib' })
   const item = { id: uid('cat'), name, type, icon: icon ?? null, color: color ?? null }
   await query('INSERT INTO categories (id,name,type,icon,color) VALUES (:id,:name,:type,:icon,:color)', item)
   res.status(201).json(item)

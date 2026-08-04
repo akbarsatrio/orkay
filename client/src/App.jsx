@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Suspense, lazy } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { Loader2, WifiOff, Wallet } from 'lucide-react'
 import { useData } from './context/DataContext.jsx'
@@ -7,13 +7,16 @@ import Sidebar from './components/layout/Sidebar.jsx'
 import Topbar from './components/layout/Topbar.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
 import TransactionForm from './components/transactions/TransactionForm.jsx'
-import Dashboard from './pages/Dashboard.jsx'
-import Transactions from './pages/Transactions.jsx'
-import Accounts from './pages/Accounts.jsx'
-import Recurring from './pages/Recurring.jsx'
-import Budgets from './pages/Budgets.jsx'
-import Reports from './pages/Reports.jsx'
-import Settings from './pages/Settings.jsx'
+
+// Lazy-load halaman: memecah bundle awal. Recharts (dipakai hanya di Dashboard & Reports)
+// ikut ter-split otomatis ke chunk masing-masing.
+const Dashboard = lazy(() => import('./pages/Dashboard.jsx'))
+const Transactions = lazy(() => import('./pages/Transactions.jsx'))
+const Accounts = lazy(() => import('./pages/Accounts.jsx'))
+const Recurring = lazy(() => import('./pages/Recurring.jsx'))
+const Budgets = lazy(() => import('./pages/Budgets.jsx'))
+const Reports = lazy(() => import('./pages/Reports.jsx'))
+const Settings = lazy(() => import('./pages/Settings.jsx'))
 
 const meta = {
   '/': { title: 'Dashboard', subtitle: 'Ringkasan keuangan kamu' },
@@ -30,6 +33,14 @@ export default function App() {
   const { pathname } = useLocation()
   const { loading, error, bootstrap } = useData()
   const m = meta[pathname] || { title: 'Orkay' }
+
+  // Fallback ringan saat chunk halaman lazy sedang dimuat (gaya konsisten dengan loading global).
+  const routeFallback = (
+    <div className="flex items-center justify-center py-24 text-muted text-sm gap-2">
+      <Loader2 size={16} className="animate-spin" />
+      Memuat halaman…
+    </div>
+  )
 
   if (loading) {
     return (
@@ -72,15 +83,17 @@ export default function App() {
           onQuickAdd={() => setTxOpen(true)}
         />
         <main className="flex-1 px-4 sm:px-6 py-6 pb-24 lg:pb-6 max-w-[1400px] w-full mx-auto overflow-x-hidden">
-          <Routes>
-            <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/accounts" element={<Accounts />} />
-            <Route path="/recurring" element={<Recurring />} />
-            <Route path="/budgets" element={<Budgets />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
+          <Suspense fallback={routeFallback}>
+            <Routes>
+              <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/accounts" element={<Accounts />} />
+              <Route path="/recurring" element={<Recurring />} />
+              <Route path="/budgets" element={<Budgets />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </Suspense>
         </main>
       </div>
 

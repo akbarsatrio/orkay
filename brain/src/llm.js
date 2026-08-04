@@ -7,6 +7,8 @@ import { buildSystemPrompt } from './prompt.js'
 
 const MODEL = process.env.LLM_MODEL || 'cc/claude-opus-4-8'
 const MAX_ITERATIONS = Number(process.env.LLM_MAX_ITER) || 5
+// Kontrol biaya token: batasi output per panggilan (default 1024).
+const MAX_TOKENS = Number(process.env.LLM_MAX_TOKENS) || 1024
 
 const openai = new OpenAI({
   baseURL: process.env.LLM_BASE_URL || 'https://api.openai.com/v1',
@@ -14,6 +16,9 @@ const openai = new OpenAI({
   // 9Router di belakang Cloudflare memblokir User-Agent yang mengandung "OpenAI".
   // Override jadi UA netral agar tidak kena 403.
   defaultHeaders: { 'User-Agent': 'orkay-brain/1.0' },
+  // Timeout & retry ringan (opsi standar SDK openai v7).
+  timeout: Number(process.env.LLM_TIMEOUT_MS) || 30000,
+  maxRetries: Number(process.env.LLM_MAX_RETRIES) || 2,
 })
 
 // Konversi daftar tool MCP -> format "tools" OpenAI (function calling).
@@ -51,6 +56,7 @@ export async function runAgent(userText, history = []) {
       tools,
       tool_choice: 'auto',
       temperature: 0.2,
+      max_tokens: MAX_TOKENS,
     })
 
     const msg = res.choices?.[0]?.message
@@ -95,6 +101,7 @@ export async function runAgent(userText, history = []) {
       { role: 'user', content: 'Rangkum hasilnya buat saya dalam 1-2 kalimat, tanpa memanggil tool lagi.' },
     ],
     temperature: 0.2,
+    max_tokens: MAX_TOKENS,
   })
   const finalMsg = finalRes.choices?.[0]?.message
   messages.push(finalMsg)

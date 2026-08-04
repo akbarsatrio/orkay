@@ -39,6 +39,7 @@ router.get('/', wrap(async (req, res) => {
 }))
 
 router.post('/', wrap(async (req, res) => {
+  if (!req.body.name || !String(req.body.name).trim()) return res.status(400).json({ error: 'name wajib' })
   const item = normalizeAccount({ ...req.body, id: uid('acc') })
   await query(INSERT_SQL, item)
   res.status(201).json(item)

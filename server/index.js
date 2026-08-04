@@ -40,7 +40,21 @@ app.post('/api/login', loginRateLimit, (req, res) => {
 })
 
 app.get('/api/me', requireAuth, (req, res) => res.json({ ok: true }))
+
+// Liveness: cepat, tanpa cek DB. Untuk load balancer / uptime check.
 app.get('/api/health', (req, res) => res.json({ ok: true }))
+
+// Readiness: cek koneksi DB dengan query ringan. PUBLIC — didaftarkan
+// sebelum requireAuth global supaya bisa diakses monitoring tanpa token.
+app.get('/api/health/ready', async (req, res) => {
+  try {
+    await query('SELECT 1')
+    res.json({ ok: true, db: 'up' })
+  } catch (err) {
+    console.error('[health] readiness gagal:', err.message)
+    res.status(503).json({ ok: false, db: 'down' })
+  }
+})
 
 // ---- Semua route data di bawah ini WAJIB auth ----
 app.use('/api', requireAuth)
@@ -93,12 +107,50 @@ if (config.isProd) {
 
 // Error handler
 app.use((err, req, res, next) => {
+  // Selalu log full error di server untuk debugging.
   console.error('[error]', err)
-  res.status(500).json({ error: err.message || 'internal error' })
+  // Pertahankan status code kalau error membawanya, selain itu 500.
+  const status = Number(err.status || err.statusCode) || 500
+  // Di production JANGAN bocorkan detail error ke client.
+  const message = config.isProd
+    ? 'internal server error'
+    : (err.message || 'internal error')
+  res.status(status).json({ error: message })
 })
+
+// ---- Guard konfigurasi rahasia ----
+// Di production: REFUSE TO START kalau secret/PIN masih default.
+// Di development: cukup warning supaya dev nyaman.
+function checkSecrets() {
+  if (config.isProd) {
+    let fatal = false
+    if (config.authSecretIsDefault) {
+      console.error('[server] ✖ AUTH_SECRET masih default. Wajib diisi string acak panjang di production.')
+      console.error('          Generate: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"')
+      fatal = true
+    }
+    if (config.pinIsDefault) {
+      console.error('[server] ✖ APP_PIN masih default (123456). Wajib diganti di production.')
+      fatal = true
+    }
+    if (fatal) {
+      console.error('[server] Server menolak start demi keamanan. Perbaiki server/.env lalu jalankan ulang.')
+      process.exit(1)
+    }
+  } else {
+    if (config.authSecretIsDefault) {
+      console.warn('[server] ⚠  AUTH_SECRET masih default. Ganti sebelum deploy production!')
+    }
+    if (config.pinIsDefault) {
+      console.warn('[server] ⚠  APP_PIN masih default (123456). Ganti di server/.env sebelum deploy!')
+    }
+  }
+}
 
 // ---- Startup ----
 async function main() {
+  checkSecrets()
+
   try {
     await initDb()
     await ensureSettings()
@@ -111,9 +163,6 @@ async function main() {
 
   app.listen(config.port, () => {
     console.log(`[server] Orkay berjalan di http://localhost:${config.port} (${config.nodeEnv})`)
-    if (config.pin === '123456') {
-      console.warn('[server] ⚠  APP_PIN masih default (123456). Ganti di server/.env sebelum deploy!')
-    }
   })
 }
 

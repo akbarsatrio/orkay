@@ -13,7 +13,7 @@
 //   node scripts/deploy-config.mjs budi --domain=budi.contoh.com
 //   node scripts/deploy-config.mjs --all --domain-suffix=contoh.com
 
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { mkdirSync, writeFileSync, chmodSync } from 'node:fs'
 import { join } from 'node:path'
 import { ROOT, DEPLOY_OUT_DIR, SERVER_DIR, BRAIN_DIR, MCP_DIR } from './lib/paths.mjs'
 import { loadInstance, listInstances, portsForInstance } from './lib/config.mjs'
@@ -129,21 +129,38 @@ ${
 `
 }
 
+// Perketat permission file/dir berisi rahasia (POSIX saja; skip di Windows).
+function tightenPerms(path, mode) {
+  if (process.platform === 'win32') return
+  try {
+    chmodSync(path, mode)
+  } catch {}
+}
+
 function writeFor(cfg) {
   const ports = portsForInstance(cfg)
   const outDir = join(DEPLOY_OUT_DIR, cfg.name)
   mkdirSync(outDir, { recursive: true })
 
   // .env production tiap komponen
-  writeFileSync(join(outDir, 'server.env'), toEnvFile(serverEnv(cfg, { prod: true })))
+  const serverEnvPath = join(outDir, 'server.env')
+  writeFileSync(serverEnvPath, toEnvFile(serverEnv(cfg, { prod: true })))
+  tightenPerms(serverEnvPath, 0o600)
   if (cfg.mode === 'full') {
-    writeFileSync(join(outDir, 'brain.env'), toEnvFile(brainEnv(cfg)))
-    writeFileSync(join(outDir, 'mcp.env'), toEnvFile(mcpEnv(cfg)))
+    const brainEnvPath = join(outDir, 'brain.env')
+    const mcpEnvPath = join(outDir, 'mcp.env')
+    writeFileSync(brainEnvPath, toEnvFile(brainEnv(cfg)))
+    writeFileSync(mcpEnvPath, toEnvFile(mcpEnv(cfg)))
+    tightenPerms(brainEnvPath, 0o600)
+    tightenPerms(mcpEnvPath, 0o600)
   }
 
   // PM2 + nginx
   writeFileSync(join(outDir, `ecosystem.${cfg.name}.cjs`), ecosystemContent(cfg, ports))
   writeFileSync(join(outDir, `nginx-${cfg.name}.conf`), nginxContent(cfg, ports))
+
+  // Folder instance berisi rahasia -> hanya owner.
+  tightenPerms(outDir, 0o700)
 
   log(`[deploy] instance "${cfg.name}" -> ${outDir}`)
   log(`         server.env${cfg.mode === 'full' ? ', brain.env, mcp.env' : ''}`)

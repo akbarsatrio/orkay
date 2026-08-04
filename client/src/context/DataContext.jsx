@@ -249,7 +249,10 @@ export function DataProvider({ children }) {
     await bootstrap()
   }, [bootstrap])
 
-  const value = {
+  // value ter-memo: hanya berubah bila salah satu dependency (state / derived / fungsi) berubah.
+  // Semua fungsi CRUD sudah dibungkus useCallback (referensi stabil), sehingga konsumen useData()
+  // tidak re-render kecuali data yang relevan berubah.
+  const value = useMemo(() => ({
     loading, error, bootstrap,
     categories, accounts, incomeSources, recurring, budgets, transactions, installments, settings,
     categoryMap, accountMap, incomeSourceMap,
@@ -265,7 +268,22 @@ export function DataProvider({ children }) {
     updateSettings,
     destroyData,
     periodKey, toISODate,
-  }
+  }), [
+    loading, error, bootstrap,
+    categories, accounts, incomeSources, recurring, budgets, transactions, installments, settings,
+    categoryMap, accountMap, incomeSourceMap,
+    accountBalances, totalBalance,
+    paylaterIds, payLaterInfo, totalDebt,
+    addTransaction, updateTransaction, deleteTransaction,
+    addCategory, updateCategory, deleteCategory,
+    addAccount, updateAccount, deleteAccount,
+    addIncomeSource, updateIncomeSource, deleteIncomeSource,
+    addRecurring, updateRecurring, deleteRecurring, confirmRecurring,
+    upsertBudget, deleteBudget,
+    addInstallment, updateInstallment, deleteInstallment, payInstallment, payStatement,
+    updateSettings,
+    destroyData,
+  ])
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>
 }

@@ -8,11 +8,19 @@ const ALLOWED = (process.env.WA_ALLOWED_NUMBERS || '')
   .map((s) => s.trim())
   .filter(Boolean)
 
+// Flag lingkungan: di production wajib fail-closed; "dev open" harus EKSPLISIT.
+const IS_PROD = process.env.NODE_ENV === 'production'
+const DEV_OPEN = process.env.WA_DEV_OPEN === '1'
+
 // Verifikasi HMAC-SHA256 atas RAW body. OpenWA mengirim signature di header
 // "X-OpenWA-Signature" dengan format "sha256=<hex>".
-// Kalau SECRET kosong -> lewati verifikasi (mode test lokal).
+// Kalau SECRET kosong: FAIL CLOSED di production (atau saat DEV_OPEN != 1).
+// Skip verifikasi HANYA di dev lokal yang eksplisit set WA_DEV_OPEN=1.
 export function verifySignature(req) {
-  if (!SECRET) return { ok: true, skipped: true }
+  if (!SECRET) {
+    if (!IS_PROD && DEV_OPEN) return { ok: true, skipped: true }
+    return { ok: false, reason: 'WA_WEBHOOK_SECRET wajib diisi' }
+  }
   const raw = req.rawBody
   if (!raw) return { ok: false, reason: 'raw body tidak tersedia' }
 
@@ -37,9 +45,11 @@ export function normalizeNumber(chatId) {
   return String(chatId || '').replace(/@.*/, '').replace(/[^\d]/g, '')
 }
 
-// Cek apakah nomor diizinkan. ALLOWED kosong -> izinkan semua (test lokal).
+// Cek apakah nomor diizinkan.
+// ALLOWED kosong: TOLAK SEMUA di production (atau saat DEV_OPEN != 1) — fail closed.
+// Izinkan semua HANYA di dev lokal yang eksplisit set WA_DEV_OPEN=1.
 export function isAllowed(number) {
-  if (ALLOWED.length === 0) return true
+  if (ALLOWED.length === 0) return !IS_PROD && DEV_OPEN
   const n = normalizeNumber(number)
   return ALLOWED.some((a) => normalizeNumber(a) === n)
 }

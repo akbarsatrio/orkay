@@ -17,11 +17,20 @@ function verify(token) {
   const a = Buffer.from(mac)
   const b = Buffer.from(expected)
   if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null
+  let payload
   try {
-    return JSON.parse(Buffer.from(body, 'base64url').toString())
+    payload = JSON.parse(Buffer.from(body, 'base64url').toString())
   } catch {
     return null
   }
+  // Cek expiry hanya jika TTL aktif (tokenTtlMs > 0). 0 = token abadi.
+  if (config.tokenTtlMs > 0) {
+    const iat = payload && payload.iat
+    // iat wajib berupa number valid saat TTL aktif; kalau tidak → tolak.
+    if (typeof iat !== 'number' || !Number.isFinite(iat)) return null
+    if (Date.now() - iat > config.tokenTtlMs) return null
+  }
+  return payload
 }
 
 export function createToken() {
@@ -47,13 +56,30 @@ export function requireAuth(req, res, next) {
 }
 
 // --- Rate limit sederhana untuk endpoint login (anti brute-force) ---
+// CATATAN: penyimpanan ini per-proses (in-memory). Aman untuk PM2 fork mode
+// single instance. TIDAK cluster-safe: di mode cluster/multi-instance tiap
+// worker punya Map sendiri sehingga batas percobaan jadi longgar. Kalau butuh
+// cluster-safe, pakai store eksternal (mis. Redis) — jangan pakai DB app ini.
 const attempts = new Map() // ip -> { count, first }
 const WINDOW_MS = 5 * 60 * 1000
 const MAX_ATTEMPTS = 10
 
+// GC sederhana: buang entri yang jendela waktunya sudah lewat.
+function gcAttempts(now = Date.now()) {
+  for (const [ip, rec] of attempts) {
+    if (now - rec.first >= WINDOW_MS) attempts.delete(ip)
+  }
+}
+
+// Bersihkan berkala supaya Map tidak tumbuh tak terbatas walau login sepi.
+// .unref() supaya interval ini tidak menahan proses exit.
+const gcTimer = setInterval(() => gcAttempts(), WINDOW_MS)
+if (typeof gcTimer.unref === 'function') gcTimer.unref()
+
 export function loginRateLimit(req, res, next) {
   const ip = req.ip || req.socket.remoteAddress || 'unknown'
   const now = Date.now()
+  gcAttempts(now) // bersihkan entri kadaluarsa setiap kali dipanggil
   const rec = attempts.get(ip)
   if (rec && now - rec.first < WINDOW_MS) {
     if (rec.count >= MAX_ATTEMPTS) {

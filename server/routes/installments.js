@@ -93,30 +93,47 @@ router.post('/:id/pay', wrap(async (req, res) => {
   const { date, fromAccountId } = req.body
   const inst = await queryOne('SELECT * FROM installments WHERE id = :id', { id: req.params.id })
   if (!inst) return res.status(404).json({ error: 'not found' })
-  if (inst.paidCount >= inst.tenor) {
-    return res.status(409).json({ error: 'cicilan sudah lunas' })
-  }
   if (!fromAccountId) return res.status(400).json({ error: 'fromAccountId (rekening pembayar) wajib' })
   if (!date) return res.status(400).json({ error: 'date wajib' })
 
-  const termin = inst.paidCount + 1
-  const tx = normalizeTx({
-    id: uid('tx'),
-    type: 'expense', // pembayaran cicilan = pengeluaran bulan ini, dari rekening cash
-    date,
-    amount: inst.monthlyAmount,
-    categoryId: inst.categoryId,
-    accountId: fromAccountId,
-    note: `${inst.name} — cicilan ${termin}/${inst.tenor}`,
-    installmentId: inst.id,
-  })
+  // Atomik: guard di UPDATE WHERE (bukan cek JS) supaya bebas race (TOCTOU).
+  // Kalau affectedRows === 0 berarti sudah lunas / hilang -> rollback & 409.
+  let result
+  try {
+    result = await withTransaction(async ({ run }) => {
+      const [upd] = await run(
+        'UPDATE installments SET paidCount = paidCount + 1 WHERE id = :id AND paidCount < tenor',
+        { id: inst.id }
+      )
+      if (upd.affectedRows === 0) {
+        const e = new Error('cicilan sudah lunas')
+        e.code = 'INSTALLMENT_DONE'
+        throw e
+      }
+      // Baca paidCount fresh (di dalam TX) supaya termin akurat walau ada race.
+      const [freshRows] = await run('SELECT paidCount FROM installments WHERE id = :id', { id: inst.id })
+      const termin = freshRows[0].paidCount
+      const tx = normalizeTx({
+        id: uid('tx'),
+        type: 'expense', // pembayaran cicilan = pengeluaran bulan ini, dari rekening cash
+        date,
+        amount: inst.monthlyAmount,
+        categoryId: inst.categoryId,
+        accountId: fromAccountId,
+        note: `${inst.name} — cicilan ${termin}/${inst.tenor}`,
+        installmentId: inst.id,
+      })
+      await run(TX_INSERT_SQL, tx)
+      return { transaction: tx, paidCount: termin }
+    })
+  } catch (err) {
+    if (err.code === 'INSTALLMENT_DONE') {
+      return res.status(409).json({ error: 'cicilan sudah lunas' })
+    }
+    throw err
+  }
 
-  await withTransaction(async ({ run }) => {
-    await run(TX_INSERT_SQL, tx)
-    await run('UPDATE installments SET paidCount = paidCount + 1 WHERE id = :id', { id: inst.id })
-  })
-
-  res.json({ transaction: tx, paidCount: termin })
+  res.json(result)
 }))
 
 export default router

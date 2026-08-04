@@ -8,6 +8,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
+    "test": "node --test test/verify.test.js",
     "test:webhook": "node test/mock-webhook.js"
   },
   "dependencies": {

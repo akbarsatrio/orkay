@@ -50,14 +50,30 @@ function cmdList() {
   }
 }
 
+// Mask field rahasia pada salinan config (deep-clone) kecuali --show-secrets.
+function maskSecrets(cfg) {
+  const c = JSON.parse(JSON.stringify(cfg))
+  if (c.pin != null) c.pin = '***'
+  if (c.authSecret != null) c.authSecret = '***'
+  if (c.db && c.db.password != null) c.db.password = '***'
+  if (c.ai) {
+    for (const k of ['openwaApiKey', 'llmApiKey', 'waWebhookSecret']) {
+      if (c.ai[k] != null) c.ai[k] = '***'
+    }
+  }
+  return c
+}
+
 function cmdInfo(name) {
   if (!name) {
-    log('Pemakaian: npm run instance -- info <nama>')
+    log('Pemakaian: npm run instance -- info <nama> [--show-secrets]')
     process.exit(1)
   }
   const cfg = loadInstance(name)
   const p = portsForInstance(cfg)
-  log(JSON.stringify({ ...cfg, ports: p }, null, 2))
+  const showSecrets = !!args['show-secrets']
+  const out = showSecrets ? cfg : maskSecrets(cfg)
+  log(JSON.stringify({ ...out, ports: p }, null, 2))
 }
 
 function cmdNew() {

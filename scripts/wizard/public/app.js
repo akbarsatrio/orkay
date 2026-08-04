@@ -3,6 +3,15 @@
 const $ = (sel) => document.querySelector(sel)
 const $$ = (sel) => Array.from(document.querySelectorAll(sel))
 
+// Token auth dibaca sekali dari URL (?token=...), disertakan di tiap request /api/*.
+const TOKEN = new URLSearchParams(location.search).get('token') || ''
+
+// Wrapper fetch yang otomatis menyisipkan header token.
+function apiFetch(url, opts = {}) {
+  const headers = { ...(opts.headers || {}), 'x-orkay-token': TOKEN }
+  return fetch(url, { ...opts, headers })
+}
+
 const state = {
   step: 0,
   mode: 'web',
@@ -37,7 +46,7 @@ async function runPreflight() {
   const box = $('#preflight')
   box.innerHTML = '<div class="check loading">Memeriksa sistem…</div>'
   $('#preflight-help').classList.add('hidden')
-  const pf = await fetch('/api/preflight').then((r) => r.json())
+  const pf = await apiFetch('/api/preflight').then((r) => r.json())
   state.dockerAvailable = pf.docker.running
 
   const checks = []
@@ -94,7 +103,7 @@ $$('.mode-card').forEach((c) =>
 )
 $('#to-step-2').addEventListener('click', async () => {
   // isi saran nama/PIN
-  const s = await fetch('/api/suggest').then((r) => r.json())
+  const s = await apiFetch('/api/suggest').then((r) => r.json())
   if (!$('#in-name').value) $('#in-name').value = s.name
   if (!$('#in-pin').value) $('#in-pin').value = s.pin
   goStep(2)
@@ -142,7 +151,7 @@ $('#btn-test-mysql').addEventListener('click', async () => {
   const el = $('#mysql-test-result')
   el.textContent = 'Mengetes…'
   el.className = 'test-result'
-  const r = await fetch('/api/test-mysql', {
+  const r = await apiFetch('/api/test-mysql', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -183,7 +192,7 @@ async function startInstall() {
   bar.style.width = '5%'
   let pct = 5
 
-  const resp = await fetch('/api/install', {
+  const resp = await apiFetch('/api/install', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(collectPayload()),
@@ -233,7 +242,7 @@ function showDone(d) {
     <div>Port: server ${d.ports.server} · web ${d.ports.vite}${d.mode === 'full' ? ' · brain ' + d.ports.brain : ''}</div>`
   $('#btn-open-app').onclick = async () => {
     // start instance kalau belum jalan, lalu buka
-    await fetch('/api/start', {
+    await apiFetch('/api/start', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: d.name }),
@@ -258,7 +267,7 @@ $('#btn-refresh').addEventListener('click', loadInstances)
 async function loadInstances() {
   const list = $('#instance-list')
   list.innerHTML = '<p class="sub">Memuat…</p>'
-  const { instances } = await fetch('/api/instances').then((r) => r.json())
+  const { instances } = await apiFetch('/api/instances').then((r) => r.json())
   if (!instances.length) {
     list.innerHTML = '<p class="sub">Belum ada aplikasi terpasang.</p>'
     return
@@ -275,7 +284,7 @@ function instanceRow(i) {
           <span class="tag">${i.mode}</span>
           <span class="tag">DB: ${i.dbProvider}</span>
         </div>
-        <div class="instance-meta">PIN ${i.pin} · web ${i.ports.vite} · server ${i.ports.server} · ${i.url}</div>
+        <div class="instance-meta">PIN ${i.hasPin ? '••••••' : '-'} · web ${i.ports.vite} · server ${i.ports.server} · ${i.url}</div>
       </div>
       <div class="instance-actions">
         ${
@@ -299,7 +308,7 @@ function bindInstanceActions() {
         if (act === 'open') return window.open(btn.dataset.url, '_blank')
         if (act === 'start') {
           btn.textContent = 'Menjalankan…'
-          const r = await fetch('/api/start', {
+          const r = await apiFetch('/api/start', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name }),
@@ -308,7 +317,7 @@ function bindInstanceActions() {
           setTimeout(loadInstances, 800)
         }
         if (act === 'stop') {
-          await fetch('/api/stop', {
+          await apiFetch('/api/stop', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name }),
@@ -335,7 +344,7 @@ $('#export-go').addEventListener('click', async () => {
   const out = $('#export-output')
   out.classList.remove('hidden')
   out.textContent = 'Generating…'
-  const r = await fetch('/api/export', {
+  const r = await apiFetch('/api/export', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: exportName, domain: $('#export-domain').value.trim() }),
@@ -380,7 +389,7 @@ $('#delete-go').addEventListener('click', async () => {
   out.classList.remove('hidden')
   out.textContent = 'Menghapus…'
   $('#delete-go').disabled = true
-  const r = await fetch('/api/delete', {
+  const r = await apiFetch('/api/delete', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
