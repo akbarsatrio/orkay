@@ -10,3 +10,6 @@ dist-ssr
 .env
 **/.env
 !**/.env.example
+
+# Generated deploy config per-instance (berisi rahasia)
+/deploy/

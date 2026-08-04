@@ -1,0 +1,3 @@
+# Config instance berisi rahasia (PIN, password DB, API key) — jangan commit.
+*.json
+!example.json

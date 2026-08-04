@@ -1,13 +1,22 @@
 {
-  "name": "economic-analytic",
+  "name": "orkay",
   "private": true,
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "console": "node scripts/wizard/server.mjs",
+    "gui": "node scripts/wizard/server.mjs",
+    "dev": "node scripts/run-instance.mjs",
+    "dev:legacy": "concurrently -n server,client -c blue,green \"npm --prefix server run dev\" \"npm --prefix client run dev\"",
+    "bootstrap": "node scripts/bootstrap.mjs",
+    "instance": "node scripts/instance.mjs",
+    "instance:new": "node scripts/instance.mjs new",
+    "instance:list": "node scripts/instance.mjs list",
+    "instance:start": "node scripts/instance.mjs start",
+    "deploy:config": "node scripts/deploy-config.mjs",
     "build": "npm --prefix client run build",
     "start": "cross-env NODE_ENV=production npm --prefix server start",
-    "install:all": "npm install && npm --prefix server install && npm --prefix client install",
+    "install:all": "npm install && npm --prefix server install && npm --prefix client install && npm --prefix mcp install && npm --prefix brain install",
     "deploy:build": "npm run install:all && npm run build"
   },
   "devDependencies": {

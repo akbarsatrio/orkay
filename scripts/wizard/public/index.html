@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Orkay — Pemasangan</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <img src="/wallet.svg" alt="Orkay" class="logo" />
+          <span>Orkay</span>
+          <span class="tag">Pemasangan</span>
+        </div>
+        <nav class="tabs">
+          <button class="tab active" data-view="wizard">Pasang Baru</button>
+          <button class="tab" data-view="manage">Kelola Aplikasi</button>
+        </nav>
+      </header>
+
+      <!-- ============ WIZARD ============ -->
+      <main id="view-wizard" class="view">
+        <ol class="steps">
+          <li class="step active" data-step="0">Cek Sistem</li>
+          <li class="step" data-step="1">Pilih Mode</li>
+          <li class="step" data-step="2">Buat Akun</li>
+          <li class="step" data-step="3">Database</li>
+          <li class="step" data-step="4">Pasang</li>
+          <li class="step" data-step="5">Selesai</li>
+        </ol>
+
+        <!-- Step 0: preflight -->
+        <section class="panel" data-panel="0">
+          <h1>Selamat datang 👋</h1>
+          <p class="sub">Wizard ini akan memasang aplikasi Orkay di komputer/server ini. Kami cek dulu kesiapannya.</p>
+          <div id="preflight" class="checks">
+            <div class="check loading">Memeriksa sistem…</div>
+          </div>
+          <div id="preflight-help" class="help hidden"></div>
+          <div class="actions">
+            <button id="btn-recheck" class="btn ghost">Periksa ulang</button>
+            <button id="to-step-1" class="btn primary" disabled>Lanjut</button>
+          </div>
+        </section>
+
+        <!-- Step 1: mode -->
+        <section class="panel hidden" data-panel="1">
+          <h1>Mau pakai yang mana?</h1>
+          <p class="sub">Pilih fitur yang kamu butuhkan. Bisa diubah nanti.</p>
+          <div class="cards">
+            <button class="card mode-card selected" data-mode="web">
+              <div class="card-icon">💻</div>
+              <div class="card-title">Aplikasi Web</div>
+              <div class="card-desc">Catat keuangan lewat browser. Paling simpel & cepat.</div>
+            </button>
+            <button class="card mode-card" data-mode="full">
+              <div class="card-icon">🤖</div>
+              <div class="card-title">Web + WhatsApp/AI</div>
+              <div class="card-desc">Tambah asisten AI via WhatsApp. Butuh API key (bisa diisi nanti).</div>
+            </button>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" data-back="0">Kembali</button>
+            <button id="to-step-2" class="btn primary">Lanjut</button>
+          </div>
+        </section>
+
+        <!-- Step 2: akun/instance -->
+        <section class="panel hidden" data-panel="2">
+          <h1>Buat akun aplikasi</h1>
+          <p class="sub">PIN dipakai untuk masuk ke aplikasi. Nama dipakai kalau kamu memasang beberapa aplikasi di server yang sama.</p>
+          <div class="field">
+            <label>Nama aplikasi</label>
+            <input id="in-name" type="text" placeholder="default" />
+            <small>Huruf/angka tanpa spasi. Contoh: budi, kantor, pribadi.</small>
+          </div>
+          <div class="field">
+            <label>PIN masuk aplikasi</label>
+            <div class="pin-row">
+              <input id="in-pin" type="text" inputmode="numeric" maxlength="12" />
+              <button id="btn-regen-pin" class="btn ghost small" type="button">Acak</button>
+            </div>
+            <small>Ingat baik-baik PIN ini. Bisa diganti di pengaturan aplikasi.</small>
+          </div>
+          <div class="actions">
+            <button class="btn ghost" data-back="1">Kembali</button>
+            <button id="to-step-3" class="btn primary">Lanjut</button>
+          </div>
+        </section>
+
+        <!-- Step 3: database -->
+        <section class="panel hidden" data-panel="3">
+          <h1>Tempat penyimpanan data</h1>
+          <p class="sub">Data keuangan disimpan di database. Pilih cara penyediaannya.</p>
+          <div class="cards">
+            <button class="card db-card selected" data-db="host">
+              <div class="card-icon">🗄️</div>
+              <div class="card-title">MySQL sudah ada</div>
+              <div class="card-desc">Saya sudah punya MySQL terpasang. Wizard tinggal membuatkan database-nya.</div>
+            </button>
+            <button class="card db-card" data-db="docker" id="db-docker-card">
+              <div class="card-icon">🐳</div>
+              <div class="card-title">Otomatis (Docker)</div>
+              <div class="card-desc">Wizard menyiapkan MySQL sendiri lewat Docker. Tidak perlu install MySQL manual.</div>
+              <div class="card-badge" id="docker-badge"></div>
+            </button>
+          </div>
+
+          <!-- form kredensial admin untuk opsi host -->
+          <div id="db-host-form" class="db-form">
+            <p class="sub">Masukkan akses admin MySQL (untuk membuat database sekali saja — tidak disimpan).</p>
+            <div class="grid2">
+              <div class="field"><label>Host</label><input id="db-host" value="localhost" /></div>
+              <div class="field"><label>Port</label><input id="db-port" value="3306" /></div>
+              <div class="field"><label>User admin</label><input id="db-admin-user" value="root" /></div>
+              <div class="field"><label>Password admin</label><input id="db-admin-pass" type="password" placeholder="(kosongkan jika tidak ada)" /></div>
+            </div>
+            <button id="btn-test-mysql" class="btn ghost small" type="button">Tes Koneksi</button>
+            <span id="mysql-test-result" class="test-result"></span>
+          </div>
+
+          <div id="db-docker-form" class="db-form hidden">
+            <p class="hint">✅ Docker terdeteksi. Wizard akan membuat 1 container MySQL khusus untuk aplikasi ini. Data tersimpan aman walau container dimatikan.</p>
+          </div>
+
+          <!-- LLM config (mode full) -->
+          <div id="ai-form" class="db-form hidden">
+            <h3>Pengaturan AI (opsional)</h3>
+            <div class="field"><label>LLM API Key</label><input id="ai-key" type="password" placeholder="Boleh dikosongkan, isi nanti" /></div>
+            <div class="grid2">
+              <div class="field"><label>LLM Base URL</label><input id="ai-url" value="https://api.openai.com/v1" /></div>
+              <div class="field"><label>Model</label><input id="ai-model" value="cc/claude-opus-4-8" /></div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn ghost" data-back="2">Kembali</button>
+            <button id="to-step-4" class="btn primary">Pasang &amp; Jalankan</button>
+          </div>
+        </section>
+
+        <!-- Step 4: install progress -->
+        <section class="panel hidden" data-panel="4">
+          <h1>Sedang memasang…</h1>
+          <p class="sub">Proses ini bisa memakan waktu 1-3 menit saat pertama kali. Jangan tutup jendela ini.</p>
+          <div class="progress"><div id="progress-bar" class="progress-bar"></div></div>
+          <pre id="install-log" class="log"></pre>
+        </section>
+
+        <!-- Step 5: done -->
+        <section class="panel hidden" data-panel="5">
+          <h1>🎉 Selesai!</h1>
+          <p class="sub">Aplikasi Orkay sudah terpasang dan berjalan.</p>
+          <div class="summary" id="done-summary"></div>
+          <div class="actions">
+            <button id="btn-open-app" class="btn primary big">Buka Aplikasi</button>
+            <button id="btn-add-another" class="btn ghost">Pasang Aplikasi Lain</button>
+            <button id="btn-goto-manage" class="btn ghost">Kelola Aplikasi</button>
+          </div>
+        </section>
+      </main>
+
+      <!-- ============ MANAGE ============ -->
+      <main id="view-manage" class="view hidden">
+        <h1>Kelola Aplikasi</h1>
+        <p class="sub">Semua aplikasi Orkay yang terpasang di server ini.</p>
+        <div id="instance-list" class="instance-list"></div>
+        <div class="actions">
+          <button id="btn-new-from-manage" class="btn primary">+ Pasang Baru</button>
+          <button id="btn-refresh" class="btn ghost">Muat ulang</button>
+        </div>
+      </main>
+    </div>
+
+    <!-- modal export -->
+    <div id="export-modal" class="modal hidden">
+      <div class="modal-box">
+        <h2>Export Config Deploy</h2>
+        <p class="sub">Generate config PM2 + Nginx untuk deploy ke server produksi.</p>
+        <div class="field">
+          <label>Domain (opsional)</label>
+          <input id="export-domain" placeholder="mis. budi.contoh.com" />
+        </div>
+        <pre id="export-output" class="log hidden"></pre>
+        <div class="actions">
+          <button id="export-cancel" class="btn ghost">Tutup</button>
+          <button id="export-go" class="btn primary">Generate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- modal hapus -->
+    <div id="delete-modal" class="modal hidden">
+      <div class="modal-box">
+        <h2 class="danger-title">Hapus Aplikasi</h2>
+        <p class="sub">Kamu akan menghapus aplikasi <b id="del-name-label"></b>. Aplikasi yang sedang berjalan akan dihentikan.</p>
+
+        <label class="checkline">
+          <input type="checkbox" id="del-drop-data" />
+          <span>Hapus juga <b>database &amp; seluruh datanya</b> (permanen, tidak bisa dikembalikan).</span>
+        </label>
+
+        <div id="del-admin-form" class="db-form hidden">
+          <p class="sub">Instance ini pakai MySQL biasa. Untuk menghapus database-nya, masukkan akses admin MySQL (tidak disimpan).</p>
+          <div class="grid2">
+            <div class="field"><label>User admin</label><input id="del-admin-user" value="root" /></div>
+            <div class="field"><label>Password admin</label><input id="del-admin-pass" type="password" placeholder="(kosongkan jika tidak ada)" /></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Ketik ulang nama aplikasi untuk konfirmasi</label>
+          <input id="del-confirm-name" placeholder="ketik nama aplikasi di sini" autocomplete="off" />
+        </div>
+
+        <pre id="delete-output" class="log hidden"></pre>
+        <div class="actions">
+          <button id="delete-cancel" class="btn ghost">Batal</button>
+          <button id="delete-go" class="btn danger" disabled>Hapus Permanen</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
