@@ -53,7 +53,8 @@ export default function Dashboard({ onAddTransaction }) {
   const incomeDelta = lastMonth.income ? ((thisMonth.income - lastMonth.income) / lastMonth.income) * 100 : null
 
   const breakdown = useMemo(() => categoryBreakdown(transactions, categoryMap, now.getFullYear(), now.getMonth()), [transactions, categoryMap])
-  const trend = useMemo(() => dailySpendingTrend(transactions, now.getFullYear(), now.getMonth()), [transactions])
+  const trend = useMemo(() => dailySpendingTrend(transactions, now, 30), [transactions])
+  const trendRange = trend.length ? `${trend[0].label} – ${trend[trend.length - 1].label} ${now.getFullYear()}` : ''
   const cashflow = useMemo(() => cashflowByMonth(transactions, 6, now), [transactions])
 
   const nextPay = useMemo(() => getNextPayday(now, settings.payDay, holidaySet), [settings.payDay, holidaySet])
@@ -184,7 +185,7 @@ export default function Dashboard({ onAddTransaction }) {
           <CardBody className="min-w-0"><CategoryDonut data={breakdown} /></CardBody>
         </Card>
         <Card className="min-w-0">
-          <CardHeader title="Tren Pengeluaran Harian" subtitle={`${monthNamesID[now.getMonth()]} ${now.getFullYear()}`} />
+          <CardHeader title="Tren Pengeluaran Harian" subtitle={trendRange} />
           <CardBody className="min-w-0"><SpendingTrend data={trend} /></CardBody>
         </Card>
       </div>

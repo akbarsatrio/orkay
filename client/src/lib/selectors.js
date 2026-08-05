@@ -1,4 +1,4 @@
-import { monthShortID, formatDateShort } from './format.js'
+import { monthShortID, formatDateShort, toISODate } from './format.js'
 
 export function inMonth(iso, year, month) {
   return iso.startsWith(`${year}-${String(month + 1).padStart(2, '0')}`)
@@ -42,17 +42,23 @@ export function categoryBreakdown(transactions, categoryMap, year, month) {
     .sort((a, b) => b.value - a.value)
 }
 
-// Tren pengeluaran harian dalam 1 bulan -> [{label, value}]
+// Tren pengeluaran harian, rolling `days` hari terakhir sampai `ref` -> [{date, label, value}]
 // Termasuk biaya admin transfer.
-export function dailySpendingTrend(transactions, year, month) {
-  const daysInMonth = new Date(year, month + 1, 0).getDate()
-  const arr = Array.from({ length: daysInMonth }, (_, i) => ({ day: i + 1, label: `${i + 1}`, value: 0 }))
+export function dailySpendingTrend(transactions, ref = new Date(), days = 30) {
+  const buckets = new Map()
+  const arr = []
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - i)
+    const iso = toISODate(d)
+    const entry = { date: iso, label: formatDateShort(iso), value: 0 }
+    buckets.set(iso, entry)
+    arr.push(entry)
+  }
   for (const t of transactions) {
-    if (!inMonth(t.date, year, month)) continue
-    const d = parseInt(t.date.slice(8, 10), 10)
-    if (!arr[d - 1]) continue
-    if (t.type === 'expense') arr[d - 1].value += t.amount
-    else if (t.type === 'transfer' && t.fee > 0) arr[d - 1].value += t.fee
+    const entry = buckets.get(t.date.slice(0, 10))
+    if (!entry) continue
+    if (t.type === 'expense') entry.value += t.amount
+    else if (t.type === 'transfer' && t.fee > 0) entry.value += t.fee
   }
   return arr
 }
