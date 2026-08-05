@@ -8,6 +8,8 @@ import StatCard from '../components/dashboard/StatCard.jsx'
 import CategoryDonut from '../components/charts/CategoryDonut.jsx'
 import SpendingTrend from '../components/charts/SpendingTrend.jsx'
 import CashflowBar from '../components/charts/CashflowBar.jsx'
+import NetWorthTrend from '../components/charts/NetWorthTrend.jsx'
+import CashflowForecast from '../components/dashboard/CashflowForecast.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import ConfirmRecurringModal from '../components/recurring/ConfirmRecurringModal.jsx'
 import PayBillModal from '../components/paylater/PayBillModal.jsx'
@@ -16,6 +18,7 @@ import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
 import { formatRupiah, formatDate, monthNamesID } from '../lib/format.js'
 import {
   monthlySummary, categoryBreakdown, dailySpendingTrend, cashflowByMonth,
+  netWorthTrend, forecastToPayday,
 } from '../lib/selectors.js'
 import { getNextPayday, daysUntil } from '../lib/payday.js'
 import { getUpcomingRecurring, periodKey } from '../lib/recurring.js'
@@ -56,6 +59,7 @@ export default function Dashboard({ onAddTransaction }) {
   const trend = useMemo(() => dailySpendingTrend(transactions, now, 30), [transactions])
   const trendRange = trend.length ? `${trend[0].label} – ${trend[trend.length - 1].label} ${now.getFullYear()}` : ''
   const cashflow = useMemo(() => cashflowByMonth(transactions, 6, now), [transactions])
+  const netWorth = useMemo(() => netWorthTrend(accounts, transactions, installments, 6, now), [accounts, transactions, installments])
 
   const nextPay = useMemo(() => getNextPayday(now, settings.payDay, holidaySet), [settings.payDay, holidaySet])
   const daysToPay = daysUntil(nextPay.effective, now)
@@ -66,6 +70,26 @@ export default function Dashboard({ onAddTransaction }) {
   const unpaidStatements = useMemo(() => getUnpaidStatements(accounts, transactions, now), [accounts, transactions])
   const pendingInstallments = useMemo(() => getPendingInstallments(installments, accounts, now), [installments, accounts])
   const hasPaylaterBills = unpaidStatements.length > 0 || pendingInstallments.length > 0
+
+  // Forecast: gabungkan semua kewajiban yang jatuh tempo sebelum gajian berikutnya.
+  const forecast = useMemo(() => {
+    const window = Math.max(daysToPay, 0)
+    const recurringBills = getUpcomingRecurring(recurring, window, now)
+      .filter((u) => !u.confirmed)
+      .map((u) => ({ name: u.recurring.name, dueDate: u.dueDate, amount: u.recurring.amount }))
+    const statementBills = unpaidStatements.map((st) => ({
+      name: `Tagihan ${st.account.name}`, dueDate: st.dueDate, amount: st.unpaid,
+    }))
+    const installmentBills = pendingInstallments.map((it) => ({
+      name: `${it.installment.name} (cicilan ${it.termin})`, dueDate: it.dueDate, amount: it.amount,
+    }))
+    return forecastToPayday({
+      totalBalance,
+      bills: [...recurringBills, ...statementBills, ...installmentBills],
+      paydayISO: nextPay.effective,
+      bufferRatio: 0.1,
+    })
+  }, [recurring, unpaidStatements, pendingInstallments, totalBalance, nextPay.effective, daysToPay])
 
   const recentTx = transactions.slice(0, 6)
 
@@ -79,27 +103,31 @@ export default function Dashboard({ onAddTransaction }) {
         <StatCard label="Selisih (Net)" value={thisMonth.net} icon={Sparkles} tone={thisMonth.net >= 0 ? 'positive' : 'negative'} />
       </div>
 
-      {/* Payday + Upcoming recurring */}
+      {/* Payday + Forecast + Upcoming recurring */}
       <div className="grid lg:grid-cols-3 gap-4">
-        <Card className="lg:col-span-1 bg-gradient-to-br from-accent/[0.08] to-transparent">
-          <CardBody>
-            <div className="flex items-center gap-2 text-accent">
-              <CalendarClock size={16} />
-              <span className="text-xs font-semibold uppercase tracking-wide">Gajian Berikutnya</span>
-            </div>
-            <p className="text-2xl font-bold text-fg mt-3">
-              {daysToPay === 0 ? 'Hari ini! 🎉' : daysToPay === 1 ? 'Besok' : `${daysToPay} hari lagi`}
-            </p>
-            <p className="text-sm text-muted mt-1">{formatDate(nextPay.effective, { withDay: true })}</p>
-            {nextPay.shifted && (
-              <div className="mt-3">
-                <Badge className="text-warning border-warning/30 bg-warning/10">
-                  Dimajukan dari tgl {settings.payDay} ({nextPay.reason})
-                </Badge>
+        <div className="lg:col-span-1 grid gap-4 content-start">
+          <Card className="bg-gradient-to-br from-accent/[0.08] to-transparent">
+            <CardBody>
+              <div className="flex items-center gap-2 text-accent">
+                <CalendarClock size={16} />
+                <span className="text-xs font-semibold uppercase tracking-wide">Gajian Berikutnya</span>
               </div>
-            )}
-          </CardBody>
-        </Card>
+              <p className="text-2xl font-bold text-fg mt-3">
+                {daysToPay === 0 ? 'Hari ini! 🎉' : daysToPay === 1 ? 'Besok' : `${daysToPay} hari lagi`}
+              </p>
+              <p className="text-sm text-muted mt-1">{formatDate(nextPay.effective, { withDay: true })}</p>
+              {nextPay.shifted && (
+                <div className="mt-3">
+                  <Badge className="text-warning border-warning/30 bg-warning/10">
+                    Dimajukan dari tgl {settings.payDay} ({nextPay.reason})
+                  </Badge>
+                </div>
+              )}
+            </CardBody>
+          </Card>
+
+          <CashflowForecast forecast={forecast} daysToPay={daysToPay} hidden={hidden} />
+        </div>
 
         <Card className="lg:col-span-2 min-w-0">
           <CardHeader
@@ -189,6 +217,11 @@ export default function Dashboard({ onAddTransaction }) {
           <CardBody className="min-w-0"><SpendingTrend data={trend} /></CardBody>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader title="Kekayaan Bersih" subtitle="6 bulan terakhir" />
+        <CardBody><NetWorthTrend data={netWorth} /></CardBody>
+      </Card>
 
       <Card>
         <CardHeader title="Arus Kas 6 Bulan Terakhir" subtitle="Pemasukan vs pengeluaran" />
