@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { TrendingDown, ShieldCheck, AlertTriangle, XCircle } from 'lucide-react'
+import { TrendingDown, ShieldCheck, AlertTriangle, XCircle, Info } from 'lucide-react'
 import { Card, CardBody, Badge, Segmented, Toggle } from '../ui/index.jsx'
 import { maskRupiah, toISODate } from '../../lib/format.js'
 import { estimateDailyBurn, projectDiscretionary, forecastToPayday } from '../../lib/selectors.js'
@@ -11,10 +11,10 @@ const STATUS = {
 }
 
 const METHODS = [
-  { value: 'mean', label: 'Rata2' },
-  { value: 'median', label: 'Median' },
-  { value: 'weekpart', label: 'Wd/We' },
-  { value: 'trim', label: 'Trim' },
+  { value: 'mean', label: 'Rata2', desc: 'Total belanja dibagi jumlah hari. Simpel, tapi gampang naik kalau ada sekali belanja gede.' },
+  { value: 'median', label: 'Median', desc: 'Nilai belanja hari tengah. Tahan terhadap hari boros, cerminkan hari biasa.' },
+  { value: 'weekpart', label: 'Wd/We', desc: 'Rata-rata hari kerja & weekend dipisah. Paling pas kalau pola jajanmu beda saat weekend.' },
+  { value: 'trim', label: 'Trim', desc: 'Rata-rata setelah membuang 10% hari paling boros. Kompromi antara rata-rata & median.' },
 ]
 
 function narrative(forecast, includeBurn) {
@@ -72,8 +72,14 @@ export default function CashflowForecast({ totalBalance, bills, transactions, pa
         <p className="text-sm text-muted mt-1">{narrative(forecast, includeBurn)}</p>
 
         {includeBurn && (
-          <div className="mt-3">
-            <Segmented options={METHODS} value={method} onChange={setMethod} className="w-full" />
+          <div className="mt-3 space-y-2">
+            <Segmented options={METHODS} value={method} onChange={setMethod} fill />
+            <div className="flex items-start gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
+              <Info size={13} className="text-accent mt-0.5 shrink-0" />
+              <p className="text-2xs text-muted leading-relaxed">
+                {METHODS.find((m) => m.value === method)?.desc}
+              </p>
+            </div>
           </div>
         )}
 

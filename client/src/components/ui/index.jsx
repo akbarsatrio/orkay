@@ -242,15 +242,20 @@ export function Empty({ icon: Icon, title, description, action }) {
 }
 
 // ---------- Segmented control ----------
-export function Segmented({ options, value, onChange, className }) {
+export function Segmented({ options, value, onChange, className, fill }) {
   return (
-    <div className={cx('inline-flex max-w-full overflow-x-auto no-scrollbar p-0.5 bg-surface-2 rounded-lg border border-border', className)}>
+    <div className={cx(
+      'p-0.5 bg-surface-2 rounded-lg border border-border',
+      fill ? 'flex w-full' : 'inline-flex max-w-full overflow-x-auto no-scrollbar',
+      className
+    )}>
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={cx(
-            'px-3 h-8 sm:h-7 text-xs font-medium rounded-md transition-colors whitespace-nowrap shrink-0',
+            'px-3 h-8 sm:h-7 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+            fill ? 'flex-1' : 'shrink-0',
             value === opt.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'
           )}
         >
