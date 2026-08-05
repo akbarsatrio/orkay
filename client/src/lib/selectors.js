@@ -169,18 +169,109 @@ export function netWorthTrend(accounts, transactions, installments, months = 6, 
 
 // ---- Forecast arus kas sampai gajian berikutnya ----
 
-// Proyeksi saldo pas gajian: saldo sekarang − semua tagihan yang jatuh tempo sebelum payday.
+// Proyeksi saldo pas gajian: saldo sekarang − tagihan terjadwal − perkiraan belanja harian.
 // bills = gabungan recurring/statement/installment { name, dueDate, amount }.
-// Return { saldoSekarang, tagihanTotal, proyeksi, status, paydayISO, bills }
-export function forecastToPayday({ totalBalance, bills, paydayISO, bufferRatio = 0.1 }) {
+// discretionary = total perkiraan belanja diskresioner sampai payday (0 kalau tidak dipakai).
+// Return { saldoSekarang, tagihanTotal, belanjaEstimasi, proyeksi, status, paydayISO, bills }
+export function forecastToPayday({ totalBalance, bills, paydayISO, discretionary = 0, bufferRatio = 0.1 }) {
   const relevant = (bills || [])
     .filter((b) => b.dueDate <= paydayISO)
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate))
   const tagihanTotal = relevant.reduce((s, b) => s + b.amount, 0)
-  const proyeksi = totalBalance - tagihanTotal
+  const belanjaEstimasi = Math.max(0, discretionary)
+  const proyeksi = totalBalance - tagihanTotal - belanjaEstimasi
   const buffer = Math.max(0, totalBalance) * bufferRatio
   let status = 'aman'
   if (proyeksi < 0) status = 'minus'
   else if (proyeksi < buffer) status = 'mepet'
-  return { saldoSekarang: totalBalance, tagihanTotal, proyeksi, status, paydayISO, bills: relevant }
+  return { saldoSekarang: totalBalance, tagihanTotal, belanjaEstimasi, proyeksi, status, paydayISO, bills: relevant }
+}
+
+// ---- Estimasi belanja harian (behavior-aware) ----
+
+const median = (nums) => {
+  if (!nums.length) return 0
+  const s = [...nums].sort((a, b) => a - b)
+  const mid = Math.floor(s.length / 2)
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2
+}
+
+const mean = (nums) => (nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 0)
+
+// Belanja DISKRESIONER per hari kalender dalam `lookback` hari terakhir (sblm hari ini).
+// Diskresioner = expense tanpa recurringId & installmentId (biar tidak dobel dgn tagihan terjadwal).
+// Return array of { iso, weekend, value } urut lama->baru, termasuk hari Rp0.
+function discretionaryDailySeries(transactions, ref, lookback) {
+  const buckets = new Map()
+  const days = []
+  // sampai kemarin (i=1) supaya hari berjalan yang belum penuh tidak menekan rata-rata
+  for (let i = lookback; i >= 1; i--) {
+    const d = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() - i)
+    const iso = toISODate(d)
+    const dow = d.getDay()
+    const entry = { iso, weekend: dow === 0 || dow === 6, value: 0 }
+    buckets.set(iso, entry)
+    days.push(entry)
+  }
+  for (const t of transactions) {
+    if (t.type !== 'expense') continue
+    if (t.recurringId || t.installmentId) continue
+    const entry = buckets.get(t.date.slice(0, 10))
+    if (entry) entry.value += t.amount
+  }
+  return days
+}
+
+// Estimasi laju belanja harian dgn 4 metode.
+// method: 'mean' | 'median' | 'weekpart' | 'trim'
+// Return { method, perDay, weekday, weekend } (perDay = laju gabungan utk metode flat).
+export function estimateDailyBurn(transactions, ref = new Date(), lookback = 60, method = 'weekpart') {
+  const series = discretionaryDailySeries(transactions, ref, lookback)
+  const values = series.map((d) => d.value)
+  const wdVals = series.filter((d) => !d.weekend).map((d) => d.value)
+  const weVals = series.filter((d) => d.weekend).map((d) => d.value)
+
+  let perDay = 0
+  if (method === 'median') {
+    perDay = median(values)
+  } else if (method === 'trim') {
+    const sorted = [...values].sort((a, b) => a - b)
+    const cut = Math.floor(sorted.length * 0.1)
+    perDay = mean(cut ? sorted.slice(0, sorted.length - cut) : sorted)
+  } else {
+    // 'mean' & fallback utk 'weekpart' (perDay dipakai kalau proyeksi butuh angka tunggal)
+    perDay = mean(values)
+  }
+
+  return {
+    method,
+    perDay,
+    weekday: mean(wdVals),
+    weekend: mean(weVals),
+  }
+}
+
+// Proyeksikan total belanja diskresioner dari `fromISO` (eksklusif hari ini) s/d `toISO` (inklusif).
+// Metode 'weekpart' menghitung jumlah hari kerja vs weekend nyata di window.
+export function projectDiscretionary(estimate, fromExclusiveISO, toISO) {
+  const start = new Date(fromExclusiveISO + 'T00:00:00')
+  const end = new Date(toISO + 'T00:00:00')
+  if (end <= start) return 0
+
+  if (estimate.method === 'weekpart') {
+    let wd = 0
+    let we = 0
+    const cur = new Date(start)
+    cur.setDate(cur.getDate() + 1) // mulai besok
+    while (cur <= end) {
+      const dow = cur.getDay()
+      if (dow === 0 || dow === 6) we++
+      else wd++
+      cur.setDate(cur.getDate() + 1)
+    }
+    return wd * estimate.weekday + we * estimate.weekend
+  }
+
+  const days = Math.round((end - start) / 86400000)
+  return Math.max(0, days) * estimate.perDay
 }

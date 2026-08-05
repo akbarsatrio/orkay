@@ -18,7 +18,7 @@ import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
 import { formatRupiah, formatDate, monthNamesID } from '../lib/format.js'
 import {
   monthlySummary, categoryBreakdown, dailySpendingTrend, cashflowByMonth,
-  netWorthTrend, forecastToPayday,
+  netWorthTrend,
 } from '../lib/selectors.js'
 import { getNextPayday, daysUntil } from '../lib/payday.js'
 import { getUpcomingRecurring, periodKey } from '../lib/recurring.js'
@@ -71,8 +71,8 @@ export default function Dashboard({ onAddTransaction }) {
   const pendingInstallments = useMemo(() => getPendingInstallments(installments, accounts, now), [installments, accounts])
   const hasPaylaterBills = unpaidStatements.length > 0 || pendingInstallments.length > 0
 
-  // Forecast: gabungkan semua kewajiban yang jatuh tempo sebelum gajian berikutnya.
-  const forecast = useMemo(() => {
+  // Semua kewajiban terjadwal yang jatuh tempo sebelum gajian berikutnya (buat forecast).
+  const forecastBills = useMemo(() => {
     const window = Math.max(daysToPay, 0)
     const recurringBills = getUpcomingRecurring(recurring, window, now)
       .filter((u) => !u.confirmed)
@@ -83,13 +83,8 @@ export default function Dashboard({ onAddTransaction }) {
     const installmentBills = pendingInstallments.map((it) => ({
       name: `${it.installment.name} (cicilan ${it.termin})`, dueDate: it.dueDate, amount: it.amount,
     }))
-    return forecastToPayday({
-      totalBalance,
-      bills: [...recurringBills, ...statementBills, ...installmentBills],
-      paydayISO: nextPay.effective,
-      bufferRatio: 0.1,
-    })
-  }, [recurring, unpaidStatements, pendingInstallments, totalBalance, nextPay.effective, daysToPay])
+    return [...recurringBills, ...statementBills, ...installmentBills]
+  }, [recurring, unpaidStatements, pendingInstallments, daysToPay])
 
   const recentTx = transactions.slice(0, 6)
 
@@ -126,7 +121,15 @@ export default function Dashboard({ onAddTransaction }) {
             </CardBody>
           </Card>
 
-          <CashflowForecast forecast={forecast} daysToPay={daysToPay} hidden={hidden} />
+          <CashflowForecast
+            totalBalance={totalBalance}
+            bills={forecastBills}
+            transactions={transactions}
+            paydayISO={nextPay.effective}
+            daysToPay={daysToPay}
+            now={now}
+            hidden={hidden}
+          />
         </div>
 
         <Card className="lg:col-span-2 min-w-0">
