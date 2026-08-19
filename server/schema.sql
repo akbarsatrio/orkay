@@ -98,6 +98,8 @@ CREATE TABLE IF NOT EXISTS investment_snapshots (
   fee           BIGINT NOT NULL DEFAULT 0,   -- biaya admin saat tarik (dicatat terpisah)
   tax           BIGINT NOT NULL DEFAULT 0,   -- pajak saat tarik (dicatat terpisah)
   marketValue   BIGINT NOT NULL DEFAULT 0,   -- nilai portfolio real saat periode ini
+  cashAccountId VARCHAR(40),                 -- rekening cash sumber setoran / tujuan tarikan
+  linkedTxId    VARCHAR(40),                 -- id transaksi transfer yang terkait (buat sinkron)
   note          TEXT,
   INDEX idx_snap_account (accountId),
   INDEX idx_snap_date (date)

@@ -6,6 +6,7 @@ import { computeFee, computeTax, computeSnapshotSeries } from '../../lib/investm
 
 const emptyForm = () => ({
   accountId: '',
+  cashAccountId: '',          // rekening cash sumber setoran / tujuan tarikan
   date: toISODate(new Date()),
   action: 'contribute',       // 'contribute' | 'withdraw'
   contribution: 0,
@@ -24,6 +25,7 @@ const emptyForm = () => ({
 export default function SnapshotForm({ open, onClose, accountId, editing }) {
   const { accounts, investmentSnapshots, addInvestmentSnapshot, updateInvestmentSnapshot } = useData()
   const investAccounts = useMemo(() => accounts.filter((a) => a.kind === 'investment'), [accounts])
+  const cashAccounts = useMemo(() => accounts.filter((a) => a.kind !== 'investment' && a.kind !== 'paylater'), [accounts])
 
   const [form, setForm] = useState(emptyForm())
   const [contribStr, setContribStr] = useState('')
@@ -41,6 +43,7 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
       setForm({
         ...emptyForm(),
         accountId: editing.accountId,
+        cashAccountId: editing.cashAccountId || '',
         date: editing.date,
         action,
         contribution: editing.contribution || 0,
@@ -64,11 +67,12 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
     } else {
       const f = emptyForm()
       f.accountId = accountId || investAccounts[0]?.id || ''
+      f.cashAccountId = cashAccounts[0]?.id || ''
       setForm(f)
       setContribStr(''); setWithdrawStr(''); setMarketStr(''); setFeeStr(''); setTaxStr('')
       setMarketTouched(false) // form baru: nilai akan auto-terisi dari baseline
     }
-  }, [open, editing, accountId, investAccounts])
+  }, [open, editing, accountId, investAccounts, cashAccounts])
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
   const isWithdraw = form.action === 'withdraw'
@@ -119,9 +123,14 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
 
   const isMarketEstimate = !marketTouched && parseNumber(marketStr) === baselineMarket
 
+  // Ada uang bergerak (setor/tarik) -> rekening cash wajib.
+  const hasMoneyMove = isWithdraw ? parseNumber(withdrawStr) > 0 : parseNumber(contribStr) > 0
+  const cashLabel = isWithdraw ? 'Ke rekening (dana masuk)' : 'Dari rekening (sumber dana)'
+
   const canSave =
     !!form.accountId && !!form.date && parseNumber(marketStr) >= 0 &&
-    (isWithdraw ? parseNumber(withdrawStr) > 0 : parseNumber(contribStr) > 0 || parseNumber(marketStr) > 0)
+    (isWithdraw ? parseNumber(withdrawStr) > 0 : parseNumber(contribStr) > 0 || parseNumber(marketStr) > 0) &&
+    (!hasMoneyMove || !!form.cashAccountId)
 
   const numHandler = (setter, key) => (e) => {
     const v = parseNumber(e.target.value)
@@ -149,6 +158,7 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
     const withdrawalGross = isWithdraw ? parseNumber(withdrawStr) : 0
     const payload = {
       accountId: form.accountId,
+      cashAccountId: hasMoneyMove ? form.cashAccountId : null,
       date: form.date,
       contribution: isWithdraw ? 0 : parseNumber(contribStr),
       withdrawal: withdrawalGross,
@@ -204,6 +214,13 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
           <RupiahField label="Tarikan (yang keluar dari portfolio)" value={withdrawStr} onChange={numHandler(setWithdrawStr, 'withdrawal')} />
         ) : (
           <RupiahField label="Setoran (uang masuk ke portfolio)" value={contribStr} onChange={numHandler(setContribStr, 'contribution')} />
+        )}
+
+        {hasMoneyMove && (
+          <Select label={cashLabel} value={form.cashAccountId} onChange={(e) => set({ cashAccountId: e.target.value })}>
+            {cashAccounts.length === 0 && <option value="">— belum ada rekening —</option>}
+            {cashAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+          </Select>
         )}
 
         {isWithdraw && (
@@ -311,6 +328,16 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
             value={(preview.returnNet >= 0 ? '+ ' : '− ') + formatRupiah(Math.abs(preview.returnNet))}
             valueClass={`font-semibold ${returnColor(preview.returnNet)}`}
           />
+          {hasMoneyMove && form.cashAccountId && (
+            <>
+              <div className="border-t border-border my-1.5" />
+              <Row
+                label={`Saldo ${cashAccounts.find((a) => a.id === form.cashAccountId)?.name || 'rekening'}`}
+                value={(isWithdraw ? '+ ' : '− ') + formatRupiah(isWithdraw ? preview.receivedNet : preview.contribution)}
+                valueClass={isWithdraw ? 'text-positive' : 'text-negative'}
+              />
+            </>
+          )}
           {prevMarketValue === null && (
             <p className="text-2xs text-muted pt-1">Periode pertama: untung/rugi selalu 0 (belum ada pembanding).</p>
           )}

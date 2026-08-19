@@ -76,6 +76,8 @@ async function migrateSchema() {
     ['accounts', 'billingModel', "VARCHAR(20) NOT NULL DEFAULT 'statement'"],
     ['transactions', 'installmentId', 'VARCHAR(40)'],
     ['transactions', 'statementPeriod', 'VARCHAR(7)'],
+    ['investment_snapshots', 'cashAccountId', 'VARCHAR(40)'],
+    ['investment_snapshots', 'linkedTxId', 'VARCHAR(40)'],
   ]
   for (const [table, column, definition] of additions) {
     const rows = await query(

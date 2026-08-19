@@ -191,21 +191,33 @@ export function DataProvider({ children }) {
   }, [])
 
   // ---- Investasi (snapshot periode) ----
+  // Response server: { snapshot, transaction, removedTxId? }
   const addInvestmentSnapshot = useCallback(async (snap) => {
-    const saved = await api.post('/investments', snap)
-    setInvestmentSnapshots((prev) => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)))
-    return saved
+    const { snapshot, transaction } = await api.post('/investments', snap)
+    setInvestmentSnapshots((prev) => [...prev, snapshot].sort((a, b) => a.date.localeCompare(b.date)))
+    if (transaction) setTransactions((prev) => [transaction, ...prev].sort(sortByDateDesc))
+    return snapshot
   }, [])
   const updateInvestmentSnapshot = useCallback(async (id, patch) => {
-    const saved = await api.put(`/investments/${id}`, patch)
+    const { snapshot, transaction, removedTxId } = await api.put(`/investments/${id}`, patch)
     setInvestmentSnapshots((prev) =>
-      prev.map((s) => (s.id === id ? saved : s)).sort((a, b) => a.date.localeCompare(b.date))
+      prev.map((s) => (s.id === id ? snapshot : s)).sort((a, b) => a.date.localeCompare(b.date))
     )
-    return saved
+    setTransactions((prev) => {
+      let next = prev
+      if (removedTxId) next = next.filter((t) => t.id !== removedTxId)
+      if (transaction) {
+        const exists = next.some((t) => t.id === transaction.id)
+        next = exists ? next.map((t) => (t.id === transaction.id ? transaction : t)) : [transaction, ...next]
+      }
+      return next.slice().sort(sortByDateDesc)
+    })
+    return snapshot
   }, [])
   const deleteInvestmentSnapshot = useCallback(async (id) => {
-    await api.del(`/investments/${id}`)
+    const res = await api.del(`/investments/${id}`)
     setInvestmentSnapshots((prev) => prev.filter((s) => s.id !== id))
+    if (res && res.removedTxId) setTransactions((prev) => prev.filter((t) => t.id !== res.removedTxId))
   }, [])
 
   // Ringkasan per akun investasi { [accountId]: summary }
