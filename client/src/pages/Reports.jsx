@@ -5,10 +5,11 @@ import CategoryIcon from '../components/CategoryIcon.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { formatRupiah, monthNamesID } from '../lib/format.js'
 import { monthlySummary, categoryBreakdown, filterMonth } from '../lib/selectors.js'
+import { computeSnapshotSeries } from '../lib/investment.js'
 import { FileBarChart } from 'lucide-react'
 
 export default function Reports() {
-  const { transactions, categoryMap, incomeSourceMap } = useData()
+  const { transactions, categoryMap, incomeSourceMap, accounts, investmentSnapshots, investmentSummary, totalInvestmentValue } = useData()
   const now = new Date()
   const [cursor, setCursor] = useState({ y: now.getFullYear(), m: now.getMonth() })
 
@@ -30,6 +31,29 @@ export default function Reports() {
       value,
     })).sort((a, b) => b.value - a.value)
   }, [transactions, incomeSourceMap, cursor])
+
+  // Aktivitas investasi pada bulan terpilih: setoran, tarikan, untung/rugi periode itu, biaya.
+  const monthPrefix = `${cursor.y}-${String(cursor.m + 1).padStart(2, '0')}`
+  const investAccounts = useMemo(() => accounts.filter((a) => a.kind === 'investment'), [accounts])
+  const investMonth = useMemo(() => {
+    const byAcc = {}
+    for (const s of investmentSnapshots) (byAcc[s.accountId] ||= []).push(s)
+    let contribution = 0, withdrawal = 0, returnNet = 0, fee = 0, tax = 0
+    const perAccount = []
+    for (const a of investAccounts) {
+      const series = computeSnapshotSeries(byAcc[a.id] || [])
+      const inMonth = series.filter((s) => s.date.startsWith(monthPrefix))
+      if (!inMonth.length) continue
+      let aC = 0, aW = 0, aR = 0
+      for (const s of inMonth) {
+        contribution += s.contribution || 0; withdrawal += s.withdrawal || 0
+        returnNet += s.returnNet || 0; fee += s.fee || 0; tax += s.tax || 0
+        aC += s.contribution || 0; aW += s.withdrawal || 0; aR += s.returnNet || 0
+      }
+      perAccount.push({ name: a.name, color: a.color, contribution: aC, withdrawal: aW, returnNet: aR })
+    }
+    return { contribution, withdrawal, returnNet, fee, tax, perAccount, hasActivity: perAccount.length > 0 }
+  }, [investmentSnapshots, investAccounts, monthPrefix])
 
   const move = (delta) => {
     const d = new Date(cursor.y, cursor.m + delta, 1)
@@ -164,6 +188,63 @@ export default function Reports() {
             </Card>
           </div>
         </>
+      )}
+
+      {/* Investasi — portfolio & aktivitas bulan ini */}
+      {investAccounts.length > 0 && (
+        <Card>
+          <CardHeader
+            title="Investasi"
+            subtitle={`Portfolio ${formatRupiah(totalInvestmentValue)} · aktivitas ${monthNamesID[cursor.m]} ${cursor.y}`}
+          />
+          <CardBody className="space-y-4">
+            {/* Ringkasan aktivitas bulan ini */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="rounded-lg border border-border bg-surface-2/40 p-3">
+                <p className="text-2xs text-muted">Setoran bulan ini</p>
+                <p className="text-lg font-bold text-fg tnum mt-0.5">{formatRupiah(investMonth.contribution)}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-surface-2/40 p-3">
+                <p className="text-2xs text-muted">Tarikan bulan ini</p>
+                <p className="text-lg font-bold text-fg tnum mt-0.5">{formatRupiah(investMonth.withdrawal)}</p>
+              </div>
+              <div className="rounded-lg border border-border bg-surface-2/40 p-3">
+                <p className="text-2xs text-muted">Untung/rugi bulan ini</p>
+                <p className={`text-lg font-bold tnum mt-0.5 ${investMonth.returnNet > 0 ? 'text-positive' : investMonth.returnNet < 0 ? 'text-negative' : 'text-fg'}`}>
+                  {investMonth.returnNet >= 0 ? '+' : '−'}{formatRupiah(Math.abs(investMonth.returnNet))}
+                </p>
+              </div>
+            </div>
+
+            {(investMonth.fee + investMonth.tax) > 0 && (
+              <p className="text-2xs text-muted -mt-1">Biaya bulan ini: fee {formatRupiah(investMonth.fee)} · tax {formatRupiah(investMonth.tax)}</p>
+            )}
+
+            {!investMonth.hasActivity && (
+              <p className="text-xs text-muted">Tidak ada aktivitas investasi di bulan ini.</p>
+            )}
+
+            {/* Per akun: nilai sekarang + untung/rugi total */}
+            <div className="border-t border-border pt-3 space-y-2">
+              <p className="text-2xs font-semibold uppercase tracking-wide text-muted">Nilai portfolio per rekening</p>
+              {investAccounts.map((a) => {
+                const sum = investmentSummary[a.id] || { marketValue: 0, cumulativeReturn: 0, returnPct: 0 }
+                const ret = sum.cumulativeReturn || 0
+                const retColor = ret > 0 ? 'text-positive' : ret < 0 ? 'text-negative' : 'text-muted'
+                return (
+                  <div key={a.id} className="flex items-center gap-2.5 text-sm">
+                    <span className="h-2.5 w-2.5 rounded-sm" style={{ background: a.color }} />
+                    <span className="text-fg flex-1">{a.name}</span>
+                    <span className={`text-xs tnum ${retColor}`}>
+                      {ret >= 0 ? '+' : '−'}{formatRupiah(Math.abs(ret))} ({(sum.returnPct || 0) >= 0 ? '+' : ''}{(sum.returnPct || 0).toFixed(1)}%)
+                    </span>
+                    <span className="font-medium text-fg tnum w-28 text-right">{formatRupiah(sum.marketValue || 0)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </CardBody>
+        </Card>
       )}
     </div>
   )

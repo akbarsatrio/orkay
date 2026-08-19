@@ -30,6 +30,7 @@ async function main() {
     ['list_categories', {}],
     ['get_balances', {}],
     ['get_networth', {}],
+    ['get_investments', {}],
     ['list_bills', {}],
     ['list_installments', {}],
     ['monthly_summary', {}],

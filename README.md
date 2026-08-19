@@ -14,15 +14,21 @@ yang sama dan langsung sinkron.
 
 - **Dashboard** — ringkasan kekayaan bersih, saldo tiap rekening, tagihan mendatang.
 - **Transaksi** — catat pengeluaran, pemasukan, dan transfer antar rekening (dengan biaya admin opsional).
-- **Rekening** — rekening cash (bank, e-wallet, tunai) dan **pay later / kartu kredit** dengan
-  limit & siklus tagihan.
+- **Rekening** — rekening cash (bank, e-wallet, tunai), **pay later / kartu kredit** dengan
+  limit & siklus tagihan, dan **investasi / portofolio**.
+- **Investasi** — pelacakan portofolio berbasis **mark-to-market** (bukan bunga): catat setoran,
+  tarikan, dan nilai portfolio tiap periode; hitung untung/rugi otomatis dari selisih nilai pasar.
+  - **Setor/tarik** otomatis membuat transfer dari/ke rekening cash → saldo cash tetap akurat.
+  - **Tarikan** mendukung **fee & pajak** (nominal atau persen; basis pajak dari gross / setelah fee).
+  - Nilai portfolio **auto-estimasi** (nilai lalu ± aliran dana) dan bisa dikoreksi manual bila nilai bursa berbeda.
 - **Cicilan** — pembelian dicicil dengan tenor + bunga (nominal Rp atau persen flat). Dua **model billing**:
   - **Statement** — mengikuti siklus kartu kredit (closing day, due day, offset bulan).
   - **Anniversary** — jatuh tempo di tanggal yang sama dengan tanggal transaksi, tiap bulan berikutnya.
 - **Pay Later** — perhitungan tagihan (statement) otomatis berdasarkan billing cycle + pembayaran tagihan.
 - **Tagihan Rutin (Recurring)** — langganan bulanan (kos, internet, Netflix, dll) dengan konfirmasi per bulan.
 - **Budget** — batas pengeluaran per kategori + status pemakaian.
-- **Reports** — pengeluaran per kategori, ringkasan bulanan, tren.
+- **Reports** — pengeluaran per kategori, ringkasan bulanan, tren, dan **ringkasan investasi**
+  (nilai portfolio, setoran/tarikan & untung-rugi bulan berjalan, per rekening).
 - **Settings** — tanggal gajian (payDay), tema (dark/light), mata uang.
 - **Keamanan** — login PIN + lock screen + rate-limit anti brute-force.
 
@@ -43,7 +49,7 @@ Tiga komponen tambahan (masing-masing punya README sendiri):
 
 | Komponen | Folder | Fungsi |
 |---|---|---|
-| **MCP Orkay** | [`mcp/`](./mcp/README.md) | Server MCP dengan 27 tools (catat transaksi, cek saldo, tagihan, cicilan, recurring, budget, laporan) yang dikonsumsi AI. |
+| **MCP Orkay** | [`mcp/`](./mcp/README.md) | Server MCP dengan 33 tools (catat transaksi, cek saldo, investasi, tagihan, cicilan, recurring, budget, laporan) yang dikonsumsi AI. |
 | **Orchestrator / Brain** | [`brain/`](./brain/README.md) | Jembatan: terima webhook WhatsApp → panggil LLM (via 9Router) → eksekusi tool MCP → balas WA. Punya memory percakapan per nomor. |
 | **OpenWA** | eksternal | WhatsApp API gateway ([rmyndharis/OpenWA](https://github.com/rmyndharis/OpenWA)). Menerima pesan WA & mengirim balasan. |
 
@@ -80,16 +86,17 @@ Tiga komponen tambahan (masing-masing punya README sendiri):
 economic-analytic/
 ├── client/          React + Vite (web app)
 │   └── src/
-│       ├── pages/           Dashboard, Transactions, Accounts, Recurring, Budgets, Reports, Settings
+│       ├── pages/           Dashboard, Transactions, Accounts, Investments, Recurring, Budgets, Reports, Settings
 │       ├── components/      UI + form + modal
 │       ├── context/         DataContext (state global)
-│       └── lib/             format, paylater, installments, recurring (logic bisnis)
+│       └── lib/             format, paylater, installments, recurring, investment (logic bisnis)
 ├── server/          Express + MySQL (backend + REST API)
-│   ├── routes/              categories, accounts, transactions, recurring, budgets, installments, paylater, ...
+│   ├── routes/              categories, accounts, transactions, recurring, budgets, installments, paylater, investments, ...
+│   ├── lib/                 investment (kalkulasi mark-to-market)
 │   ├── db.js                pool MySQL + init schema + migrasi
 │   ├── schema.sql           DDL tabel
 │   └── .env.example         template konfigurasi
-├── mcp/             MCP server (27 tools) untuk AI  → lihat mcp/README.md
+├── mcp/             MCP server (33 tools) untuk AI  → lihat mcp/README.md
 ├── brain/           Orchestrator WhatsApp ↔ LLM ↔ MCP → lihat brain/README.md
 ├── ecosystem.config.cjs     konfigurasi PM2 (deploy)
 └── package.json             script workspace (dev, build, deploy)

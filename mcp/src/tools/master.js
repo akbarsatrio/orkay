@@ -24,15 +24,17 @@ export function registerMasterTools(server) {
 
   server.tool(
     'list_accounts',
-    'Daftar semua rekening + jenisnya (cash / pay later).',
+    'Daftar semua rekening + jenisnya (cash / investasi / pay later).',
     {},
     safeTool(async () => {
       const { accounts } = await client.bootstrap()
       if (!accounts.length) return text('Belum ada rekening.')
       let out = '🏦 *Rekening*'
-      const cash = accounts.filter((a) => a.kind !== 'paylater').map((a) => a.name)
+      const cash = accounts.filter((a) => a.kind !== 'paylater' && a.kind !== 'investment').map((a) => a.name)
+      const inv = accounts.filter((a) => a.kind === 'investment').map((a) => a.name)
       const pl = accounts.filter((a) => a.kind === 'paylater').map((a) => a.name)
       if (cash.length) out += `\n\nCash: ${cash.join(', ')}`
+      if (inv.length) out += `\n\nInvestasi: ${inv.join(', ')}`
       if (pl.length) out += `\n\nPay Later: ${pl.join(', ')}`
       return text(out)
     })
