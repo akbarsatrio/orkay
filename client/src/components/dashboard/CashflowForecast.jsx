@@ -49,9 +49,22 @@ export default function CashflowForecast({ totalBalance, bills, transactions, pa
 
   const meta = STATUS[forecast.status] || STATUS.aman
   const Icon = meta.icon
-  const rate = method === 'weekpart'
-    ? (estimate.weekday + estimate.weekend) / 2
-    : estimate.perDay
+
+  // Komposisi hari kerja vs weekend dari besok s/d gajian (buat rincian mode Wd/We).
+  const dayParts = useMemo(() => {
+    let weekday = 0
+    let weekend = 0
+    const cur = new Date(toISODate(ref) + 'T00:00:00')
+    const end = new Date(paydayISO + 'T00:00:00')
+    cur.setDate(cur.getDate() + 1) // mulai besok
+    while (cur <= end) {
+      const dow = cur.getDay()
+      if (dow === 0 || dow === 6) weekend++
+      else weekday++
+      cur.setDate(cur.getDate() + 1)
+    }
+    return { weekday, weekend }
+  }, [paydayISO, ref])
 
   return (
     <Card className="min-w-0">
@@ -95,9 +108,16 @@ export default function CashflowForecast({ totalBalance, bills, transactions, pa
             <span className="text-negative tnum">− {maskRupiah(forecast.tagihanTotal, hidden)}</span>
           </div>
           {includeBurn && (
-            <div className="flex items-center justify-between">
-              <span className="text-muted">Perkiraan belanja</span>
-              <span className="text-negative tnum">− {maskRupiah(forecast.belanjaEstimasi, hidden)}</span>
+            <div className="flex items-start justify-between">
+              <div className="min-w-0">
+                <span className="text-muted">Perkiraan belanja</span>
+                {method === 'weekpart' && (
+                  <p className="text-2xs text-muted/80 mt-0.5">
+                    {dayParts.weekday} hari kerja · {dayParts.weekend} weekend
+                  </p>
+                )}
+              </div>
+              <span className="text-negative tnum shrink-0">− {maskRupiah(forecast.belanjaEstimasi, hidden)}</span>
             </div>
           )}
           <div className="flex items-center justify-between border-t border-border pt-1.5 font-semibold">
@@ -109,8 +129,13 @@ export default function CashflowForecast({ totalBalance, bills, transactions, pa
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
           <div className="min-w-0">
             <p className="text-xs font-medium text-fg">Sertakan perkiraan belanja</p>
-            {includeBurn && rate > 0 && (
-              <p className="text-2xs text-muted mt-0.5">≈ {maskRupiah(rate, hidden)}/hari</p>
+            {includeBurn && method === 'weekpart' && (
+              <p className="text-2xs text-muted mt-0.5">
+                Hari kerja ≈ {maskRupiah(estimate.weekday, hidden)}/hari · Weekend ≈ {maskRupiah(estimate.weekend, hidden)}/hari
+              </p>
+            )}
+            {includeBurn && method !== 'weekpart' && estimate.perDay > 0 && (
+              <p className="text-2xs text-muted mt-0.5">≈ {maskRupiah(estimate.perDay, hidden)}/hari</p>
             )}
           </div>
           <Toggle checked={includeBurn} onChange={setIncludeBurn} />
