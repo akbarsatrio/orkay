@@ -17,6 +17,7 @@ import budgets from './routes/budgets.js'
 import settings from './routes/settings.js'
 import installments from './routes/installments.js'
 import paylater from './routes/paylater.js'
+import investments from './routes/investments.js'
 import admin from './routes/admin.js'
 
 const app = express()
@@ -46,7 +47,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }))
 app.use('/api', requireAuth)
 
 app.get('/api/bootstrap', wrap(async (req, res) => {
-  const [categoriesRows, accountsRows, incomeRows, txRows, recRows, budgetRows, instRows, settingsRow] = await Promise.all([
+  const [categoriesRows, accountsRows, incomeRows, txRows, recRows, budgetRows, instRows, snapRows, settingsRow] = await Promise.all([
     query('SELECT * FROM categories'),
     query('SELECT * FROM accounts'),
     query('SELECT * FROM income_sources'),
@@ -54,6 +55,7 @@ app.get('/api/bootstrap', wrap(async (req, res) => {
     query('SELECT * FROM recurring'),
     query('SELECT * FROM budgets'),
     query('SELECT * FROM installments'),
+    query('SELECT * FROM investment_snapshots ORDER BY date ASC, id ASC'),
     queryOne('SELECT payDay, theme, currency FROM settings WHERE id = 1'),
   ])
   res.json({
@@ -64,6 +66,7 @@ app.get('/api/bootstrap', wrap(async (req, res) => {
     recurring: recRows.map(parseRecurring),
     budgets: budgetRows,
     installments: instRows.map((i) => ({ ...i, active: !!i.active })),
+    investmentSnapshots: snapRows,
     settings: settingsRow || { payDay: 28, theme: 'light', currency: 'IDR' },
   })
 }))
@@ -77,6 +80,7 @@ app.use('/api/budgets', budgets)
 app.use('/api/settings', settings)
 app.use('/api/installments', installments)
 app.use('/api/paylater', paylater)
+app.use('/api/investments', investments)
 app.use('/api/admin', admin)
 
 // ---- Serve React build di production (SPA fallback) ----

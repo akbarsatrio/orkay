@@ -85,3 +85,22 @@ CREATE TABLE IF NOT EXISTS installments (
   active           TINYINT(1) NOT NULL DEFAULT 1,
   INDEX idx_inst_account (accountId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Snapshot periode untuk rekening investasi (mark-to-market).
+-- Tiap baris = 1 catatan periode: berapa yang disetor/ditarik + nilai portfolio saat itu.
+-- Return dihitung dari selisih nilai (bukan bunga). Lihat lib/investment.js.
+CREATE TABLE IF NOT EXISTS investment_snapshots (
+  id            VARCHAR(40) PRIMARY KEY,
+  accountId     VARCHAR(40) NOT NULL,
+  date          VARCHAR(10) NOT NULL,
+  contribution  BIGINT NOT NULL DEFAULT 0,   -- setoran uang masuk ke portfolio
+  withdrawal    BIGINT NOT NULL DEFAULT 0,   -- tarikan GROSS yang keluar dari portfolio (Makna A)
+  fee           BIGINT NOT NULL DEFAULT 0,   -- biaya admin saat tarik (dicatat terpisah)
+  tax           BIGINT NOT NULL DEFAULT 0,   -- pajak saat tarik (dicatat terpisah)
+  marketValue   BIGINT NOT NULL DEFAULT 0,   -- nilai portfolio real saat periode ini
+  cashAccountId VARCHAR(40),                 -- rekening cash sumber setoran / tujuan tarikan
+  linkedTxId    VARCHAR(40),                 -- id transaksi transfer yang terkait (buat sinkron)
+  note          TEXT,
+  INDEX idx_snap_account (accountId),
+  INDEX idx_snap_date (date)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
