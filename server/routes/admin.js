@@ -10,6 +10,7 @@ router.post('/destroy', wrap(async (req, res) => {
   await withTransaction(async ({ run }) => {
     await run('DELETE FROM transactions')
     await run('DELETE FROM budgets')
+    await run('DELETE FROM investment_snapshots')
     await run('UPDATE accounts SET openingBalance = 0')
     await run("UPDATE recurring SET generatedPeriods = '[]'")
   })

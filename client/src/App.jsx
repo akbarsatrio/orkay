@@ -10,6 +10,7 @@ import TransactionForm from './components/transactions/TransactionForm.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Transactions from './pages/Transactions.jsx'
 import Accounts from './pages/Accounts.jsx'
+import Investments from './pages/Investments.jsx'
 import Recurring from './pages/Recurring.jsx'
 import Budgets from './pages/Budgets.jsx'
 import Reports from './pages/Reports.jsx'
@@ -19,6 +20,7 @@ const meta = {
   '/': { title: 'Dashboard', subtitle: 'Ringkasan keuangan kamu' },
   '/transactions': { title: 'Transaksi', subtitle: 'Semua catatan pemasukan & pengeluaran' },
   '/accounts': { title: 'Rekening', subtitle: 'Saldo tiap dompet & rekening' },
+  '/investments': { title: 'Investasi', subtitle: 'Portofolio & untung/rugi mark-to-market' },
   '/recurring': { title: 'Tagihan Rutin', subtitle: 'Pengeluaran tetap tiap bulan' },
   '/budgets': { title: 'Anggaran', subtitle: 'Batas pengeluaran per kategori' },
   '/reports': { title: 'Laporan', subtitle: 'Rekap bulanan keuangan' },
@@ -76,6 +78,7 @@ export default function App() {
             <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
             <Route path="/transactions" element={<Transactions />} />
             <Route path="/accounts" element={<Accounts />} />
+            <Route path="/investments" element={<Investments />} />
             <Route path="/recurring" element={<Recurring />} />
             <Route path="/budgets" element={<Budgets />} />
             <Route path="/reports" element={<Reports />} />

@@ -3,6 +3,7 @@ import { api } from '../lib/api.js'
 import { periodKey } from '../lib/recurring.js'
 import { toISODate } from '../lib/format.js'
 import { payLaterInfoFor } from '../lib/paylater.js'
+import { summarizeInvestment } from '../lib/investment.js'
 
 const DataContext = createContext(null)
 
@@ -16,6 +17,7 @@ export function DataProvider({ children }) {
   const [budgets, setBudgets] = useState([])
   const [transactions, setTransactions] = useState([])
   const [installments, setInstallments] = useState([])
+  const [investmentSnapshots, setInvestmentSnapshots] = useState([])
   const [settings, setSettings] = useState({ payDay: 28, theme: 'light', currency: 'IDR' })
 
   const [loading, setLoading] = useState(true)
@@ -34,6 +36,7 @@ export function DataProvider({ children }) {
       setBudgets(data.budgets || [])
       setTransactions((data.transactions || []).slice().sort(sortByDateDesc))
       setInstallments(data.installments || [])
+      setInvestmentSnapshots(data.investmentSnapshots || [])
       setSettings(data.settings || { payDay: 28, theme: 'light', currency: 'IDR' })
     } catch (e) {
       setError(e.message || 'Gagal memuat data dari server')
@@ -187,6 +190,44 @@ export function DataProvider({ children }) {
     setInstallments((prev) => prev.map((i) => (i.id === inst.id ? { ...i, paidCount } : i)))
   }, [])
 
+  // ---- Investasi (snapshot periode) ----
+  const addInvestmentSnapshot = useCallback(async (snap) => {
+    const saved = await api.post('/investments', snap)
+    setInvestmentSnapshots((prev) => [...prev, saved].sort((a, b) => a.date.localeCompare(b.date)))
+    return saved
+  }, [])
+  const updateInvestmentSnapshot = useCallback(async (id, patch) => {
+    const saved = await api.put(`/investments/${id}`, patch)
+    setInvestmentSnapshots((prev) =>
+      prev.map((s) => (s.id === id ? saved : s)).sort((a, b) => a.date.localeCompare(b.date))
+    )
+    return saved
+  }, [])
+  const deleteInvestmentSnapshot = useCallback(async (id) => {
+    await api.del(`/investments/${id}`)
+    setInvestmentSnapshots((prev) => prev.filter((s) => s.id !== id))
+  }, [])
+
+  // Ringkasan per akun investasi { [accountId]: summary }
+  const investmentSummary = useMemo(() => {
+    const byAccount = {}
+    for (const s of investmentSnapshots) {
+      ;(byAccount[s.accountId] ||= []).push(s)
+    }
+    const map = {}
+    for (const a of accounts) {
+      if (a.kind !== 'investment') continue
+      map[a.id] = summarizeInvestment(byAccount[a.id] || [])
+    }
+    return map
+  }, [accounts, investmentSnapshots])
+
+  // Total nilai pasar seluruh portfolio investasi (masuk ke kekayaan bersih)
+  const totalInvestmentValue = useMemo(
+    () => Object.values(investmentSummary).reduce((s, v) => s + (v.marketValue || 0), 0),
+    [investmentSummary]
+  )
+
   // Bayar tagihan statement paylater (charge langsung) -> transfer cash ke paylater
   const payStatement = useCallback(async (paylaterAccountId, fromAccountId, amount, date, statementPeriod) => {
     const { transaction } = await api.post('/paylater/pay-statement', {
@@ -206,7 +247,7 @@ export function DataProvider({ children }) {
   const accountBalances = useMemo(() => {
     const map = {}
     for (const a of accounts) {
-      if (a.kind === 'paylater') continue
+      if (a.kind === 'paylater' || a.kind === 'investment') continue
       map[a.id] = a.openingBalance || 0
     }
     for (const t of transactions) {
@@ -237,10 +278,10 @@ export function DataProvider({ children }) {
     [payLaterInfo]
   )
 
-  // Total kekayaan bersih = saldo cash − total utang paylater
+  // Total kekayaan bersih = saldo cash + nilai portfolio investasi − total utang paylater
   const totalBalance = useMemo(
-    () => Object.values(accountBalances).reduce((s, v) => s + v, 0) - totalDebt,
-    [accountBalances, totalDebt]
+    () => Object.values(accountBalances).reduce((s, v) => s + v, 0) + totalInvestmentValue - totalDebt,
+    [accountBalances, totalInvestmentValue, totalDebt]
   )
 
   // ---- Admin ----
@@ -252,9 +293,11 @@ export function DataProvider({ children }) {
   const value = {
     loading, error, bootstrap,
     categories, accounts, incomeSources, recurring, budgets, transactions, installments, settings,
+    investmentSnapshots,
     categoryMap, accountMap, incomeSourceMap,
     accountBalances, totalBalance,
     paylaterIds, payLaterInfo, totalDebt,
+    investmentSummary, totalInvestmentValue,
     addTransaction, updateTransaction, deleteTransaction,
     addCategory, updateCategory, deleteCategory,
     addAccount, updateAccount, deleteAccount,
@@ -262,6 +305,7 @@ export function DataProvider({ children }) {
     addRecurring, updateRecurring, deleteRecurring, confirmRecurring,
     upsertBudget, deleteBudget,
     addInstallment, updateInstallment, deleteInstallment, payInstallment, payStatement,
+    addInvestmentSnapshot, updateInvestmentSnapshot, deleteInvestmentSnapshot,
     updateSettings,
     destroyData,
     periodKey, toISODate,

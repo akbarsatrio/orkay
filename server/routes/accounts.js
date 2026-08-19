@@ -15,7 +15,7 @@ const UPDATE_SQL = `UPDATE accounts SET
   WHERE id=:id`
 
 function normalizeAccount(a) {
-  const kind = a.kind === 'paylater' ? 'paylater' : 'cash'
+  const kind = a.kind === 'paylater' ? 'paylater' : a.kind === 'investment' ? 'investment' : 'cash'
   // billingModel: 'anniversary' (jatuh tempo = tgl beli + N bulan) atau 'statement' (default).
   const billingModel = a.billingModel === 'anniversary' ? 'anniversary' : 'statement'
   return {

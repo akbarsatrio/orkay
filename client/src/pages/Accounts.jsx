@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { Plus, Pencil, Trash2, Wallet, ArrowDownLeft, ArrowUpRight, CreditCard, Eye, EyeOff } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, Pencil, Trash2, Wallet, ArrowDownLeft, ArrowUpRight, CreditCard, Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, CardBody, Button, Empty, Progress, Badge } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import AccountForm from '../components/accounts/AccountForm.jsx'
@@ -8,11 +9,12 @@ import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
 import { formatRupiah, maskRupiah, formatDate } from '../lib/format.js'
 import { computeStatements } from '../lib/paylater.js'
 
-const typeLabels = { bank: 'Bank', ewallet: 'E-Wallet', cash: 'Tunai', paylater: 'Pay Later', other: 'Lainnya' }
+const typeLabels = { bank: 'Bank', ewallet: 'E-Wallet', cash: 'Tunai', paylater: 'Pay Later', investment: 'Investasi', other: 'Lainnya' }
 
 export default function Accounts() {
-  const { accounts, accountBalances, totalBalance, totalDebt, payLaterInfo, transactions, deleteAccount } = useData()
+  const { accounts, accountBalances, totalBalance, totalDebt, payLaterInfo, investmentSummary, transactions, deleteAccount } = useData()
   const { hidden, toggle } = useBalanceVisibility()
+  const navigate = useNavigate()
   const [form, setForm] = useState({ open: false, editing: null })
 
   const now = new Date()
@@ -48,7 +50,7 @@ export default function Accounts() {
       <Card className="bg-gradient-to-br from-accent/[0.07] to-transparent">
         <CardBody className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-xs text-muted">Kekayaan bersih (saldo − utang pay later)</p>
+            <p className="text-xs text-muted">Kekayaan bersih (saldo + investasi − utang pay later)</p>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-3xl font-bold text-fg tnum">{maskRupiah(totalBalance, hidden)}</p>
               <button
@@ -85,10 +87,10 @@ export default function Accounts() {
           {accounts.map((acc) => {
             const editBtns = (
               <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                <button onClick={() => setForm({ open: true, editing: acc })} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2">
+                <button onClick={(e) => { e.stopPropagation(); setForm({ open: true, editing: acc }) }} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2">
                   <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
                 </button>
-                <button onClick={() => handleDelete(acc)} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(acc) }} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
                   <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
                 </button>
               </div>
@@ -105,6 +107,37 @@ export default function Accounts() {
                 {editBtns}
               </div>
             )
+
+            if (acc.kind === 'investment') {
+              const sum = investmentSummary[acc.id] || { marketValue: 0, netInvested: 0, cumulativeReturn: 0, returnPct: 0 }
+              const ret = sum.cumulativeReturn || 0
+              const retColor = ret > 0 ? 'text-positive' : ret < 0 ? 'text-negative' : 'text-muted'
+              const RetIcon = ret >= 0 ? TrendingUp : TrendingDown
+              return (
+                <Card
+                  key={acc.id}
+                  className="group relative overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
+                  onClick={() => navigate('/investments')}
+                >
+                  <div className="absolute top-0 left-0 h-full w-1" style={{ background: acc.color }} />
+                  <CardBody>
+                    {header}
+                    <p className="text-2xl font-bold tnum mt-4 text-fg">{maskRupiah(sum.marketValue, hidden)}</p>
+                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <RetIcon size={14} className={retColor} />
+                        <span className="text-muted">Untung/rugi</span>
+                        <span className={`font-medium tnum ${retColor}`}>
+                          {(ret >= 0 ? '+' : '−') + formatRupiah(Math.abs(ret)).replace('Rp', 'Rp')}
+                          {(sum.netInvested || 0) > 0 && ` (${sum.returnPct >= 0 ? '+' : ''}${(sum.returnPct || 0).toFixed(1)}%)`}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-2xs text-muted mt-2">Modal bersih {maskRupiah(sum.netInvested || 0, hidden)} · kelola di halaman Investasi</p>
+                  </CardBody>
+                </Card>
+              )
+            }
 
             if (acc.kind === 'paylater') {
               const info = payLaterInfo[acc.id] || { limit: acc.creditLimit || 0, used: 0, available: acc.creditLimit || 0 }

@@ -8,6 +8,7 @@ const TYPES = [
   { value: 'ewallet', label: 'E-Wallet', icon: 'Smartphone', kind: 'cash' },
   { value: 'cash', label: 'Tunai / Cash', icon: 'Banknote', kind: 'cash' },
   { value: 'paylater', label: 'Pay Later / Kartu Kredit', icon: 'CreditCard', kind: 'paylater' },
+  { value: 'investment', label: 'Investasi / Portofolio', icon: 'TrendingUp', kind: 'investment' },
   { value: 'other', label: 'Lainnya', icon: 'Wallet', kind: 'cash' },
 ]
 const COLORS = ['#1d4ed8', '#0ea5e9', '#16a34a', '#f97316', '#8b5cf6', '#ec4899', '#71717a', '#0f766e']
@@ -38,6 +39,7 @@ export default function AccountForm({ open, onClose, editing }) {
 
   const set = (patch) => setForm((f) => ({ ...f, ...patch }))
   const isPaylater = form.kind === 'paylater'
+  const isInvestment = form.kind === 'investment'
   const canSave = form.name.trim().length > 0 && (!isPaylater || parseNumber(limitStr) > 0)
 
   const handleType = (val) => {
@@ -63,7 +65,7 @@ export default function AccountForm({ open, onClose, editing }) {
       kind: form.kind,
       color: form.color,
       icon: form.icon,
-      openingBalance: isPaylater ? 0 : Number(form.openingBalance),
+      openingBalance: (isPaylater || isInvestment) ? 0 : Number(form.openingBalance),
       creditLimit: isPaylater ? Number(form.creditLimit) : 0,
       closingDay: Number(form.closingDay) || 1,
       dueDay: Number(form.dueDay) || 1,
@@ -90,12 +92,12 @@ export default function AccountForm({ open, onClose, editing }) {
       <div className="space-y-4">
         <Input label={isPaylater ? 'Nama kartu / pay later' : 'Nama rekening / dompet'} value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder={isPaylater ? 'mis. GoPay Later, CC BCA' : 'mis. BCA, GoPay, Dompet'} autoFocus />
 
-        <div className="grid grid-cols-2 gap-3">
+        <div className={isInvestment ? '' : 'grid grid-cols-2 gap-3'}>
           <Select label="Tipe" value={form.type} onChange={(e) => handleType(e.target.value)}>
             {TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
           </Select>
 
-          {isPaylater ? (
+          {isInvestment ? null : isPaylater ? (
             <div>
               <span className="block text-xs font-medium text-muted mb-1.5">Limit</span>
               <div className="relative">
@@ -156,6 +158,15 @@ export default function AccountForm({ open, onClose, editing }) {
                 </p>
               </>
             )}
+          </div>
+        )}
+
+        {isInvestment && (
+          <div className="rounded-lg border border-border bg-surface-2/40 p-3">
+            <p className="text-2xs text-muted leading-relaxed">
+              Rekening investasi tidak pakai saldo awal. Nilai portfolio & untung/rugi dihitung dari
+              <b> catatan periode</b> (setoran, tarikan, nilai portfolio) yang kamu input di halaman Investasi.
+            </p>
           </div>
         )}
 

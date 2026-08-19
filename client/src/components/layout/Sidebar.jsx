@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, ArrowLeftRight, Wallet, Repeat, Target, FileBarChart, Settings, LogOut,
+  LayoutDashboard, ArrowLeftRight, Wallet, TrendingUp, Repeat, Target, FileBarChart, Settings, LogOut,
 } from 'lucide-react'
 import { clearToken } from '../../lib/api.js'
 
@@ -8,6 +8,7 @@ const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/transactions', label: 'Transaksi', icon: ArrowLeftRight },
   { to: '/accounts', label: 'Rekening', icon: Wallet },
+  { to: '/investments', label: 'Investasi', icon: TrendingUp },
   { to: '/recurring', label: 'Tagihan Rutin', icon: Repeat },
   { to: '/budgets', label: 'Anggaran', icon: Target },
   { to: '/reports', label: 'Laporan', icon: FileBarChart },
