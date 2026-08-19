@@ -59,7 +59,7 @@ npm run test:tools  # smoke test read-only lawan API lokal
 Nanti di **Fase 2 (Brain service)**, server ini di-spawn otomatis oleh Brain sebagai
 subprocess stdio — konfigurasi env diambil dari Brain.
 
-## Tools (27)
+## Tools (33)
 
 ### Transaksi
 | Tool | Fungsi |
@@ -74,9 +74,19 @@ subprocess stdio — konfigurasi env diambil dari Brain.
 ### Saldo & kekayaan
 | Tool | Fungsi |
 |---|---|
-| `get_balances` | Saldo semua rekening cash + sisa limit pay later |
-| `get_networth` | Kekayaan bersih (cash − utang) |
-| `get_account` | Detail satu rekening |
+| `get_balances` | Saldo cash + nilai investasi + sisa limit pay later |
+| `get_networth` | Kekayaan bersih (cash + investasi − utang) |
+| `get_account` | Detail satu rekening (cash / pay later / investasi) |
+
+### Investasi
+| Tool | Fungsi |
+|---|---|
+| `get_investments` | Ringkasan portfolio: nilai, modal bersih, untung/rugi (mark-to-market), biaya |
+| `list_investment_records` | Riwayat catatan periode 1 rekening + untung/rugi tiap periode (cari id) |
+| `invest_deposit` | Setor ke investasi dari rekening cash (auto transfer, saldo cash berkurang) |
+| `invest_withdraw` | Tarik dari investasi ke cash (kotor − fee − pajak = diterima) |
+| `invest_update_value` | Perbarui nilai portfolio (mark-to-market) tanpa setor/tarik |
+| `delete_investment_record` | Hapus catatan periode by id (transfer terkait ikut terhapus) |
 
 ### Tagihan & cicilan
 | Tool | Fungsi |
@@ -109,7 +119,7 @@ subprocess stdio — konfigurasi env diambil dari Brain.
 | Tool | Fungsi |
 |---|---|
 | `list_categories` | Daftar kategori (filter expense/income) |
-| `list_accounts` | Daftar rekening + jenis |
+| `list_accounts` | Daftar rekening + jenis (cash / investasi / pay later) |
 | `add_category` | Buat kategori baru |
 
 ## Catatan desain
@@ -120,9 +130,11 @@ subprocess stdio — konfigurasi env diambil dari Brain.
 - **Money model dijaga persis** seperti web app: charge pay later dihitung saat
   belanja, pembayaran statement = transfer (tidak dobel), pembelian cicilan tidak
   masuk pengeluaran, bayar termin = pengeluaran dari cash.
-- **Logika billing di-copy** dari `client/src/lib/` (`paylater.js`, `installments.js`)
-  ke `src/` — karena MCP tak bisa meng-`import` file client. Kalau aturan billing di
-  client berubah, **sinkronkan kedua file ini secara manual**.
+- **Logika billing & investasi di-copy** dari `client/src/lib/` (`paylater.js`,
+  `installments.js`, `investment.js`) ke `src/` — karena MCP tak bisa meng-`import` file
+  client. Kalau aturan billing / kalkulasi investasi berubah, **sinkronkan file ini secara manual**.
+- **Investasi = mark-to-market**, bukan bunga. Untung/rugi = selisih nilai pasar setelah
+  dikoreksi aliran dana (setor/tarik). Setor/tarik otomatis membuat transfer cash agar saldo akurat.
 - **Saldo & laporan dihitung di sisi MCP** dari `/api/bootstrap` (backend tidak diubah).
 - Balasan tool sudah berformat teks Bahasa Indonesia + Rupiah, siap diteruskan ke chat.
 
@@ -135,11 +147,12 @@ src/
 ├── resolve.js        fuzzy nama → ID
 ├── util.js           parseAmount ("25rb"/"1,2jt"), resolveDate, safeTool
 ├── format.js         Rupiah & tanggal (Bahasa Indonesia)
-├── balances.js       kalkulasi saldo & kekayaan (port dari DataContext)
+├── balances.js       kalkulasi saldo & kekayaan + nilai investasi (port dari DataContext)
+├── investment.js     COPY kalkulasi investasi mark-to-market (dari server/lib)
 ├── paylater.js       COPY billing cycle (A1)
 ├── installments.js   COPY jadwal cicilan (A1)
 ├── recurring.js      COPY logic recurring (A1)
-└── tools/            transactions, accounts, bills, reports, master, recurring
+└── tools/            transactions, accounts, bills, reports, master, recurring, investments
 test/
 ├── smoke.js          list + panggil tool read-only
 ├── write.js          test add_expense/add_transfer + error handling

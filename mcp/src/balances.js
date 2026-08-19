@@ -1,13 +1,15 @@
 // Kalkulasi saldo & kekayaan bersih — di-port dari client/src/context/DataContext.jsx.
 // Sumber kebenaran tetap sama dengan web app.
 import { payLaterInfoFor } from './paylater.js'
+import { summarizeAllInvestments } from './investment.js'
 
-// Saldo per akun CASH (paham transfer + fee). Akun paylater TIDAK punya saldo cash.
+// Saldo per akun CASH (paham transfer + fee).
+// Akun paylater (utang/limit) & investasi (nilai portfolio dari snapshot) TIDAK punya saldo cash.
 // Return { [accountId]: saldo }
 export function computeBalances(accounts, transactions) {
   const map = {}
   for (const a of accounts) {
-    if (a.kind === 'paylater') continue
+    if (a.kind === 'paylater' || a.kind === 'investment') continue
     map[a.id] = a.openingBalance || 0
   }
   for (const t of transactions) {
@@ -38,8 +40,13 @@ export function computeTotalDebt(payLaterInfo) {
   return Object.values(payLaterInfo).reduce((s, v) => s + v.used, 0)
 }
 
-// Kekayaan bersih = total saldo cash − total utang paylater.
-export function computeNetWorth(accountBalances, totalDebt) {
+// Total nilai portfolio seluruh akun investasi (mark-to-market dari snapshot).
+export function computeInvestmentValue(accounts, investmentSnapshots = []) {
+  return summarizeAllInvestments(accounts, investmentSnapshots).marketValue
+}
+
+// Kekayaan bersih = total saldo cash + nilai investasi − total utang paylater.
+export function computeNetWorth(accountBalances, totalDebt, investmentValue = 0) {
   const cash = Object.values(accountBalances).reduce((s, v) => s + v, 0)
-  return { cash, debt: totalDebt, net: cash - totalDebt }
+  return { cash, investment: investmentValue, debt: totalDebt, net: cash + investmentValue - totalDebt }
 }

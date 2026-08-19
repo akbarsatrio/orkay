@@ -63,10 +63,12 @@ export function resolveOne(query, items, label = 'item', extraFilter = null) {
   return best.it
 }
 
-export function resolveAccount(query, accounts, { paylaterOnly, cashOnly } = {}) {
+export function resolveAccount(query, accounts, { paylaterOnly, cashOnly, investmentOnly } = {}) {
   let filter = null
   if (paylaterOnly) filter = (a) => a.kind === 'paylater'
-  if (cashOnly) filter = (a) => a.kind !== 'paylater'
+  if (investmentOnly) filter = (a) => a.kind === 'investment'
+  // cashOnly = benar-benar cash (bukan paylater, bukan investasi)
+  if (cashOnly) filter = (a) => a.kind !== 'paylater' && a.kind !== 'investment'
   return resolveOne(query, accounts, 'akun', filter)
 }
 

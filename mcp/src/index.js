@@ -11,6 +11,7 @@ import { registerBillTools } from './tools/bills.js'
 import { registerReportTools } from './tools/reports.js'
 import { registerMasterTools } from './tools/master.js'
 import { registerRecurringTools } from './tools/recurring.js'
+import { registerInvestmentTools } from './tools/investments.js'
 
 const server = new McpServer({
   name: 'orkay',
@@ -23,12 +24,13 @@ registerBillTools(server)
 registerReportTools(server)
 registerMasterTools(server)
 registerRecurringTools(server)
+registerInvestmentTools(server)
 
 async function main() {
   const transport = new StdioServerTransport()
   await server.connect(transport)
   // Jangan log ke stdout (dipakai protokol). Gunakan stderr untuk info.
-  console.error('[orkay-mcp] siap. Tools: transaksi, saldo, tagihan, cicilan, laporan, master.')
+  console.error('[orkay-mcp] siap. Tools: transaksi, saldo, investasi, tagihan, cicilan, laporan, master.')
 }
 
 main().catch((err) => {
