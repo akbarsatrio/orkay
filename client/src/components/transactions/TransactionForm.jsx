@@ -61,6 +61,14 @@ export default function TransactionForm({ open, onClose, editing }) {
   const availableCats = categories.filter((c) => c.type === form.type)
   const expenseCats = categories.filter((c) => c.type === 'expense')
 
+  // Rekening yang boleh dipilih per konteks:
+  //  - Expense: cash + paylater (charge kartu), TANPA investasi.
+  //  - Income & Transfer (dari/ke): cash saja. Paylater tak punya saldo/tagihan untuk itu,
+  //    investasi hanya lewat menu Investasi.
+  const cashOnly = useMemo(() => accounts.filter((a) => a.kind !== 'paylater' && a.kind !== 'investment'), [accounts])
+  const expenseAccounts = useMemo(() => accounts.filter((a) => a.kind !== 'investment'), [accounts])
+  const accountOptions = isIncome ? cashOnly : expenseAccounts // untuk field "Rekening" (expense/income)
+
   const selectedAccount = accounts.find((a) => a.id === form.accountId)
   const isPaylaterAccount = selectedAccount?.kind === 'paylater'
   const canInstallment = form.type === 'expense' && isPaylaterAccount && !editing
@@ -112,11 +120,20 @@ export default function TransactionForm({ open, onClose, editing }) {
     return Math.round(principal / effectiveTenor) + interestRp
   }, [form.amount, effectiveTenor, form.monthlyMode, form.monthlyAmount, interestRp])
 
-  const canSave = isTransfer
+  // Validasi kind rekening sesuai aturan (juga menutup kasus edit data lama yang invalid).
+  const kindOf = (id) => accounts.find((a) => a.id === id)?.kind
+  const isCash = (id) => { const k = kindOf(id); return k && k !== 'paylater' && k !== 'investment' }
+  const accountKindValid = isTransfer
+    ? isCash(form.fromAccountId) && isCash(form.toAccountId)
+    : isIncome
+      ? isCash(form.accountId)
+      : kindOf(form.accountId) !== 'investment' // expense: cash/paylater, bukan investasi
+
+  const canSave = (isTransfer
     ? form.amount > 0 && form.fromAccountId && form.toAccountId && form.fromAccountId !== form.toAccountId && form.date
     : useInstallment
       ? form.amount > 0 && form.categoryId && form.accountId && form.date && effectiveTenor >= 1 && computedMonthly > 0
-      : form.amount > 0 && form.categoryId && form.accountId && form.date
+      : form.amount > 0 && form.categoryId && form.accountId && form.date) && accountKindValid
 
   const handleSave = async () => {
     if (!canSave || saving) return
@@ -191,7 +208,22 @@ export default function TransactionForm({ open, onClose, editing }) {
             { value: 'transfer', label: 'Transfer' },
           ]}
           value={form.type}
-          onChange={(v) => set({ type: v, categoryId: '', installment: false })}
+          onChange={(v) => {
+            // Reset rekening yang jadi tidak valid untuk tipe baru (mis. paylater saat pindah ke income).
+            const okForNew = (id) => {
+              const k = accounts.find((a) => a.id === id)?.kind
+              if (v === 'expense') return k !== 'investment'
+              return k && k !== 'paylater' && k !== 'investment' // income & transfer: cash only
+            }
+            set({
+              type: v,
+              categoryId: '',
+              installment: false,
+              accountId: okForNew(form.accountId) ? form.accountId : '',
+              fromAccountId: okForNew(form.fromAccountId) ? form.fromAccountId : '',
+              toAccountId: okForNew(form.toAccountId) ? form.toAccountId : '',
+            })
+          }}
         />
 
         <div>
@@ -216,7 +248,7 @@ export default function TransactionForm({ open, onClose, editing }) {
             <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
               <Select label="Dari" value={form.fromAccountId} onChange={(e) => set({ fromAccountId: e.target.value })}>
                 <option value="">Rekening asal</option>
-                {accounts.map((a) => (
+                {cashOnly.map((a) => (
                   <option key={a.id} value={a.id} disabled={a.id === form.toAccountId}>{a.name}</option>
                 ))}
               </Select>
@@ -225,10 +257,11 @@ export default function TransactionForm({ open, onClose, editing }) {
               </div>
               <Select label="Ke" value={form.toAccountId} onChange={(e) => set({ toAccountId: e.target.value })}>
                 <option value="">Rekening tujuan</option>
-                {accounts.map((a) => (
+                {cashOnly.map((a) => (
                   <option key={a.id} value={a.id} disabled={a.id === form.fromAccountId}>{a.name}</option>
                 ))}
               </Select>
+              <p className="col-span-3 text-2xs text-muted -mt-1">Transfer hanya antar rekening cash. Bayar tagihan pay later lewat menu Pay Later.</p>
             </div>
             {form.fromAccountId && form.fromAccountId === form.toAccountId && (
               <p className="text-2xs text-negative">Rekening asal dan tujuan tidak boleh sama.</p>
@@ -269,7 +302,7 @@ export default function TransactionForm({ open, onClose, editing }) {
               </Select>
               <Select label="Rekening" value={form.accountId} onChange={(e) => set({ accountId: e.target.value, installment: false })}>
                 <option value="">Pilih rekening</option>
-                {accounts.map((a) => (
+                {accountOptions.map((a) => (
                   <option key={a.id} value={a.id}>{a.name}{a.kind === 'paylater' ? ' (pay later)' : ''}</option>
                 ))}
               </Select>
@@ -420,6 +453,12 @@ className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-
         <Input type="date" label={useInstallment ? 'Tanggal pembelian' : 'Tanggal'} value={form.date} onChange={(e) => set({ date: e.target.value })} />
 
         <Textarea label={useInstallment ? 'Nama barang / catatan' : 'Catatan (opsional)'} rows={2} value={form.note} onChange={(e) => set({ note: e.target.value })} placeholder={isTransfer ? 'mis. Top up GoPay' : useInstallment ? 'mis. iPhone 15' : 'mis. Makan siang di kantin'} />
+
+        {!accountKindValid && (form.accountId || form.fromAccountId || form.toAccountId) && (
+          <p className="text-2xs text-warning">
+            Rekening yang dipilih tidak valid untuk tipe transaksi ini. Pilih rekening cash{form.type === 'expense' ? ' atau pay later' : ''}.
+          </p>
+        )}
 
         {err && <p className="text-xs text-negative">{err}</p>}
       </div>

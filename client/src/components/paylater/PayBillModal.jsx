@@ -13,7 +13,7 @@ import { formatRupiah, formatDate, toISODate } from '../../lib/format.js'
  */
 export default function PayBillModal({ open, item, onClose }) {
   const { accounts, payStatement, payInstallment } = useData()
-  const cashAccounts = accounts.filter((a) => a.kind !== 'paylater')
+  const cashAccounts = accounts.filter((a) => a.kind !== 'paylater' && a.kind !== 'investment')
   const [fromAccountId, setFromAccountId] = useState('')
   const [date, setDate] = useState(toISODate(new Date()))
   const [saving, setSaving] = useState(false)
