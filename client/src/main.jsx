@@ -4,6 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import AuthGate from './AuthGate.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { BalanceVisibilityProvider } from './context/BalanceVisibilityContext.jsx'
+import { ConfirmProvider } from './context/ConfirmContext.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -11,7 +12,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <ThemeProvider>
         <BalanceVisibilityProvider>
-          <AuthGate />
+          <ConfirmProvider>
+            <AuthGate />
+          </ConfirmProvider>
         </BalanceVisibilityProvider>
       </ThemeProvider>
     </BrowserRouter>

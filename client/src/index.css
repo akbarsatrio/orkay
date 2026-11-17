@@ -14,6 +14,7 @@
   --accent-fg: 255 255 255;
   --positive: 22 138 90;
   --negative: 203 54 54;
+  --negative-fg: 255 255 255;
   --warning: 191 128 20;
 }
 
@@ -28,6 +29,7 @@
   --accent-fg: 15 17 22;
   --positive: 61 196 137;
   --negative: 244 113 113;
+  --negative-fg: 15 17 22;
   --warning: 226 173 74;
 }
 

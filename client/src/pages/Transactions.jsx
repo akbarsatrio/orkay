@@ -6,6 +6,7 @@ import { Card, Button, Input, Select, Badge, Empty, Segmented, cx } from '../com
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import TransactionForm from '../components/transactions/TransactionForm.jsx'
 import { useData } from '../context/DataContext.jsx'
+import { useConfirm } from '../context/ConfirmContext.jsx'
 import { formatRupiah, formatDate, dayName } from '../lib/format.js'
 
 export default function Transactions() {
@@ -18,6 +19,17 @@ export default function Transactions() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const confirm = useConfirm()
+
+  const askDelete = (t) => {
+    const label = t.note || (t.type === 'transfer' ? 'Transfer' : categoryMap[t.categoryId]?.name || 'Transaksi')
+    confirm({
+      title: 'Hapus transaksi',
+      message: <>Hapus <b>{label}</b> sebesar {formatRupiah(t.amount)} ({formatDate(t.date)})?</>,
+      detail: 'Saldo rekening dihitung ulang tanpa transaksi ini. Tindakan ini tidak bisa dibatalkan.',
+      onConfirm: () => deleteTransaction(t.id),
+    })
+  }
 
   const filtered = useMemo(() => {
     return transactions.filter((t) => {
@@ -180,7 +192,7 @@ export default function Transactions() {
                       acc={accountMap[t.accountId]}
                       accountMap={accountMap}
                       onEdit={() => setForm({ open: true, editing: t })}
-                      onDelete={() => deleteTransaction(t.id)}
+                      onDelete={() => askDelete(t)}
                     />
                   ))}
                 </div>

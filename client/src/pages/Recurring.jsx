@@ -8,6 +8,7 @@ import RecurringForm from '../components/recurring/RecurringForm.jsx'
 import ConfirmRecurringModal from '../components/recurring/ConfirmRecurringModal.jsx'
 import PayBillModal from '../components/paylater/PayBillModal.jsx'
 import { useData } from '../context/DataContext.jsx'
+import { useConfirm } from '../context/ConfirmContext.jsx'
 import { formatRupiah, formatDate, monthNamesID } from '../lib/format.js'
 import { getPendingRecurring, dueDateFor, periodKey } from '../lib/recurring.js'
 import { getUnpaidStatements } from '../lib/paylater.js'
@@ -18,6 +19,7 @@ export default function Recurring() {
   const [form, setForm] = useState({ open: false, editing: null })
   const [confirmItem, setConfirmItem] = useState(null)
   const [payItem, setPayItem] = useState(null)
+  const confirm = useConfirm()
 
   const now = new Date()
   const pending = useMemo(() => getPendingRecurring(recurring, now), [recurring])
@@ -202,7 +204,15 @@ export default function Recurring() {
                       <button onClick={() => setForm({ open: true, editing: r })} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                         <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
                       </button>
-                      <button onClick={() => confirm(`Hapus tagihan "${r.name}"?`) && deleteRecurring(r.id)} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={() => confirm({
+                          title: 'Hapus tagihan rutin',
+                          message: <>Hapus tagihan <b>{r.name}</b>?</>,
+                          detail: 'Transaksi yang sudah dikonfirmasi tetap tersimpan.',
+                          onConfirm: () => deleteRecurring(r.id),
+                        })}
+                        className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
+                      >
                         <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
                       </button>
                     </div>
@@ -233,7 +243,15 @@ export default function Recurring() {
                       <p className="text-2xs text-muted">{acc?.name} · {formatRupiah(inst.monthlyAmount)}/bln</p>
                     </div>
                     <span className="text-xs tnum text-muted">{inst.paidCount}/{inst.tenor}x</span>
-                    <button onClick={() => confirm(`Hapus cicilan "${inst.name}"? Transaksi terkait ikut terhapus.`) && deleteInstallment(inst.id)} className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                    <button
+                      onClick={() => confirm({
+                        title: 'Hapus cicilan',
+                        message: <>Hapus cicilan <b>{inst.name}</b>?</>,
+                        detail: 'Transaksi terkait ikut terhapus.',
+                        onConfirm: () => deleteInstallment(inst.id),
+                      })}
+                      className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    >
                       <Trash2 size={15} className="lg:hidden" /><Trash2 size={12} className="hidden lg:block" />
                     </button>
                   </div>

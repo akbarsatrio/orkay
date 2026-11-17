@@ -15,6 +15,7 @@ export default {
         'accent-fg': 'rgb(var(--accent-fg) / <alpha-value>)',
         positive: 'rgb(var(--positive) / <alpha-value>)',
         negative: 'rgb(var(--negative) / <alpha-value>)',
+        'negative-fg': 'rgb(var(--negative-fg) / <alpha-value>)',
         warning: 'rgb(var(--warning) / <alpha-value>)',
       },
       fontFamily: {

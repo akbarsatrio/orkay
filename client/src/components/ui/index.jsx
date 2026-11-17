@@ -38,7 +38,7 @@ const btnVariants = {
   primary: 'bg-accent text-accent-fg hover:opacity-90 shadow-sm',
   secondary: 'bg-surface-2 text-fg hover:bg-border/60 border border-border',
   ghost: 'text-muted hover:text-fg hover:bg-surface-2',
-  danger: 'bg-negative text-white hover:opacity-90',
+  danger: 'bg-negative text-negative-fg hover:opacity-90',
   outline: 'border border-border text-fg hover:bg-surface-2',
 }
 const btnSizes = {

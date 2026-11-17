@@ -6,6 +6,7 @@ import { Card, CardHeader, CardBody, Button, Input, Badge, Empty, Modal } from '
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import CategoryForm from '../components/settings/CategoryForm.jsx'
 import { useData } from '../context/DataContext.jsx'
+import { useConfirm } from '../context/ConfirmContext.jsx'
 import { fetchHolidays } from '../lib/holidays.js'
 import { getPaydayDate } from '../lib/payday.js'
 import { formatDate, monthNamesID } from '../lib/format.js'
@@ -24,6 +25,21 @@ export default function Settings() {
   const [loadingHol, setLoadingHol] = useState(false)
   const [destroyOpen, setDestroyOpen] = useState(false)
   const [destroyConfirm, setDestroyConfirm] = useState('')
+  const confirm = useConfirm()
+
+  const askDeleteCategory = (c) => confirm({
+    title: 'Hapus kategori',
+    message: <>Hapus kategori <b>{c.name}</b>?</>,
+    detail: 'Transaksi dengan kategori ini tidak ikut terhapus, tapi jadi tanpa kategori.',
+    onConfirm: () => deleteCategory(c.id),
+  })
+
+  const askDeleteSource = (s) => confirm({
+    title: 'Hapus sumber pemasukan',
+    message: <>Hapus sumber pemasukan <b>{s.name}</b>?</>,
+    detail: 'Transaksi pemasukan dari sumber ini tidak ikut terhapus.',
+    onConfirm: () => deleteIncomeSource(s.id),
+  })
 
   const incomeCats = categories.filter((c) => c.type === 'income')
   const expenseCats = categories.filter((c) => c.type === 'expense')
@@ -101,7 +117,7 @@ export default function Settings() {
             </p>
             <div className="grid sm:grid-cols-2 gap-2">
               {expenseCats.map((c) => (
-                <CategoryRow key={c.id} cat={c} onEdit={() => setCatForm({ open: true, editing: c })} onDelete={() => deleteCategory(c.id)} />
+                <CategoryRow key={c.id} cat={c} onEdit={() => setCatForm({ open: true, editing: c })} onDelete={() => askDeleteCategory(c)} />
               ))}
             </div>
           </div>
@@ -111,7 +127,7 @@ export default function Settings() {
             </p>
             <div className="grid sm:grid-cols-2 gap-2">
               {incomeCats.map((c) => (
-                <CategoryRow key={c.id} cat={c} onEdit={() => setCatForm({ open: true, editing: c })} onDelete={() => deleteCategory(c.id)} />
+                <CategoryRow key={c.id} cat={c} onEdit={() => setCatForm({ open: true, editing: c })} onDelete={() => askDeleteCategory(c)} />
               ))}
             </div>
           </div>
@@ -141,7 +157,7 @@ export default function Settings() {
                 <div key={s.id} className="inline-flex items-center gap-2 pl-3 pr-1.5 h-8 rounded-full bg-surface-2 border border-border text-sm">
                   <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
                   {s.name}
-                  <button onClick={() => deleteIncomeSource(s.id)} className="h-5 w-5 flex items-center justify-center rounded-full text-muted hover:text-negative hover:bg-negative/10">
+                  <button onClick={() => askDeleteSource(s)} aria-label={`Hapus ${s.name}`} className="h-5 w-5 flex items-center justify-center rounded-full text-muted hover:text-negative hover:bg-negative/10">
                     <Trash2 size={12} />
                   </button>
                 </div>

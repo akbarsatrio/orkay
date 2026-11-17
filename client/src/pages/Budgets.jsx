@@ -3,12 +3,14 @@ import { Plus, Target, Trash2, AlertTriangle, Pencil } from 'lucide-react'
 import { Card, CardBody, CardHeader, Button, Progress, Empty, Modal, Select, Badge } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import { useData } from '../context/DataContext.jsx'
+import { useConfirm } from '../context/ConfirmContext.jsx'
 import { formatRupiah, formatNumber, parseNumber, monthNamesID } from '../lib/format.js'
 import { spendingPerCategory } from '../lib/selectors.js'
 
 export default function Budgets() {
   const { budgets, categories, categoryMap, transactions, upsertBudget, deleteBudget } = useData()
   const [modal, setModal] = useState({ open: false, editing: null })
+  const confirm = useConfirm()
 
   const now = new Date()
   const spending = useMemo(
@@ -77,7 +79,15 @@ export default function Budgets() {
                   <button onClick={() => setModal({ open: true, editing: r })} className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-fg active:bg-surface-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                     <Pencil size={15} className="lg:hidden" /><Pencil size={12} className="hidden lg:block" />
                   </button>
-                  <button onClick={() => deleteBudget(r.id)} className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                  <button
+                    onClick={() => confirm({
+                      title: 'Hapus anggaran',
+                      message: <>Hapus anggaran kategori <b>{r.cat.name}</b>?</>,
+                      detail: 'Transaksi di kategori ini tidak terpengaruh.',
+                      onConfirm: () => deleteBudget(r.id),
+                    })}
+                    className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                  >
                     <Trash2 size={15} className="lg:hidden" /><Trash2 size={12} className="hidden lg:block" />
                   </button>
                 </div>

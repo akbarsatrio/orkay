@@ -6,6 +6,7 @@ import AccountForm from '../components/accounts/AccountForm.jsx'
 import SnapshotForm from '../components/investments/SnapshotForm.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
+import { useConfirm } from '../context/ConfirmContext.jsx'
 import { formatRupiah, maskRupiah, formatDate } from '../lib/format.js'
 import { computeSnapshotSeries } from '../lib/investment.js'
 
@@ -19,6 +20,7 @@ export default function Investments() {
   const investAccounts = useMemo(() => accounts.filter((a) => a.kind === 'investment'), [accounts])
   const [accForm, setAccForm] = useState({ open: false, editing: null })
   const [snapForm, setSnapForm] = useState({ open: false, accountId: null, editing: null })
+  const confirm = useConfirm()
 
   // total gabungan
   const totals = useMemo(() => {
@@ -40,9 +42,14 @@ export default function Investments() {
   }, [investmentSnapshots])
 
   const handleDeleteSnap = (snap) => {
-    if (confirm('Hapus catatan periode ini? Perhitungan periode setelahnya akan menyesuaikan.')) {
-      deleteInvestmentSnapshot(snap.id)
-    }
+    confirm({
+      title: 'Hapus catatan investasi',
+      message: <>Hapus catatan periode <b>{formatDate(snap.date)}</b>?</>,
+      detail: snap.linkedTxId
+        ? 'Transfer terkait dari/ke rekening cash ikut terhapus. Perhitungan periode setelahnya akan menyesuaikan.'
+        : 'Perhitungan periode setelahnya akan menyesuaikan.',
+      onConfirm: () => deleteInvestmentSnapshot(snap.id),
+    })
   }
 
   const gain = totals.cumulativeReturn

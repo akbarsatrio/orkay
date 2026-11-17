@@ -6,6 +6,7 @@ import CategoryIcon from '../components/CategoryIcon.jsx'
 import AccountForm from '../components/accounts/AccountForm.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
+import { useConfirm } from '../context/ConfirmContext.jsx'
 import { formatRupiah, maskRupiah, formatDate } from '../lib/format.js'
 import { computeStatements } from '../lib/paylater.js'
 
@@ -16,6 +17,7 @@ export default function Accounts() {
   const { hidden, toggle } = useBalanceVisibility()
   const navigate = useNavigate()
   const [form, setForm] = useState({ open: false, editing: null })
+  const confirm = useConfirm()
 
   const now = new Date()
   const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
@@ -37,11 +39,15 @@ export default function Accounts() {
   }
 
   const handleDelete = (acc) => {
-    const hasTx = transactions.some((t) => t.accountId === acc.id)
-    const msg = hasTx
-      ? `Hapus "${acc.name}"? Transaksi terkait tidak ikut terhapus, tapi saldonya jadi tidak terhitung.`
-      : `Hapus rekening "${acc.name}"?`
-    if (confirm(msg)) deleteAccount(acc.id)
+    const hasTx = transactions.some((t) => t.accountId === acc.id || t.fromAccountId === acc.id || t.toAccountId === acc.id)
+    confirm({
+      title: 'Hapus rekening',
+      message: <>Hapus rekening <b>{acc.name}</b>?</>,
+      detail: hasTx
+        ? 'Transaksi terkait tidak ikut terhapus, tapi saldonya jadi tidak terhitung.'
+        : 'Tindakan ini tidak bisa dibatalkan.',
+      onConfirm: () => deleteAccount(acc.id),
+    })
   }
 
   return (
