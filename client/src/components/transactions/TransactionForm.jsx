@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, CreditCard } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowRight, CreditCard, CheckCircle2 } from 'lucide-react'
 import { Modal, Button, Input, Select, Textarea, Segmented, Toggle } from '../ui/index.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber, toISODate, formatRupiah } from '../../lib/format.js'
+import { load, save } from '../../lib/storage.js'
 
 const empty = (type = 'expense') => ({
   type,
@@ -39,10 +40,24 @@ export default function TransactionForm({ open, onClose, editing }) {
   const [monthlyStr, setMonthlyStr] = useState('')
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState(null)
+  // "Tetap di sini": setelah simpan, form tetap terbuka untuk input berikutnya.
+  // Preferensi dibaca ulang tiap form dibuka (ada >1 instance form: topbar & halaman Transaksi).
+  const [stayOpen, setStayOpen] = useState(false)
+  const [savedCount, setSavedCount] = useState(0)
+  const [lastSaved, setLastSaved] = useState('')
+  const amountRef = useRef(null)
+
+  const changeStayOpen = (v) => {
+    setStayOpen(v)
+    save('txStayOpen', v)
+  }
 
   useEffect(() => {
     if (!open) return
     setErr(null)
+    setSavedCount(0)
+    setLastSaved('')
+    setStayOpen(load('txStayOpen', false))
     if (editing) {
       setForm({ ...empty(editing.type), ...editing })
       setAmountStr(formatNumber(editing.amount))
@@ -175,7 +190,28 @@ export default function TransactionForm({ open, onClose, editing }) {
         if (editing) await updateTransaction(editing.id, payload)
         else await addTransaction(payload)
       }
-      onClose()
+      if (!editing && stayOpen) {
+        // Tipe, tanggal & rekening dipertahankan; sisanya dikosongkan untuk transaksi berikutnya.
+        const label = useInstallment
+          ? `Cicilan ${form.note.trim() || availableCats.find((c) => c.id === form.categoryId)?.name || ''}`.trim()
+          : form.note.trim() || (isTransfer ? 'Transfer' : availableCats.find((c) => c.id === form.categoryId)?.name || 'Transaksi')
+        setSavedCount((n) => n + 1)
+        setLastSaved(`${label}, ${formatRupiah(Number(form.amount))}`)
+        setForm({
+          ...empty(form.type),
+          date: form.date,
+          accountId: form.accountId,
+          fromAccountId: form.fromAccountId,
+          toAccountId: form.toAccountId,
+        })
+        setAmountStr('')
+        setFeeStr('')
+        setInterestStr('')
+        setMonthlyStr('')
+        amountRef.current?.focus()
+      } else {
+        onClose()
+      }
     } catch (e) {
       setErr(e.message || 'Gagal menyimpan')
     } finally {
@@ -192,7 +228,13 @@ export default function TransactionForm({ open, onClose, editing }) {
       title={editing ? 'Edit Transaksi' : 'Tambah Transaksi'}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose} disabled={saving}>Batal</Button>
+          {!editing && (
+            <label className="mr-auto inline-flex items-center gap-2 min-h-11 sm:min-h-0 text-xs font-medium text-fg cursor-pointer select-none">
+              <Toggle checked={stayOpen} onChange={changeStayOpen} />
+              Tetap di sini
+            </label>
+          )}
+          <Button variant="secondary" onClick={onClose} disabled={saving}>{savedCount > 0 ? 'Selesai' : 'Batal'}</Button>
           <Button onClick={handleSave} disabled={!canSave || saving}>
             {saving ? 'Menyimpan…' : editing ? 'Simpan Perubahan' : useInstallment ? 'Buat Cicilan' : 'Simpan'}
           </Button>
@@ -231,6 +273,7 @@ export default function TransactionForm({ open, onClose, editing }) {
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rp</span>
             <input
+              ref={amountRef}
               inputMode="numeric"
               value={amountStr}
               onChange={handleAmount}
@@ -461,6 +504,13 @@ className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-
         )}
 
         {err && <p className="text-xs text-negative">{err}</p>}
+
+        {savedCount > 0 && (
+          <p role="status" className="flex items-start gap-2 text-xs text-fg">
+            <CheckCircle2 size={14} className="text-positive shrink-0 mt-px" />
+            <span>{savedCount} transaksi tersimpan. Terakhir: {lastSaved}</span>
+          </p>
+        )}
       </div>
     </Modal>
   )
