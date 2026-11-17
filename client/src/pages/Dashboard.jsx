@@ -61,7 +61,10 @@ export default function Dashboard({ onAddTransaction }) {
   const cashflow = useMemo(() => cashflowByMonth(transactions, 6, now), [transactions])
   const netWorth = useMemo(() => netWorthTrend(accounts, transactions, installments, 6, now), [accounts, transactions, installments])
 
-  const nextPay = useMemo(() => getNextPayday(now, settings.payDay, holidaySet), [settings.payDay, holidaySet])
+  const nextPay = useMemo(
+    () => getNextPayday(now, settings.payDay, holidaySet, settings.payDayShift),
+    [settings.payDay, settings.payDayShift, holidaySet]
+  )
   const daysToPay = daysUntil(nextPay.effective, now)
 
   const upcoming = useMemo(() => getUpcomingRecurring(recurring, 14, now), [recurring])

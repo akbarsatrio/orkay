@@ -78,6 +78,7 @@ async function migrateSchema() {
     ['transactions', 'statementPeriod', 'VARCHAR(7)'],
     ['investment_snapshots', 'cashAccountId', 'VARCHAR(40)'],
     ['investment_snapshots', 'linkedTxId', 'VARCHAR(40)'],
+    ['settings', 'payDayShift', 'TINYINT(1) NOT NULL DEFAULT 1'],
   ]
   for (const [table, column, definition] of additions) {
     const rows = await query(

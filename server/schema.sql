@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS budgets (
 CREATE TABLE IF NOT EXISTS settings (
   id       INT PRIMARY KEY,
   payDay   INT NOT NULL DEFAULT 28,
+  payDayShift TINYINT(1) NOT NULL DEFAULT 1, -- 1 = majukan gajian kalau jatuh di weekend/libur
   theme    VARCHAR(20) NOT NULL DEFAULT 'light',
   currency VARCHAR(10) NOT NULL DEFAULT 'IDR'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

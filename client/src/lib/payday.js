@@ -17,16 +17,17 @@ function isNonWorking(date, holidaySet) {
 
 /**
  * Hitung tanggal gajian efektif.
- * Aturan: gajian di tanggal `payDay`. Kalau jatuh di weekend/libur,
- * MAJU (mundur mundur ke hari sebelumnya) ke hari kerja terdekat.
+ * Aturan: gajian di tanggal `payDay`. Kalau `shift` aktif dan tanggal itu jatuh di weekend/libur,
+ * MAJU (mundur ke hari sebelumnya) ke hari kerja terdekat. Kalau `shift` mati, tetap di tanggalnya.
  *
  * @param {number} year
  * @param {number} month  0-indexed (0 = Januari)
  * @param {number} payDay tanggal target (mis. 28)
  * @param {Set<string>} holidaySet set tanggal libur ISO
+ * @param {boolean} shift majukan ke hari kerja terdekat (default true)
  * @returns {{ target: string, effective: string, shifted: boolean, reason: string|null }}
  */
-export function getPaydayDate(year, month, payDay = 28, holidaySet = new Set()) {
+export function getPaydayDate(year, month, payDay = 28, holidaySet = new Set(), shift = true) {
   // Clamp payDay ke jumlah hari di bulan tsb
   const lastDay = new Date(year, month + 1, 0).getDate()
   const day = Math.min(payDay, lastDay)
@@ -36,7 +37,7 @@ export function getPaydayDate(year, month, payDay = 28, holidaySet = new Set()) 
 
   let eff = new Date(year, month, day)
   let guard = 0
-  while (isNonWorking(eff, holidaySet) && guard < 40) {
+  while (shift && isNonWorking(eff, holidaySet) && guard < 40) {
     eff.setDate(eff.getDate() - 1)
     guard++
   }
@@ -58,8 +59,9 @@ export function getPaydayDate(year, month, payDay = 28, holidaySet = new Set()) 
  * @param {Date} from
  * @param {number} payDay
  * @param {Set<string>} holidaySet
+ * @param {boolean} shift lihat getPaydayDate
  */
-export function getNextPayday(from, payDay = 28, holidaySet = new Set()) {
+export function getNextPayday(from, payDay = 28, holidaySet = new Set(), shift = true) {
   const base = new Date(from)
   base.setHours(0, 0, 0, 0)
 
@@ -69,13 +71,13 @@ export function getNextPayday(from, payDay = 28, holidaySet = new Set()) {
     const m = base.getMonth() + i
     const yy = y + Math.floor(m / 12)
     const mm = ((m % 12) + 12) % 12
-    const pd = getPaydayDate(yy, mm, payDay, holidaySet)
+    const pd = getPaydayDate(yy, mm, payDay, holidaySet, shift)
     const effDate = new Date(pd.effective + 'T00:00:00')
     if (effDate >= base) {
       return pd
     }
   }
-  return getPaydayDate(base.getFullYear(), base.getMonth() + 1, payDay, holidaySet)
+  return getPaydayDate(base.getFullYear(), base.getMonth() + 1, payDay, holidaySet, shift)
 }
 
 export function daysUntil(iso, from = new Date()) {

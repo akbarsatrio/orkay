@@ -4,17 +4,24 @@ import { wrap } from './helpers.js'
 
 const router = Router()
 
+const DEFAULTS = { payDay: 28, payDayShift: true, theme: 'light', currency: 'IDR' }
+
+// payDayShift disimpan TINYINT di MySQL, dikirim ke client sebagai boolean.
+export async function loadSettings() {
+  const row = await queryOne('SELECT payDay, payDayShift, theme, currency FROM settings WHERE id = 1')
+  return row ? { ...row, payDayShift: !!row.payDayShift } : { ...DEFAULTS }
+}
+
 router.get('/', wrap(async (req, res) => {
-  const row = await queryOne('SELECT payDay, theme, currency FROM settings WHERE id = 1')
-  res.json(row || { payDay: 28, theme: 'light', currency: 'IDR' })
+  res.json(await loadSettings())
 }))
 
 router.put('/', wrap(async (req, res) => {
-  const existing = await queryOne('SELECT payDay, theme, currency FROM settings WHERE id = 1')
-  const merged = { ...(existing || { payDay: 28, theme: 'light', currency: 'IDR' }), ...req.body }
+  const merged = { ...(await loadSettings()), ...req.body }
   merged.payDay = Number(merged.payDay) || 28
-  await query('UPDATE settings SET payDay=:payDay, theme=:theme, currency=:currency WHERE id=1', {
-    payDay: merged.payDay, theme: merged.theme, currency: merged.currency,
+  merged.payDayShift = !!merged.payDayShift
+  await query('UPDATE settings SET payDay=:payDay, payDayShift=:payDayShift, theme=:theme, currency=:currency WHERE id=1', {
+    payDay: merged.payDay, payDayShift: merged.payDayShift ? 1 : 0, theme: merged.theme, currency: merged.currency,
   })
   res.json(merged)
 }))

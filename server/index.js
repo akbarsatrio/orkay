@@ -2,7 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import { existsSync } from 'node:fs'
 import { join } from 'node:path'
-import { query, queryOne, parseRecurring, initDb } from './db.js'
+import { query, parseRecurring, initDb } from './db.js'
 import { ensureSettings } from './seed.js'
 import { wrap } from './routes/helpers.js'
 import { config } from './config.js'
@@ -14,7 +14,7 @@ import incomeSources from './routes/incomeSources.js'
 import transactions from './routes/transactions.js'
 import recurring from './routes/recurring.js'
 import budgets from './routes/budgets.js'
-import settings from './routes/settings.js'
+import settings, { loadSettings } from './routes/settings.js'
 import installments from './routes/installments.js'
 import paylater from './routes/paylater.js'
 import investments from './routes/investments.js'
@@ -47,7 +47,7 @@ app.get('/api/health', (req, res) => res.json({ ok: true }))
 app.use('/api', requireAuth)
 
 app.get('/api/bootstrap', wrap(async (req, res) => {
-  const [categoriesRows, accountsRows, incomeRows, txRows, recRows, budgetRows, instRows, snapRows, settingsRow] = await Promise.all([
+  const [categoriesRows, accountsRows, incomeRows, txRows, recRows, budgetRows, instRows, snapRows, appSettings] = await Promise.all([
     query('SELECT * FROM categories'),
     query('SELECT * FROM accounts'),
     query('SELECT * FROM income_sources'),
@@ -56,7 +56,7 @@ app.get('/api/bootstrap', wrap(async (req, res) => {
     query('SELECT * FROM budgets'),
     query('SELECT * FROM installments'),
     query('SELECT * FROM investment_snapshots ORDER BY date ASC, id ASC'),
-    queryOne('SELECT payDay, theme, currency FROM settings WHERE id = 1'),
+    loadSettings(),
   ])
   res.json({
     categories: categoriesRows,
@@ -67,7 +67,7 @@ app.get('/api/bootstrap', wrap(async (req, res) => {
     budgets: budgetRows,
     installments: instRows.map((i) => ({ ...i, active: !!i.active })),
     investmentSnapshots: snapRows,
-    settings: settingsRow || { payDay: 28, theme: 'light', currency: 'IDR' },
+    settings: appSettings,
   })
 }))
 

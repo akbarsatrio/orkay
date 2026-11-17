@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   Plus, Pencil, Trash2, RefreshCw, CalendarDays, Tag, Coins, AlertTriangle, Check, Bomb,
 } from 'lucide-react'
-import { Card, CardHeader, CardBody, Button, Input, Badge, Empty, Modal } from '../components/ui/index.jsx'
+import { Card, CardHeader, CardBody, Button, Input, Badge, Empty, Modal, Toggle } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import CategoryForm from '../components/settings/CategoryForm.jsx'
 import { useData } from '../context/DataContext.jsx'
@@ -55,7 +55,7 @@ export default function Settings() {
 
   const holidaySet = new Set(holidays.map((h) => h.date))
   const now = new Date()
-  const nextPay = getPaydayDate(now.getFullYear(), now.getMonth(), settings.payDay, holidaySet)
+  const nextPay = getPaydayDate(now.getFullYear(), now.getMonth(), settings.payDay, holidaySet, settings.payDayShift)
 
   const handleAddSource = () => {
     if (!newSource.trim()) return
@@ -69,7 +69,7 @@ export default function Settings() {
       <Card>
         <CardHeader
           title="Tanggal Gajian"
-          subtitle="Kalau jatuh di weekend/libur, gajian dianggap maju ke hari kerja terdekat sebelumnya."
+          subtitle="Dipakai untuk hitung mundur gajian dan prakiraan saldo di Dashboard."
         />
         <CardBody className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
@@ -96,6 +96,15 @@ export default function Settings() {
               </p>
             </div>
           </div>
+          <label className="flex items-start justify-between gap-4 cursor-pointer">
+            <span>
+              <span className="block text-sm font-medium text-fg">Majukan kalau jatuh di weekend/libur</span>
+              <span className="block text-2xs text-muted mt-0.5">
+                Gajian dianggap cair di hari kerja terdekat sebelumnya. Matikan kalau gajian kamu tetap cair di tanggalnya.
+              </span>
+            </span>
+            <Toggle checked={settings.payDayShift} onChange={(v) => updateSettings({ payDayShift: v })} />
+          </label>
         </CardBody>
       </Card>
 

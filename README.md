@@ -29,7 +29,7 @@ yang sama dan langsung sinkron.
 - **Budget** — batas pengeluaran per kategori + status pemakaian.
 - **Reports** — pengeluaran per kategori, ringkasan bulanan, tren, dan **ringkasan investasi**
   (nilai portfolio, setoran/tarikan & untung-rugi bulan berjalan, per rekening).
-- **Settings** — tanggal gajian (payDay), tema (dark/light), mata uang.
+- **Settings** — tanggal gajian (payDay) + opsi majukan ke hari kerja sebelumnya kalau jatuh di weekend/libur, tema (dark/light), mata uang.
 - **Keamanan** — login PIN + lock screen + rate-limit anti brute-force.
 
 ---

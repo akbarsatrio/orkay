@@ -18,7 +18,7 @@ export function DataProvider({ children }) {
   const [transactions, setTransactions] = useState([])
   const [installments, setInstallments] = useState([])
   const [investmentSnapshots, setInvestmentSnapshots] = useState([])
-  const [settings, setSettings] = useState({ payDay: 28, theme: 'light', currency: 'IDR' })
+  const [settings, setSettings] = useState({ payDay: 28, payDayShift: true, theme: 'light', currency: 'IDR' })
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -37,7 +37,7 @@ export function DataProvider({ children }) {
       setTransactions((data.transactions || []).slice().sort(sortByDateDesc))
       setInstallments(data.installments || [])
       setInvestmentSnapshots(data.investmentSnapshots || [])
-      setSettings(data.settings || { payDay: 28, theme: 'light', currency: 'IDR' })
+      setSettings(data.settings || { payDay: 28, payDayShift: true, theme: 'light', currency: 'IDR' })
     } catch (e) {
       setError(e.message || 'Gagal memuat data dari server')
     } finally {
