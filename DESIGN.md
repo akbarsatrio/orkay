@@ -89,7 +89,7 @@ Fokus dibuat lewat ukuran di posisi yang sudah ada, bukan dengan memindah atau m
 | Transaksi | Catat cepat & cari transaksi | Tidak ada; fokusnya tombol tambah + daftar. |
 | Tagihan Rutin | Berapa tagihan tetap per bulan, mana yang belum dibayar | Total tagihan aktif / bulan. Jumlah tagihan aktif dan "menunggu konfirmasi" jadi satu baris di bawahnya; tombol Tambah di kanan. |
 | Anggaran | Masih aman belanja bulan ini? | **Terpakai** (total pengeluaran di kategori beranggaran) dengan bar total di bawahnya; total anggaran dan jumlah "lewat batas" jadi satu baris keterangan; tombol Atur di kanan. Baris kategori: nama + badge status, **Sisa** rata kanan (angka penentu keputusan), lalu bar selebar baris dengan "Terpakai / Limit". Bar normal `fg`, ≥ 85% `warning`, ≥ 100% `negative` (aksen oranye tidak dipakai). |
-| Settings | Ubah pengaturan | Tidak ada. |
+| Settings | Ubah pengaturan | Tidak ada. Bergaya menu pengaturan HP (keputusan owner), datar tanpa kotak (gaya Android). Menu dikelompokkan (Tampilan; Keuangan; Zona Berbahaya); tiap baris: ikon 34px, nama, nilai sekarang di kanan (mis. "Ikut sistem", "Tgl 28", jumlah kategori). **HP & tablet:** `/settings` = menu, tiap baris membuka sub-layar `/settings/:section` dengan tombol kembali di Topbar. **Desktop:** menu di kiri (bagian aktif disorot), isi bagian di kanan; `/settings` membuka Versi tampilan. Pilihan tunggal (versi tampilan, tema) berupa daftar baris dengan centang, bukan `Segmented`. Destroy Data membuka dialog, bukan sub-layar. Bagian didefinisikan di `lib/settingsSections.js`. |
 
 ### Baris tagihan
 

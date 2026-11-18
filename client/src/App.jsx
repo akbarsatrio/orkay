@@ -16,6 +16,8 @@ import Recurring from './pages/Recurring.jsx'
 import Budgets from './pages/Budgets.jsx'
 import Reports from './pages/Reports.jsx'
 import Settings from './pages/Settings.jsx'
+import { SETTINGS_SECTIONS } from './lib/settingsSections.js'
+import { useIsMobile } from './components/ui/SwipeRow.jsx'
 
 const meta = {
   '/': { title: 'Dashboard', subtitle: 'Ringkasan keuangan kamu' },
@@ -32,7 +34,13 @@ export default function App() {
   const [txOpen, setTxOpen] = useState(false)
   const { pathname } = useLocation()
   const { loading, error, bootstrap } = useData()
-  const m = meta[pathname] || { title: 'Orkay' }
+  const mobile = useIsMobile()
+  // Sub-layar Pengaturan di HP & tablet: judul = nama bagian + tombol kembali ke menu.
+  // Desktop menampilkan menu & isi berdampingan, jadi judul tetap "Pengaturan".
+  const settingsSection = SETTINGS_SECTIONS[pathname.match(/^\/settings\/([^/]+)/)?.[1]]
+  const m = settingsSection
+    ? (mobile ? { title: settingsSection.title, subtitle: settingsSection.subtitle, back: '/settings' } : meta['/settings'])
+    : meta[pathname] || { title: 'Orkay' }
 
   if (loading) {
     return (
@@ -68,7 +76,7 @@ export default function App() {
 
       <div className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-12">
         <div className="max-w-[1280px] w-full mx-auto">
-          <Topbar title={m.title} subtitle={m.subtitle} />
+          <Topbar title={m.title} subtitle={m.subtitle} back={m.back} />
           <NewUiNotice />
           <main>
             <Routes>
@@ -79,7 +87,7 @@ export default function App() {
               <Route path="/recurring" element={<Recurring />} />
               <Route path="/budgets" element={<Budgets />} />
               <Route path="/reports" element={<Reports />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings/:section?" element={<Settings />} />
             </Routes>
           </main>
         </div>

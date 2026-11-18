@@ -17,7 +17,7 @@ export default function NewUiNotice() {
     <div role="status" className="mb-6 flex items-start gap-3 rounded-md bg-surface-2 pl-4 pr-2 py-2">
       <p className="flex-1 text-sm text-fg py-1.5">
         Ini tampilan baru Orkay. Kalau lebih nyaman yang lama, kamu bisa balik kapan aja lewat{' '}
-        <Link to="/settings" onClick={dismiss} className="font-medium underline underline-offset-2">
+        <Link to="/settings/tampilan" onClick={dismiss} className="font-medium underline underline-offset-2">
           Pengaturan
         </Link>
         .
