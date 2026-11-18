@@ -19,6 +19,30 @@ export function normalizeTx(t) {
     installmentId: t.installmentId ?? null,
     statementPeriod: t.statementPeriod ?? null,
     note: t.note ?? null,
+    ...normalizeLocation(t),
+  }
+}
+
+const trimOrNull = (v, max) => {
+  if (v == null) return null
+  const s = String(v).trim().slice(0, max)
+  return s || null
+}
+
+// Lokasi opsional: lat & lng harus lengkap dan valid, kalau tidak semua kolom lokasi dikosongkan.
+// Transfer tidak punya tempat, jadi lokasinya selalu kosong.
+export function normalizeLocation(t) {
+  const lat = t.lat == null || t.lat === '' ? NaN : Number(t.lat)
+  const lng = t.lng == null || t.lng === '' ? NaN : Number(t.lng)
+  const valid = t.type !== 'transfer' && Number.isFinite(lat) && Number.isFinite(lng)
+    && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+  if (!valid) return { lat: null, lng: null, placeName: null, placeAddress: null, placeId: null }
+  return {
+    lat,
+    lng,
+    placeName: trimOrNull(t.placeName, 255),
+    placeAddress: trimOrNull(t.placeAddress, 500),
+    placeId: trimOrNull(t.placeId, 80),
   }
 }
 

@@ -76,6 +76,12 @@ async function migrateSchema() {
     ['accounts', 'billingModel', "VARCHAR(20) NOT NULL DEFAULT 'statement'"],
     ['transactions', 'installmentId', 'VARCHAR(40)'],
     ['transactions', 'statementPeriod', 'VARCHAR(7)'],
+    // Lokasi transaksi (opsional). placeId = "osm:<tipe><id>" dari OpenStreetMap (Photon) kalau hasil pencarian.
+    ['transactions', 'lat', 'DOUBLE'],
+    ['transactions', 'lng', 'DOUBLE'],
+    ['transactions', 'placeName', 'VARCHAR(255)'],
+    ['transactions', 'placeAddress', 'VARCHAR(500)'],
+    ['transactions', 'placeId', 'VARCHAR(80)'],
     ['investment_snapshots', 'cashAccountId', 'VARCHAR(40)'],
     ['investment_snapshots', 'linkedTxId', 'VARCHAR(40)'],
     ['settings', 'payDayShift', 'TINYINT(1) NOT NULL DEFAULT 1'],

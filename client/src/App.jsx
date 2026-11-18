@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import { Loader2, WifiOff } from 'lucide-react'
 import { useData } from './context/DataContext.jsx'
@@ -20,6 +20,9 @@ import Settings from './pages/Settings.jsx'
 import { SETTINGS_SECTIONS } from './lib/settingsSections.js'
 import { useIsMobile } from './components/ui/SwipeRow.jsx'
 
+// Peta dimuat terpisah: mapbox-gl besar dan hanya dibutuhkan di menu ini.
+const TransactionMap = lazy(() => import('./pages/TransactionMap.jsx'))
+
 const meta = {
   '/': { title: 'Dashboard', subtitle: 'Ringkasan keuangan kamu' },
   '/transactions': { title: 'Transaksi', subtitle: 'Semua catatan pemasukan & pengeluaran' },
@@ -28,6 +31,7 @@ const meta = {
   '/recurring': { title: 'Tagihan Rutin', subtitle: 'Pengeluaran tetap tiap bulan' },
   '/budgets': { title: 'Anggaran', subtitle: 'Batas pengeluaran per kategori' },
   '/reports': { title: 'Laporan', subtitle: 'Rekap bulanan keuangan' },
+  '/peta': { title: 'Peta Transaksi', subtitle: 'Di mana uang kamu keluar' },
   '/settings': { title: 'Pengaturan', subtitle: 'Kategori, sumber dana & payday' },
 }
 
@@ -69,28 +73,46 @@ export default function App() {
     )
   }
 
+  const routes = (
+    <Routes>
+      <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
+      <Route path="/transactions" element={<Transactions />} />
+      <Route path="/accounts" element={<Accounts />} />
+      <Route path="/investments" element={<Investments />} />
+      <Route path="/recurring" element={<Recurring />} />
+      <Route path="/budgets" element={<Budgets />} />
+      <Route path="/reports" element={<Reports />} />
+      <Route
+        path="/peta"
+        element={(
+          <Suspense fallback={<p className="h-full flex items-center justify-center gap-2 text-sm text-muted"><Loader2 size={16} className="animate-spin" aria-hidden="true" /> Memuat peta…</p>}>
+            <TransactionMap />
+          </Suspense>
+        )}
+      />
+      <Route path="/settings/:section?" element={<Settings />} />
+    </Routes>
+  )
+
+  // Peta Transaksi memenuhi area konten (dari sidebar sampai tepi kanan, setinggi layar) dan membawa judul sendiri
+  // di panel mengambang, jadi tanpa Topbar & padding halaman.
+  const fullBleed = pathname === '/peta'
+
   return (
     <div className="min-h-screen flex bg-bg theme-transition">
       <Sidebar onQuickAdd={() => setTxOpen(true)} />
 
-      <div className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-12">
-        <div className="max-w-[1280px] w-full mx-auto">
-          <Topbar title={m.title} subtitle={m.subtitle} back={m.back} />
-          <NewUiNotice />
-          <main>
-            <Routes>
-              <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
-              <Route path="/transactions" element={<Transactions />} />
-              <Route path="/accounts" element={<Accounts />} />
-              <Route path="/investments" element={<Investments />} />
-              <Route path="/recurring" element={<Recurring />} />
-              <Route path="/budgets" element={<Budgets />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/settings/:section?" element={<Settings />} />
-            </Routes>
-          </main>
+      {fullBleed ? (
+        <main className="flex-1 min-w-0 h-[100dvh]">{routes}</main>
+      ) : (
+        <div className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-12">
+          <div className="max-w-[1280px] w-full mx-auto">
+            <Topbar title={m.title} subtitle={m.subtitle} back={m.back} />
+            <NewUiNotice />
+            <main>{routes}</main>
+          </div>
         </div>
-      </div>
+      )}
 
       <BottomNav onQuickAdd={() => setTxOpen(true)} />
       <TransactionForm open={txOpen} onClose={() => setTxOpen(false)} />

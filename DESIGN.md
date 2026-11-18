@@ -90,6 +90,63 @@ Fokus dibuat lewat ukuran di posisi yang sudah ada, bukan dengan memindah atau m
 | Tagihan Rutin | Berapa tagihan tetap per bulan, mana yang belum dibayar | Total tagihan aktif / bulan. Jumlah tagihan aktif dan "menunggu konfirmasi" jadi satu baris di bawahnya; tombol Tambah di kanan. |
 | Anggaran | Masih aman belanja bulan ini? | **Terpakai** (total pengeluaran di kategori beranggaran) dengan bar total di bawahnya; total anggaran dan jumlah "lewat batas" jadi satu baris keterangan; tombol Atur di kanan. Baris kategori: nama + badge status, **Sisa** rata kanan (angka penentu keputusan), lalu bar selebar baris dengan "Terpakai / Limit". Bar normal `fg`, ≥ 85% `warning`, ≥ 100% `negative` (aksen oranye tidak dipakai). |
 | Settings | Ubah pengaturan | Tidak ada. Bergaya menu pengaturan HP (keputusan owner), datar tanpa kotak (gaya Android). Menu dikelompokkan (Tampilan; Keuangan; Zona Berbahaya); tiap baris: ikon 34px, nama, nilai sekarang di kanan (mis. "Ikut sistem", "Tgl 28", jumlah kategori). **HP & tablet:** `/settings` = menu, tiap baris membuka sub-layar `/settings/:section` dengan tombol kembali di Topbar. **Desktop:** menu di kiri (bagian aktif disorot), isi bagian di kanan; `/settings` membuka Versi tampilan. Pilihan tunggal (versi tampilan, tema) berupa daftar baris dengan centang, bukan `Segmented`. Destroy Data membuka dialog, bukan sub-layar. Bagian didefinisikan di `lib/settingsSections.js`. |
+| Peta Transaksi | Di mana uang paling banyak keluar | Peta itu sendiri; angka **Total berlokasi** (`large`) di panel kanan bersama cakupan "N dari M transaksi punya lokasi" supaya peta tidak terlihat lengkap padahal belum. Detail di bagian "Peta Transaksi" di bawah. |
+
+### Peta Transaksi
+
+- **Peta dasar Mapbox `light-v11` / `dark-v11`** ikut tema: peta monokrom supaya warna kategori pada titik terbaca; aksen
+  oranye tidak dipakai di peta.
+- **Tempat** (untuk rincian, Cluster, Heatmap): transaksi dengan `placeId` sama digabung; titik GPS tanpa `placeId` ikut
+  tempat terdekat ≤ 50 m; dua `placeId` berbeda tidak pernah digabung (toko bersebelahan di mal tetap terpisah). Logika di
+  `lib/places.js`. Tempat/titik yang dibuka diberi **lingkaran 50 m** (isian `fg` 8% + garis putus-putus) dan catatan
+  "Transaksi dari titik GPS dalam lingkaran 50 m ikut tempat ini", supaya aturan penggabungan terlihat, bukan tersembunyi.
+- **Titik (keputusan owner)**: satu titik per transaksi di koordinat aslinya, tanpa penggabungan; warna = kategori
+  transaksinya, luas sebanding nominal (akar, 5–14 px, lebih kecil dari titik tempat karena bisa bertumpuk). Ketuk titik =
+  rincian tempatnya. **Cluster**: lingkaran `fg` berlabel total ringkas tanpa "Rp" ("80 rb", "1,2 jt") supaya muat; label
+  jadi "N trx" saat saldo disembunyikan. **Heatmap**: ramp kuning → merah tua (konvensi "makin panas makin banyak"), bobot
+  nominal atau frekuensi; di zoom dekat memudar jadi titik tempat supaya tetap bisa diketuk.
+- **Rincian tempat**: nama bisa diubah (ikon pensil di judul, berlaku untuk semua transaksi tempat itu di semua periode),
+  dan dua aksi lebar penuh yang sama dengan "Titik dipilih": **Buat transaksi baru di sini** (primer) dan **Pasang ke
+  transaksi lama** (sekunder). Lebar penuh & bertumpuk supaya terbaca sebagai sepasang pilihan, bukan dua tombol beda
+  ukuran yang membungkus.
+- **Tooltip saat hover (desktop/perangkat dengan kursor; di layar sentuh ketuk = rincian)**: melayang di atas titik
+  (di bawahnya kalau titik dekat tepi atas), dijaga tetap di area peta yang tidak tertutup panel, tidak menangkap kursor,
+  hilang saat peta bergerak. Isi: **Titik** = satu transaksi (catatan/kategori, nominal besar, tanggal · kategori ·
+  rekening, nama tempat); kalau beberapa transaksi berkoordinat persis sama (bertumpuk), ringkasannya. **Cluster** dan
+  titik tempat = 3 transaksi terbesar, "+N lainnya", dan "Total N transaksi" + nominal. Nominal ikut tombol sembunyikan
+  saldo. Bentuk sama dengan panel mengambang tapi `rounded-lg` (lebih kecil, sementara).
+- **Peta penuh, kontrol mengambang (keputusan owner).** Peta memenuhi area konten dari tepi sidebar sampai tepi kanan,
+  setinggi layar, tanpa Topbar & padding halaman (`App.jsx` → `fullBleed`). Semua kontrol berupa **panel mengambang**:
+  `rounded-xl` (lebih besar dari tombol/isian `rounded-md` supaya terbaca sebagai wadah), latar `bg` padat, garis `border`,
+  dan `shadow-pop` sebagai penanda elevasi di atas peta. Ini satu-satunya pengecualian aturan "tanpa card pembungkus":
+  tanpa wadah, kontrol tidak terbaca di atas peta. Tanpa blur (peta di belakang tetap tajam, kontras teks terjamin).
+- **Panel seringkas mungkin (keputusan owner)**: peta adalah isinya, panel hanya kontrol.
+  - **Desktop**: panel kiri atas satu baris: judul, pemilih bulan (atau "Semua waktu"), tombol **Filter**, pilihan mode.
+    Filter membuka baris tambahan di panel yang sama (periode, tipe, kategori, rekening, bobot heatmap saat Heatmap);
+    Escape menutupnya. Kolom kanan: panel ringkasan kecil (total, cakupan, sembunyikan saldo, pilihan "Lompat ke
+    tempat") dan panel rincian di bawahnya **hanya saat** tempat/titik dipilih (rincian tempat → "Titik dipilih" →
+    "Pasang ke transaksi lama"), ditutup dengan ×. Daftar "Tempat paling boros" dihapus (keputusan owner).
+  - **HP**: panel atas: judul, tombol Filter (badge oranye = jumlah filter aktif, sama seperti Transaksi; isinya juga
+    pemilih bulan), pilihan mode selebar panel. Panel bawah di atas bottom nav: ringkasan, ditambah rincian saat
+    tempat/titik dipilih (maks 60% tinggi layar). Tombol zoom disembunyikan (cubit dua jari).
+- **Panel tidak menutupi data**: ukuran panel diukur (`ResizeObserver`) lalu dipakai sebagai jarak tepi `fitBounds`,
+  pusat `easeTo`, titik tengah, dan titik/tempat yang sedang dibuka digeser masuk ke area terlihat kalau tertutup panel
+  yang membesar.
+- **Kontrol Mapbox (keputusan owner)**: lokasi saya + zoom di **kiri bawah**; logo + atribusi di **pojok kanan bawah**.
+  Kolom panel kanan desktop berhenti 3rem di atas tepi bawah supaya logo & atribusi (wajib terlihat) tidak tertutup. Di HP
+  keduanya diangkat ke atas panel bawah lewat CSS var `--inset-bottom`.
+- **Alternatif keyboard** (titik di kanvas peta tidak bisa difokus): pilihan "Lompat ke tempat" di panel ringkasan
+  (desktop) membuka rincian tempat mana pun; untuk titik baru, fokus ke peta (Tab), geser dengan tombol panah, lalu
+  **Enter** memilih tengah area terlihat. Tombol peta ⌖ untuk ini dihapus atas keputusan owner; label kanvas menjelaskan
+  cara pakainya ke pembaca layar.
+- **Pencarian tempat dari OpenStreetMap (Photon)**, bukan Search Box Mapbox: hasil Search Box tidak boleh disimpan permanen
+  menurut ToS Mapbox (keputusan owner). Atribusi "© OpenStreetMap contributors" tampil di bawah hasil pencarian.
+- **Lokasi di form transaksi** opsional, hanya untuk pengeluaran & pemasukan biasa (transfer tidak punya tempat, cicilan
+  dicatat lewat tagihan). Disembunyikan di balik saklar **Tambah lokasi** (keputusan owner, pola sama dengan saklar
+  Cicilan) supaya form tetap pendek; saklar sudah menyala kalau transaksi punya lokasi (ubah transaksi, atau dibuka dari
+  Peta), dan mematikannya menghapus lokasi. Isi: cari tempat (tempat yang pernah dipakai muncul duluan, ikon riwayat),
+  atau Lokasi saat ini lalu pilih nama dari tempat terdekat. "Tetap di sini" mempertahankan lokasi untuk transaksi
+  berikutnya.
 
 ### Baris tagihan
 
@@ -249,7 +306,8 @@ Kandidat dari owner: Host Grotesk, Space Grotesk, Instrument Sans. Dicek dari fi
   dan tombol tambah melayang di HP.
 - Input: isian abu `surface-2` + garis tipis `border` saat diam, garis hitam saat fokus (`fieldClass` di
   `components/ui/index.jsx`, dipakai juga oleh input mentah). Garis gelap permanen terlalu kontras tanpa kotak di sekitarnya.
-- Shadow: hanya sheet, modal, dan tombol tambah melayang di HP. Blur: hanya backdrop modal/sheet.
+- Shadow: hanya sheet, modal, tombol tambah melayang di HP, panel mengambang dan tooltip di atas Peta Transaksi
+  (elevasi di atas peta). Blur: hanya backdrop modal/sheet.
   Gradien: tidak ada.
 
 ## Navigasi (shell)
@@ -260,8 +318,9 @@ Menu, urutan menu, dan isinya tetap. Gayanya:
   konteks, angka raksasa jadi fokus. Di kanan judul hanya tombol sembunyikan saldo; tema diatur di Pengaturan.
 - **Sidebar (desktop) gelap** (`rail`, hitam di tema terang, abu arang di tema gelap): identitas shell dan pemisah tegas
   antara navigasi dan konten putih. Isi: logo + "Orkay" besar, tombol **Tambah Transaksi** oranye, menu dalam dua kelompok
-  (harian: Dashboard, Transaksi, Rekening, Investasi; perencanaan: Tagihan Rutin, Anggaran, Laporan, Pengaturan; urutan
-  tetap), menu aktif berlatar abu gelap dengan ikon oranye, lalu Kunci Aplikasi.
+  (harian: Dashboard, Transaksi, Rekening, Investasi; perencanaan: Tagihan Rutin, Anggaran, Laporan, Peta Transaksi,
+  Pengaturan; urutan tetap, Peta Transaksi ditambahkan owner), menu aktif berlatar abu gelap dengan ikon oranye, lalu
+  Kunci Aplikasi.
 - **Bottom nav (HP)**: latar solid, garis tipis di atas, dan **tombol tambah bulat oranye yang melayang** di tengah
   (keputusan owner: tombol melayang adalah penegasan keras bahwa mencatat transaksi adalah aksi inti).
 - **Menu Lainnya** berupa daftar baris, bukan grid tile.

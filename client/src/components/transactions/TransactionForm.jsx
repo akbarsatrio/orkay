@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, CreditCard, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, CreditCard, CheckCircle2, MapPin } from 'lucide-react'
 import { Modal, Button, Input, Select, Textarea, Segmented, Toggle, FormDeleteButton } from '../ui/index.jsx'
+import LocationField from './LocationField.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber, toISODate, formatRupiah } from '../../lib/format.js'
 import { load, save } from '../../lib/storage.js'
+import { groupPlaces, hasLocation, locationOf } from '../../lib/places.js'
 
 const empty = (type = 'expense') => ({
   type,
@@ -17,6 +19,12 @@ const empty = (type = 'expense') => ({
   fee: 0,
   feeCategoryId: '',
   note: '',
+  // lokasi (opsional)
+  lat: null,
+  lng: null,
+  placeName: '',
+  placeAddress: '',
+  placeId: null,
   // cicilan
   installment: false,
   tenorMode: 'preset', // 'preset' | 'custom'
@@ -31,8 +39,9 @@ const empty = (type = 'expense') => ({
 
 const TENORS = [1, 3, 6, 9, 12, 24]
 
-export default function TransactionForm({ open, onClose, editing, onDelete }) {
-  const { categories, accounts, incomeSources, addTransaction, updateTransaction, addInstallment } = useData()
+// defaults: nilai awal untuk transaksi baru (mis. lokasi dari titik yang dipilih di Peta Transaksi).
+export default function TransactionForm({ open, onClose, editing, onDelete, defaults }) {
+  const { categories, accounts, incomeSources, transactions, addTransaction, updateTransaction, addInstallment } = useData()
   const [form, setForm] = useState(empty())
   const [amountStr, setAmountStr] = useState('')
   const [feeStr, setFeeStr] = useState('')
@@ -43,6 +52,7 @@ export default function TransactionForm({ open, onClose, editing, onDelete }) {
   // "Tetap di sini": setelah simpan, form tetap terbuka untuk input berikutnya.
   // Preferensi dibaca ulang tiap form dibuka (ada >1 instance form: topbar & halaman Transaksi).
   const [stayOpen, setStayOpen] = useState(false)
+  const [showLocation, setShowLocation] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
   const [lastSaved, setLastSaved] = useState('')
   const amountRef = useRef(null)
@@ -58,18 +68,27 @@ export default function TransactionForm({ open, onClose, editing, onDelete }) {
     setSavedCount(0)
     setLastSaved('')
     setStayOpen(load('txStayOpen', false))
+    // Lokasi tersembunyi di balik saklar; langsung terbuka kalau transaksi sudah punya lokasi (ubah, atau dari Peta).
+    setShowLocation(editing ? hasLocation(editing) : defaults?.lat != null)
     if (editing) {
       setForm({ ...empty(editing.type), ...editing })
       setAmountStr(formatNumber(editing.amount))
       setFeeStr(editing.fee ? formatNumber(editing.fee) : '')
     } else {
-      setForm(empty())
+      setForm({ ...empty(defaults?.type), ...defaults })
       setAmountStr('')
       setFeeStr('')
     }
     setInterestStr('')
     setMonthlyStr('')
-  }, [open, editing])
+  }, [open, editing, defaults])
+
+  // Tempat yang pernah dipakai (untuk saran lokasi) dan titik acuan pencarian (lokasi transaksi terakhir).
+  const savedPlaces = useMemo(() => (open ? groupPlaces(transactions) : []), [open, transactions])
+  const searchBias = useMemo(() => {
+    const last = transactions.find(hasLocation)
+    return last ? { lat: last.lat, lng: last.lng } : null
+  }, [transactions])
 
   const isIncome = form.type === 'income'
   const isTransfer = form.type === 'transfer'
@@ -185,13 +204,15 @@ export default function TransactionForm({ open, onClose, editing, onDelete }) {
           categoryId: form.categoryId,
           accountId: form.accountId,
           note: form.note.trim(),
+          ...(locationOf(form) || { lat: null, lng: null, placeName: null, placeAddress: null, placeId: null }),
         }
         if (isIncome && form.incomeSourceId) payload.incomeSourceId = form.incomeSourceId
         if (editing) await updateTransaction(editing.id, payload)
         else await addTransaction(payload)
       }
       if (!editing && stayOpen) {
-        // Tipe, tanggal & rekening dipertahankan; sisanya dikosongkan untuk transaksi berikutnya.
+        // Tipe, tanggal, rekening & lokasi dipertahankan (belanja beberapa barang di tempat yang sama);
+        // sisanya dikosongkan untuk transaksi berikutnya.
         const label = useInstallment
           ? `Cicilan ${form.note.trim() || availableCats.find((c) => c.id === form.categoryId)?.name || ''}`.trim()
           : form.note.trim() || (isTransfer ? 'Transfer' : availableCats.find((c) => c.id === form.categoryId)?.name || 'Transaksi')
@@ -203,6 +224,7 @@ export default function TransactionForm({ open, onClose, editing, onDelete }) {
           accountId: form.accountId,
           fromAccountId: form.fromAccountId,
           toAccountId: form.toAccountId,
+          ...locationOf(form),
         })
         setAmountStr('')
         setFeeStr('')
@@ -497,6 +519,35 @@ export default function TransactionForm({ open, onClose, editing, onDelete }) {
         <Input type="date" label={useInstallment ? 'Tanggal pembelian' : 'Tanggal'} value={form.date} onChange={(e) => set({ date: e.target.value })} />
 
         <Textarea label={useInstallment ? 'Nama barang / catatan' : 'Catatan (opsional)'} rows={2} value={form.note} onChange={(e) => set({ note: e.target.value })} placeholder={isTransfer ? 'mis. Top up GoPay' : useInstallment ? 'mis. iPhone 15' : 'mis. Makan siang di kantin'} />
+
+        {/* Lokasi hanya untuk pengeluaran & pemasukan biasa: transfer tidak punya tempat, cicilan dicatat lewat tagihan.
+            Disembunyikan di balik saklar (keputusan owner) supaya form tetap pendek; mematikan saklar menghapus lokasi. */}
+        {!isTransfer && !useInstallment && (
+          <div className="border-t border-border pt-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-sm font-medium text-fg">
+                <MapPin size={15} className="text-muted" aria-hidden="true" /> Tambah lokasi
+              </span>
+              <Toggle
+                checked={showLocation}
+                label="Tambah lokasi"
+                onChange={(v) => {
+                  setShowLocation(v)
+                  if (!v) set({ lat: null, lng: null, placeName: '', placeAddress: '', placeId: null })
+                }}
+              />
+            </div>
+            {showLocation && (
+              <LocationField
+                label={null}
+                value={locationOf(form)}
+                onChange={(loc) => set(loc || { lat: null, lng: null, placeName: '', placeAddress: '', placeId: null })}
+                savedPlaces={savedPlaces}
+                bias={locationOf(form) || searchBias}
+              />
+            )}
+          </div>
+        )}
 
         {!accountKindValid && (form.accountId || form.fromAccountId || form.toAccountId) && (
           <p className="text-xs text-warning">

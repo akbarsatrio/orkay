@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { TrendingUp, Repeat, Target, FileBarChart, Settings, LogOut, X } from 'lucide-react'
+import { TrendingUp, Repeat, Target, FileBarChart, MapPinned, Settings, LogOut, X } from 'lucide-react'
 import { clearToken } from '../../lib/api.js'
 
 const moreNav = [
@@ -8,6 +8,7 @@ const moreNav = [
   { to: '/recurring', label: 'Tagihan Rutin', icon: Repeat },
   { to: '/budgets', label: 'Anggaran', icon: Target },
   { to: '/reports', label: 'Laporan', icon: FileBarChart },
+  { to: '/peta', label: 'Peta Transaksi', icon: MapPinned },
   { to: '/settings', label: 'Pengaturan', icon: Settings },
 ]
 
