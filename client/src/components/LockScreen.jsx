@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Lock, Loader2 } from 'lucide-react'
 import { Button } from './ui/index.jsx'
+import Wordmark from './Wordmark.jsx'
 import { login } from '../lib/api.js'
 
 export default function LockScreen({ onUnlock }) {
@@ -34,8 +35,9 @@ export default function LockScreen({ onUnlock }) {
     <div className="min-h-screen flex items-center justify-center bg-bg px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8">
-          <img src="/wallet-new.svg" alt="" className="h-10 w-10 mb-4" />
-          <h1 className="text-4xl font-bold text-fg leading-none">Orkay</h1>
+          <h1>
+            <Wordmark className="h-12 w-auto text-fg" />
+          </h1>
           <p className="text-sm text-muted mt-2">Masukkan PIN untuk mengakses datamu</p>
         </div>
 
