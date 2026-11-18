@@ -225,25 +225,24 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
       <div
         ref={ref}
         className={cx(
-          'relative w-full flex flex-col bg-surface border border-border shadow-pop',
+          'relative w-full flex flex-col bg-bg shadow-pop sm:bg-surface sm:border sm:border-border',
           'rounded-t-2xl sm:rounded-card',
           'animate-[slideUp_.2s_ease] sm:animate-[popIn_.15s_ease]',
           'max-h-[90dvh] sm:max-h-[85vh]',
           sizes[size]
         )}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <h3 className="text-base font-semibold text-fg">{title}</h3>
+        <div className="flex items-center justify-between px-5 pt-5 pb-2 shrink-0 sm:py-4 sm:border-b sm:border-border">
+          <h2 className="text-xl font-bold text-fg sm:text-base sm:font-semibold">{title}</h2>
           <button
             onClick={onClose}
             aria-label="Tutup"
             className="text-muted hover:text-fg h-9 w-9 touch:h-11 touch:w-11 -mr-2 flex items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
           >
-            <X size={18} className="sm:hidden" />
-            <X size={16} className="hidden sm:block" />
+            <X size={16} />
           </button>
         </div>
-        <div ref={bodyRef} className="px-5 py-4 overflow-y-auto overscroll-contain flex-1">{children}</div>
+        <div ref={bodyRef} className="px-5 pt-2 pb-4 sm:py-4 overflow-y-auto overscroll-contain flex-1">{children}</div>
         {footer && (
           <div className="flex items-center justify-end gap-2 px-5 py-4 border-t border-border shrink-0 pb-[max(1rem,env(safe-area-inset-bottom))]">
             {footer}
