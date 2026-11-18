@@ -312,10 +312,10 @@ export default function TransactionMap() {
       onKeyDown={(e) => { if (e.key === 'Escape' && filterOpen) setFilterOpen(false) }}
       className={cx(
         'relative h-full w-full overflow-hidden bg-surface-2',
-        // Kontrol & atribusi Mapbox digeser keluar dari bawah panel.
-        '[&_.mapboxgl-ctrl-bottom-right]:right-[var(--inset-right)] [&_.mapboxgl-ctrl-bottom-right]:bottom-[var(--inset-bottom)] [&_.mapboxgl-ctrl-bottom-left]:bottom-[var(--inset-bottom)]'
+        // HP: kontrol (kiri bawah) & logo + atribusi (kanan bawah) diangkat ke atas panel bawah.
+        '[&_.mapboxgl-ctrl-bottom-right]:bottom-[var(--inset-bottom)] [&_.mapboxgl-ctrl-bottom-left]:bottom-[var(--inset-bottom)]'
       )}
-      style={{ '--inset-right': `${insets.right}px`, '--inset-bottom': `${insets.bottom}px` }}
+      style={{ '--inset-bottom': `${insets.bottom}px` }}
     >
       <div className="absolute inset-0">{mapArea}</div>
       {hover && (
@@ -383,7 +383,8 @@ export default function TransactionMap() {
       {/* Desktop: kolom kanan = ringkasan ringkas, lalu panel rincian hanya saat tempat/titik dipilih.
           Hanya satu dari kolom kanan / panel bawah yang dipasang, supaya isi panel tidak ganda. */}
       {!mobile && (
-        <div ref={sideRef} className="absolute z-10 right-4 top-4 bottom-4 w-[22rem] flex flex-col gap-3 pointer-events-none">
+        // Berhenti 3rem di atas tepi bawah: pojok kanan bawah dipakai logo & atribusi Mapbox (wajib terlihat).
+        <div ref={sideRef} className="absolute z-10 right-4 top-4 bottom-12 w-[22rem] flex flex-col gap-3 pointer-events-none">
           <section aria-label="Ringkasan peta" className={cx(FLOAT, 'shrink-0 px-5 py-4 pointer-events-auto')}>
             {summary}
             {places.length > 0 && (

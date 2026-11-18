@@ -130,8 +130,11 @@ Fokus dibuat lewat ukuran di posisi yang sudah ada, bukan dengan memindah atau m
     pemilih bulan), pilihan mode selebar panel. Panel bawah di atas bottom nav: ringkasan, ditambah rincian saat
     tempat/titik dipilih (maks 60% tinggi layar). Tombol zoom disembunyikan (cubit dua jari).
 - **Panel tidak menutupi data**: ukuran panel diukur (`ResizeObserver`) lalu dipakai sebagai jarak tepi `fitBounds`,
-  pusat `easeTo`, titik tengah, posisi kontrol + atribusi Mapbox (CSS var `--inset-right` / `--inset-bottom`), dan
-  titik/tempat yang sedang dibuka digeser masuk ke area terlihat kalau tertutup panel yang membesar.
+  pusat `easeTo`, titik tengah, dan titik/tempat yang sedang dibuka digeser masuk ke area terlihat kalau tertutup panel
+  yang membesar.
+- **Kontrol Mapbox (keputusan owner)**: lokasi saya + zoom di **kiri bawah**; logo + atribusi di **pojok kanan bawah**.
+  Kolom panel kanan desktop berhenti 3rem di atas tepi bawah supaya logo & atribusi (wajib terlihat) tidak tertutup. Di HP
+  keduanya diangkat ke atas panel bawah lewat CSS var `--inset-bottom`.
 - **Alternatif keyboard** (titik di kanvas peta tidak bisa difokus): pilihan "Lompat ke tempat" di panel ringkasan
   (desktop) membuka rincian tempat mana pun; untuk titik baru, fokus ke peta (Tab), geser dengan tombol panah, lalu
   **Enter** memilih tengah area terlihat. Tombol peta ⌖ untuk ini dihapus atas keputusan owner; label kanvas menjelaskan
@@ -139,8 +142,11 @@ Fokus dibuat lewat ukuran di posisi yang sudah ada, bukan dengan memindah atau m
 - **Pencarian tempat dari OpenStreetMap (Photon)**, bukan Search Box Mapbox: hasil Search Box tidak boleh disimpan permanen
   menurut ToS Mapbox (keputusan owner). Atribusi "© OpenStreetMap contributors" tampil di bawah hasil pencarian.
 - **Lokasi di form transaksi** opsional, hanya untuk pengeluaran & pemasukan biasa (transfer tidak punya tempat, cicilan
-  dicatat lewat tagihan). Isi: cari tempat (tempat yang pernah dipakai muncul duluan, ikon riwayat), atau Lokasi saat ini
-  lalu pilih nama dari tempat terdekat. "Tetap di sini" mempertahankan lokasi untuk transaksi berikutnya.
+  dicatat lewat tagihan). Disembunyikan di balik saklar **Tambah lokasi** (keputusan owner, pola sama dengan saklar
+  Cicilan) supaya form tetap pendek; saklar sudah menyala kalau transaksi punya lokasi (ubah transaksi, atau dibuka dari
+  Peta), dan mematikannya menghapus lokasi. Isi: cari tempat (tempat yang pernah dipakai muncul duluan, ikon riwayat),
+  atau Lokasi saat ini lalu pilih nama dari tempat terdekat. "Tetap di sini" mempertahankan lokasi untuk transaksi
+  berikutnya.
 
 ### Baris tagihan
 

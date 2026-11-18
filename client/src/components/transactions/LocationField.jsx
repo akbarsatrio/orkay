@@ -85,7 +85,7 @@ export function NearbySuggestions({ point, savedPlaces = [], onSelect }) {
  * value: { lat, lng, placeName, placeAddress, placeId } | null. onChange(value | null).
  * savedPlaces: hasil groupPlaces() dari transaksi yang sudah ada. bias: { lat, lng } untuk mengutamakan hasil terdekat.
  */
-export default function LocationField({ value, onChange, savedPlaces = [], bias }) {
+export default function LocationField({ value, onChange, savedPlaces = [], bias, label = 'Lokasi (opsional)' }) {
   const [q, setQ] = useState('')
   const [results, setResults] = useState(null)
   const [searching, setSearching] = useState(false)
@@ -153,7 +153,7 @@ export default function LocationField({ value, onChange, savedPlaces = [], bias 
 
   return (
     <div className="space-y-2">
-      <span className="block text-[13px] font-medium text-muted">Lokasi (opsional)</span>
+      {label && <span className="block text-[13px] font-medium text-muted">{label}</span>}
 
       {value ? (
         <div className="space-y-3">

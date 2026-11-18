@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, CreditCard, CheckCircle2 } from 'lucide-react'
+import { ArrowRight, CreditCard, CheckCircle2, MapPin } from 'lucide-react'
 import { Modal, Button, Input, Select, Textarea, Segmented, Toggle, FormDeleteButton } from '../ui/index.jsx'
 import LocationField from './LocationField.jsx'
 import { useData } from '../../context/DataContext.jsx'
@@ -52,6 +52,7 @@ export default function TransactionForm({ open, onClose, editing, onDelete, defa
   // "Tetap di sini": setelah simpan, form tetap terbuka untuk input berikutnya.
   // Preferensi dibaca ulang tiap form dibuka (ada >1 instance form: topbar & halaman Transaksi).
   const [stayOpen, setStayOpen] = useState(false)
+  const [showLocation, setShowLocation] = useState(false)
   const [savedCount, setSavedCount] = useState(0)
   const [lastSaved, setLastSaved] = useState('')
   const amountRef = useRef(null)
@@ -67,6 +68,8 @@ export default function TransactionForm({ open, onClose, editing, onDelete, defa
     setSavedCount(0)
     setLastSaved('')
     setStayOpen(load('txStayOpen', false))
+    // Lokasi tersembunyi di balik saklar; langsung terbuka kalau transaksi sudah punya lokasi (ubah, atau dari Peta).
+    setShowLocation(editing ? hasLocation(editing) : defaults?.lat != null)
     if (editing) {
       setForm({ ...empty(editing.type), ...editing })
       setAmountStr(formatNumber(editing.amount))
@@ -517,14 +520,33 @@ export default function TransactionForm({ open, onClose, editing, onDelete, defa
 
         <Textarea label={useInstallment ? 'Nama barang / catatan' : 'Catatan (opsional)'} rows={2} value={form.note} onChange={(e) => set({ note: e.target.value })} placeholder={isTransfer ? 'mis. Top up GoPay' : useInstallment ? 'mis. iPhone 15' : 'mis. Makan siang di kantin'} />
 
-        {/* Lokasi hanya untuk pengeluaran & pemasukan biasa: transfer tidak punya tempat, cicilan dicatat lewat tagihan. */}
+        {/* Lokasi hanya untuk pengeluaran & pemasukan biasa: transfer tidak punya tempat, cicilan dicatat lewat tagihan.
+            Disembunyikan di balik saklar (keputusan owner) supaya form tetap pendek; mematikan saklar menghapus lokasi. */}
         {!isTransfer && !useInstallment && (
-          <LocationField
-            value={locationOf(form)}
-            onChange={(loc) => set(loc || { lat: null, lng: null, placeName: '', placeAddress: '', placeId: null })}
-            savedPlaces={savedPlaces}
-            bias={locationOf(form) || searchBias}
-          />
+          <div className="border-t border-border pt-3 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="flex items-center gap-2 text-sm font-medium text-fg">
+                <MapPin size={15} className="text-muted" aria-hidden="true" /> Tambah lokasi
+              </span>
+              <Toggle
+                checked={showLocation}
+                label="Tambah lokasi"
+                onChange={(v) => {
+                  setShowLocation(v)
+                  if (!v) set({ lat: null, lng: null, placeName: '', placeAddress: '', placeId: null })
+                }}
+              />
+            </div>
+            {showLocation && (
+              <LocationField
+                label={null}
+                value={locationOf(form)}
+                onChange={(loc) => set(loc || { lat: null, lng: null, placeName: '', placeAddress: '', placeId: null })}
+                savedPlaces={savedPlaces}
+                bias={locationOf(form) || searchBias}
+              />
+            )}
+          </div>
         )}
 
         {!accountKindValid && (form.accountId || form.fromAccountId || form.toAccountId) && (

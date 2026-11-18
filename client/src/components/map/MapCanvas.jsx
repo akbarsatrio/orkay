@@ -205,16 +205,17 @@ export default function MapCanvas({
         zoom: INDONESIA.zoom,
         language: 'id',
         cooperativeGestures: false,
+        logoPosition: 'bottom-right', // logo + atribusi di pojok kanan bawah, kontrol di kiri bawah (keputusan owner)
       })
     } catch {
       latest.current.onError?.('webgl')
       return undefined
     }
     mapRef.current = map
-    // Kontrol di kanan bawah; halaman menggesernya keluar dari bawah panel mengambang (CSS var --inset-*).
+    // Kontrol di kiri bawah (keputusan owner); di HP halaman mengangkatnya ke atas panel bawah (CSS var --inset-bottom).
     // Tombol zoom hanya di desktop: di HP cubit dua jari sudah cukup dan ruang di antara panel sempit.
-    if (window.matchMedia('(min-width: 1024px)').matches) map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-right')
-    map.addControl(new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, showUserHeading: false }), 'bottom-right')
+    if (window.matchMedia('(min-width: 1024px)').matches) map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), 'bottom-left')
+    map.addControl(new mapboxgl.GeolocateControl({ positionOptions: { enableHighAccuracy: true }, showUserHeading: false }), 'bottom-left')
     // Alternatif keyboard untuk memilih titik (tanpa tombol, keputusan owner): fokus ke peta, geser dengan tombol panah,
     // lalu Enter memilih tengah area peta yang terlihat (di luar panel mengambang).
     const canvas = map.getCanvas()
