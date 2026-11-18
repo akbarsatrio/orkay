@@ -128,20 +128,31 @@ Fokus dibuat lewat ukuran di posisi yang sudah ada, bukan dengan memindah atau m
 - **Panel seringkas mungkin (keputusan owner)**: peta adalah isinya, panel hanya kontrol.
   - **Desktop**: panel kiri atas satu baris: judul, pemilih bulan (atau "Semua waktu"), tombol **Filter**, pilihan mode.
     Filter membuka baris tambahan di panel yang sama (periode, tipe, kategori, rekening, bobot heatmap saat Heatmap);
-    Escape menutupnya. Kolom kanan: panel ringkasan kecil (total, cakupan, sembunyikan saldo, pilihan "Lompat ke
-    tempat") dan panel rincian di bawahnya **hanya saat** tempat/titik dipilih (rincian tempat → "Titik dipilih" →
-    "Pasang ke transaksi lama"), ditutup dengan ×. Daftar "Tempat paling boros" dihapus (keputusan owner).
-  - **HP**: panel atas: judul, tombol Filter (badge oranye = jumlah filter aktif, sama seperti Transaksi; isinya juga
-    pemilih bulan), pilihan mode selebar panel. Panel bawah di atas bottom nav: ringkasan, ditambah rincian saat
-    tempat/titik dipilih (maks 60% tinggi layar). Tombol zoom disembunyikan (cubit dua jari).
+    Escape menutupnya. Kolom kanan: panel ringkasan kecil (total, cakupan, sembunyikan saldo) dan panel rincian di
+    bawahnya **hanya saat** tempat/titik dipilih (rincian tempat → "Titik dipilih" → "Pasang ke transaksi lama"),
+    ditutup dengan ×. Daftar "Tempat paling boros" dan pilihan "Lompat ke tempat" dihapus (keputusan owner).
+  - **HP (keputusan owner)**: tanpa panel atas. Satu panel bawah **menempel** di tepi bawah (tidak mengambang, tanpa
+    bayangan) dan menerus ke belakang bottom nav; padding bawahnya = tinggi bottom nav + tonjolan tombol tambah.
+    Isinya ringkas: total + "x/y berlokasi", sembunyikan saldo, tombol Filter (badge oranye = jumlah filter aktif;
+    isinya juga pemilih bulan, terbuka di atas baris ringkasan), lalu pilihan mode selebar layar. Judul halaman hanya
+    untuk pembaca layar. Tombol zoom disembunyikan (cubit dua jari).
+  - **HP, rincian tempat/titik layar penuh (keputusan owner)**: ketuk titik/tempat membuka dialog layar penuh (di atas
+    bottom nav, di bawah modal form) dengan **peta mini statis** (Mapbox Static Images, gaya sama dengan peta utama)
+    berisi pin + lingkaran radius tempat; bingkai `auto` mengikuti lingkaran, jadi ganti radius terlihat lewat zoom peta
+    yang berubah (keputusan owner). × / ‹ / Escape mundur satu langkah.
+- **Pasang ke transaksi lama** (semua ukuran layar): pilih banyak transaksi sekaligus (centang, "Pilih semua yang
+  tampil"), lalu satu tombol "Pasang lokasi" di bilah yang menempel di bawah daftar (jumlah + total terpilih). Pilihan
+  bertahan saat kata kunci diganti. Pencarian juga cocok dengan nominal: angka ("25000", "25.000") cocok dengan nominal
+  yang memuatnya; "25rb", "25k", "1,5jt" cocok persis. Kotak centang = `Checkbox` (`components/ui`): kosong isian abu
+  bergaris, tercentang `fg` seperti `Toggle`, "Pilih semua" tampil sebagian saat hanya sebagian terpilih; aksen oranye
+  tidak dipakai.
 - **Panel tidak menutupi data**: ukuran panel diukur (`ResizeObserver`) lalu dipakai sebagai jarak tepi `fitBounds`,
   pusat `easeTo`, titik tengah, dan titik/tempat yang sedang dibuka digeser masuk ke area terlihat kalau tertutup panel
   yang membesar.
 - **Kontrol Mapbox (keputusan owner)**: lokasi saya + zoom di **kiri bawah**; logo + atribusi di **pojok kanan bawah**.
   Kolom panel kanan desktop berhenti 3rem di atas tepi bawah supaya logo & atribusi (wajib terlihat) tidak tertutup. Di HP
   keduanya diangkat ke atas panel bawah lewat CSS var `--inset-bottom`.
-- **Alternatif keyboard** (titik di kanvas peta tidak bisa difokus): pilihan "Lompat ke tempat" di panel ringkasan
-  (desktop) membuka rincian tempat mana pun; untuk titik baru, fokus ke peta (Tab), geser dengan tombol panah, lalu
+- **Alternatif keyboard** (titik di kanvas peta tidak bisa difokus): fokus ke peta (Tab), geser dengan tombol panah, lalu
   **Enter** memilih tengah area terlihat. Tombol peta ⌖ untuk ini dihapus atas keputusan owner; label kanvas menjelaskan
   cara pakainya ke pembaca layar.
 - **Pencarian tempat dari OpenStreetMap (Photon)**, bukan Search Box Mapbox: hasil Search Box tidak boleh disimpan permanen

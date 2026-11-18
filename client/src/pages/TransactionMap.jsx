@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { MapPinned, ChevronLeft, X, Plus, Link2, Search, Loader2, SlidersHorizontal, Pencil } from 'lucide-react'
-import { Button, Segmented, Select, fieldClass, cx } from '../components/ui/index.jsx'
+import { Button, Checkbox, Segmented, Select, fieldClass, cx } from '../components/ui/index.jsx'
 import BalanceToggle from '../components/layout/BalanceToggle.jsx'
 import MonthPicker from '../components/ui/MonthPicker.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
@@ -175,10 +175,20 @@ export default function TransactionMap() {
   // Lokasi tujuan "Pasang ke transaksi lama": titik yang dipilih, atau tempat yang sedang dibuka.
   const placeLoc = (p) => ({ lat: p.lat, lng: p.lng, placeName: p.name, placeAddress: p.address, placeId: p.placeId, placeRadius: p.placeRadius })
   const target = picked || (selected && placeLoc(selected))
-  const attachTo = async (t) => {
-    await updateTransaction(t.id, { ...target })
+  const attachTo = async (txs) => {
+    await Promise.all(txs.map((t) => updateTransaction(t.id, { ...target })))
     if (!picked) setAttaching(false) // tempat yang sudah ada: kembali ke rinciannya (transaksi baru langsung terlihat)
   }
+  // Tutup satu langkah: daftar pasang → titik/tempat, titik/tempat → peta.
+  const closePanel = () => {
+    if (attaching) setAttaching(false)
+    else if (picked) setPicked(null)
+    else setSelectedKey(null)
+  }
+  // Lokasi untuk peta mini rincian di HP, termasuk radius yang sedang diubah.
+  const panelLoc = picked
+    ? { lat: picked.lat, lng: picked.lng, radius: picked.placeRadius || DEFAULT_PLACE_RADIUS_M, color: null }
+    : selected && { lat: selected.lat, lng: selected.lng, radius: draftRadius || selected.radius, color: selected.color }
   // Ubah tempat = ganti placeName & placeRadius di semua transaksi tempat itu (semua periode, bukan hanya yang lolos filter).
   const updatePlace = async (place, { name, radius }) => {
     const full = allPlaces.find((g) => g.txs.some((t) => t.id === place.txs[0].id)) || place
@@ -299,6 +309,11 @@ export default function TransactionMap() {
   )
 
   // Ringkasan: total berlokasi + cakupan data, supaya peta tidak terlihat lengkap padahal belum.
+  const emptyNote = places.length === 0 && (
+    <p className="text-[13px] text-muted mt-2">
+      Belum ada transaksi berlokasi di filter ini. Tambah lokasi lewat form transaksi, atau ketuk peta untuk memilih titik.
+    </p>
+  )
   const summary = (
     <>
       <div className="flex items-start justify-between gap-3">
@@ -309,13 +324,51 @@ export default function TransactionMap() {
       <p className="text-[13px] text-muted tnum mt-1">
         <span className="text-fg font-medium">{located.length}</span> dari {matching.length} transaksi punya lokasi
       </p>
-      {places.length === 0 && (
-        <p className="text-[13px] text-muted mt-2">
-          Belum ada transaksi berlokasi di filter ini. Tambah lokasi lewat form transaksi, atau ketuk peta untuk memilih titik.
-        </p>
-      )}
+      {emptyNote}
     </>
   )
+
+  const filters = (
+    <div id="map-filters" className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <Segmented options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
+        {mobile && period === 'month' && <MonthPicker cursor={cursor} onChange={setCursor} />}
+      </div>
+      <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
+        <Segmented
+          className="col-span-2 flex [&>button]:flex-1 lg:inline-flex lg:[&>button]:flex-none"
+          options={TYPE_OPTIONS}
+          value={type}
+          onChange={(v) => { setType(v); setCategoryId(''); setAccountId('') }}
+        />
+        <Select aria-label="Kategori" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="lg:w-44">
+          <option value="">Semua kategori</option>
+          {catOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </Select>
+        <Select aria-label="Rekening" value={accountId} onChange={(e) => setAccountId(e.target.value)} className="lg:w-44">
+          <option value="">Semua rekening</option>
+          {accOptions.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
+        </Select>
+      </div>
+      {mode === 'heat' && (
+        <div className="flex items-center gap-3">
+          <span className="text-[13px] text-muted">Panas berdasarkan</span>
+          <Segmented options={WEIGHT_OPTIONS} value={heatWeight} onChange={setHeatWeight} />
+        </div>
+      )}
+    </div>
+  )
+
+  // HP: rincian layar penuh. Fokus pindah ke dialog saat dibuka (sekali, bukan tiap render, supaya modal form tidak
+  // kehilangan fokus); body halaman dikunci, yang bergulir hanya isi dialog.
+  const sheetOpen = mobile && !!panel
+  const sheetDialogRef = useRef(null)
+  useEffect(() => {
+    if (!sheetOpen) return undefined
+    sheetDialogRef.current?.focus()
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [sheetOpen])
 
   return (
     // Peta memenuhi area konten (dari sidebar sampai tepi kanan, setinggi layar); semua kontrol berupa panel mengambang.
@@ -342,77 +395,27 @@ export default function TransactionMap() {
         />
       )}
 
-      {/* Panel atas: satu baris (judul, bulan, Filter, mode). Filter lain dilipat di balik tombol Filter. */}
-      <div
-        ref={topRef}
-        className={cx(
-          FLOAT,
-          'absolute z-10 left-3 right-3 top-[calc(0.75rem+env(safe-area-inset-top))] p-3',
-          'lg:left-4 lg:top-4 lg:right-auto lg:max-w-[calc(100%-22rem-3rem)] lg:px-4'
-        )}
-      >
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
-          <h1 className="text-lg font-bold text-fg leading-tight flex-1 lg:flex-none min-w-0 truncate">Peta Transaksi</h1>
-          <div className="hidden lg:block">
+      {/* Desktop: panel atas satu baris (judul, bulan, Filter, mode). Filter lain dilipat di balik tombol Filter. */}
+      {!mobile && (
+        <div ref={topRef} className={cx(FLOAT, 'absolute z-10 left-4 top-4 max-w-[calc(100%-22rem-3rem)] p-3 px-4')}>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-3">
+            <h1 className="text-lg font-bold text-fg leading-tight min-w-0 truncate">Peta Transaksi</h1>
             {period === 'month'
               ? <MonthPicker cursor={cursor} onChange={setCursor} />
               : <p className="text-sm font-semibold text-fg px-2">Semua waktu</p>}
+            {filterButton}
+            <Segmented options={MODE_OPTIONS} value={mode} onChange={setMode} />
           </div>
-          {filterButton}
-          <Segmented options={MODE_OPTIONS} value={mode} onChange={setMode} fill={mobile} className="w-full lg:w-auto" />
+          {filterOpen && <div className="mt-3 pt-3 border-t border-border">{filters}</div>}
         </div>
+      )}
 
-        <div id="map-filters" className={cx(filterOpen ? 'block' : 'hidden', 'mt-3 pt-3 border-t border-border space-y-2')}>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-            <Segmented options={PERIOD_OPTIONS} value={period} onChange={setPeriod} />
-            {period === 'month' && <div className="lg:hidden"><MonthPicker cursor={cursor} onChange={setCursor} /></div>}
-          </div>
-          <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-wrap lg:items-center">
-            <Segmented
-              className="col-span-2 flex [&>button]:flex-1 lg:inline-flex lg:[&>button]:flex-none"
-              options={TYPE_OPTIONS}
-              value={type}
-              onChange={(v) => { setType(v); setCategoryId(''); setAccountId('') }}
-            />
-            <Select aria-label="Kategori" value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="lg:w-44">
-              <option value="">Semua kategori</option>
-              {catOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </Select>
-            <Select aria-label="Rekening" value={accountId} onChange={(e) => setAccountId(e.target.value)} className="lg:w-44">
-              <option value="">Semua rekening</option>
-              {accOptions.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </Select>
-          </div>
-          {mode === 'heat' && (
-            <div className="flex items-center gap-3">
-              <span className="text-[13px] text-muted">Panas berdasarkan</span>
-              <Segmented options={WEIGHT_OPTIONS} value={heatWeight} onChange={setHeatWeight} />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Desktop: kolom kanan = ringkasan ringkas, lalu panel rincian hanya saat tempat/titik dipilih.
-          Hanya satu dari kolom kanan / panel bawah yang dipasang, supaya isi panel tidak ganda. */}
+      {/* Desktop: kolom kanan = ringkasan ringkas, lalu panel rincian hanya saat tempat/titik dipilih. */}
       {!mobile && (
         // Berhenti 3rem di atas tepi bawah: pojok kanan bawah dipakai logo & atribusi Mapbox (wajib terlihat).
         <div ref={sideRef} className="absolute z-10 right-4 top-4 bottom-12 w-[22rem] flex flex-col gap-3 pointer-events-none">
           <section aria-label="Ringkasan peta" className={cx(FLOAT, 'shrink-0 px-5 py-4 pointer-events-auto')}>
             {summary}
-            {places.length > 0 && (
-              // Jalan pintas keyboard ke tempat mana pun (titik di kanvas peta tidak bisa difokus).
-              <Select
-                aria-label="Lompat ke tempat"
-                value=""
-                onChange={(e) => e.target.value && selectPlace(e.target.value, true)}
-                className="mt-3"
-              >
-                <option value="">Lompat ke tempat…</option>
-                {places.map((p) => (
-                  <option key={p.key} value={p.key}>{p.name || 'Titik tanpa nama'} · {money(p.total)}</option>
-                ))}
-              </Select>
-            )}
           </section>
           {panel && (
             <aside
@@ -426,23 +429,52 @@ export default function TransactionMap() {
         </div>
       )}
 
-      {/* HP: panel bawah di atas bottom nav: ringkasan, ditambah rincian saat tempat/titik dipilih. */}
+      {/* HP: satu panel menempel di tepi bawah, menerus ke belakang bottom nav: ringkasan, Filter, mode.
+          Padding bawah = tinggi bottom nav + tonjolan tombol tambah, supaya isinya tidak tertutup. */}
       {mobile && (
         <section
           ref={sheetRef}
-          aria-label="Ringkasan dan rincian"
-          className={cx(FLOAT, 'absolute z-10 left-3 right-3 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] flex flex-col overflow-hidden max-h-[60dvh]')}
+          aria-label="Ringkasan peta"
+          className="absolute z-10 inset-x-0 bottom-0 bg-bg border-t border-border rounded-t-xl px-4 pt-3 pb-[calc(5.25rem+env(safe-area-inset-bottom))]"
         >
-          <div className="px-4 py-3 shrink-0">{summary}</div>
-          {panel && (
-            <div
-              ref={(el) => { bodyRefs.current[1] = el }}
-              className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 border-t border-border"
-            >
-              {panel}
+          <h1 className="sr-only">Peta Transaksi</h1>
+          {filterOpen && <div className="max-h-[45dvh] overflow-y-auto pb-3 mb-3 border-b border-border">{filters}</div>}
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <p className="text-[13px] text-muted truncate">{summaryLabel}</p>
+              <p className="text-fg tnum leading-tight truncate">
+                <span className="text-xl font-bold">{money(total)}</span>
+                <span className="text-[13px] text-muted"> · {located.length}/{matching.length} berlokasi</span>
+              </p>
             </div>
-          )}
+            <BalanceToggle />
+            {filterButton}
+          </div>
+          <Segmented options={MODE_OPTIONS} value={mode} onChange={setMode} fill className="w-full mt-3" />
+          {emptyNote}
         </section>
+      )}
+
+      {/* HP: rincian tempat/titik layar penuh (di atas bottom nav, di bawah modal form) dengan peta mini lokasinya. */}
+      {mobile && panel && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Rincian lokasi"
+          tabIndex={-1}
+          ref={sheetDialogRef}
+          onKeyDown={(e) => { if (e.key === 'Escape') closePanel() }}
+          className="fixed inset-0 z-[45] h-[100dvh] flex flex-col overflow-hidden bg-bg pt-[env(safe-area-inset-top)] outline-none"
+        >
+          {panelLoc && tokenState.token && (
+            <div className="shrink-0"><MiniMap token={tokenState.token} theme={theme} {...panelLoc} /></div>
+          )}
+          {/* Padding bawah di pembungkus dalam, bukan di area gulir: bilah "Pasang lokasi" (sticky) menempel tepat di
+              tepi bawah layar, tanpa celah yang memperlihatkan baris di belakangnya. */}
+          <div ref={(el) => { bodyRefs.current[1] = el }} className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4">
+            <div className="pb-[calc(1.5rem+env(safe-area-inset-bottom))]">{panel}</div>
+          </div>
+        </div>
       )}
 
       <TransactionForm
@@ -700,15 +732,10 @@ function PlaceDetail({ place, type, categoryMap, accountMap, money, onClose, onS
   )
 }
 
-function TxButton({ t, categoryMap, accountMap, money, onClick, label }) {
+function TxInfo({ t, categoryMap, accountMap, money }) {
   const cat = categoryMap[t.categoryId]
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      className="w-full flex items-center gap-3 min-h-14 py-2 text-left hover:bg-surface-2/60 active:bg-surface-2 lg:-mx-2 lg:px-2 lg:w-[calc(100%+1rem)] lg:rounded-md"
-    >
+    <span className="flex-1 min-w-0 flex items-center gap-3 min-h-14 py-2">
       <CategoryIcon name={cat?.icon} color={cat?.color} size={14} />
       <span className="flex-1 min-w-0">
         <span className="block text-sm text-fg truncate">{t.note || cat?.name || 'Transaksi'}</span>
@@ -717,6 +744,18 @@ function TxButton({ t, categoryMap, accountMap, money, onClick, label }) {
         </span>
       </span>
       <span className="text-sm font-medium text-fg tnum whitespace-nowrap">{money(t.amount)}</span>
+    </span>
+  )
+}
+
+function TxButton({ t, categoryMap, accountMap, money, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full flex text-left hover:bg-surface-2/60 active:bg-surface-2 lg:-mx-2 lg:px-2 lg:w-[calc(100%+1rem)] lg:rounded-md"
+    >
+      <TxInfo t={t} categoryMap={categoryMap} accountMap={accountMap} money={money} />
     </button>
   )
 }
@@ -760,26 +799,61 @@ function PickedPanel({ picked, savedPlaces, onChange, onClose, onCreate, onAttac
   )
 }
 
+// Kata kunci nominal: "25000", "25.000", "Rp25.000" cocok dengan nominal yang memuat angka itu;
+// "25rb", "25k", "1,5jt" cocok persis dengan 25.000 / 1.500.000. Bukan angka → null (cari teks saja).
+function amountMatcher(q) {
+  const m = q.replace(/\s/g, '').toLowerCase().match(/^(?:rp)?(\d[\d.,]*)(rb|ribu|k|jt|juta)?$/)
+  if (!m) return null
+  const [, num, unit] = m
+  if (!unit) {
+    const digits = num.replace(/[.,]/g, '')
+    return (amount) => String(Math.round(amount)).includes(digits)
+  }
+  const value = Math.round(parseFloat(num.replace(',', '.')) * (unit === 'jt' || unit === 'juta' ? 1e6 : 1e3))
+  return (amount) => Math.round(amount) === value
+}
+
 function AttachList({ candidates, categoryMap, accountMap, money, periodAll, backLabel, onBack, onAttach }) {
   const [q, setQ] = useState('')
-  const [busy, setBusy] = useState(null)
+  const [chosen, setChosen] = useState(() => new Set())
+  const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const needle = q.trim().toLowerCase()
+  const byAmount = needle ? amountMatcher(needle) : null
   const rows = (needle
-    ? candidates.filter((t) => `${t.note || ''} ${categoryMap[t.categoryId]?.name || ''}`.toLowerCase().includes(needle))
+    ? candidates.filter((t) => byAmount?.(t.amount)
+      || `${t.note || ''} ${categoryMap[t.categoryId]?.name || ''}`.toLowerCase().includes(needle))
     : candidates
   ).slice(0, 50)
+  // Pilihan tetap tersimpan saat kata kunci berganti; yang dipasang = semua yang dicentang, terlihat atau tidak.
+  const picked = candidates.filter((t) => chosen.has(t.id))
+  const pickedTotal = picked.reduce((s, t) => s + t.amount, 0)
+  const allRowsChosen = rows.length > 0 && rows.every((t) => chosen.has(t.id))
 
-  const attach = async (t) => {
-    setBusy(t.id)
+  const toggle = (id) => setChosen((s) => {
+    const next = new Set(s)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    return next
+  })
+  const toggleRows = () => setChosen((s) => {
+    const next = new Set(s)
+    for (const t of rows) {
+      if (allRowsChosen) next.delete(t.id)
+      else next.add(t.id)
+    }
+    return next
+  })
+  const attach = async () => {
+    setBusy(true)
     setErr('')
-    try { await onAttach(t) } catch (e) { setErr(e.message || 'Gagal menyimpan lokasi') } finally { setBusy(null) }
+    try { await onAttach(picked); setChosen(new Set()) } catch (e) { setErr(e.message || 'Gagal menyimpan lokasi') } finally { setBusy(false) }
   }
 
   return (
     <section aria-label="Pasang ke transaksi lama">
       <PanelHeader title="Pasang ke transaksi lama" onBack={onBack} backLabel={backLabel}>
-        <p className="text-[13px] text-muted">Transaksi tanpa lokasi sesuai filter. Ketuk untuk memasang lokasi ini.</p>
+        <p className="text-[13px] text-muted">Transaksi tanpa lokasi sesuai filter. Pilih satu atau lebih, lalu pasang lokasi ini.</p>
       </PanelHeader>
       <div className="relative mb-2">
         <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" aria-hidden="true" />
@@ -787,37 +861,88 @@ function AttachList({ candidates, categoryMap, accountMap, money, periodAll, bac
           type="search"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Cari catatan atau kategori"
-          aria-label="Cari transaksi"
+          placeholder="Cari catatan, kategori, nominal"
+          aria-label="Cari transaksi berdasarkan catatan, kategori, atau nominal"
           className={cx(fieldClass, 'w-full h-9 touch:h-11 pl-9 pr-3 text-base sm:text-sm')}
         />
       </div>
-      {err && <p className="text-[13px] text-negative mb-2" role="alert">{err}</p>}
       {rows.length === 0 ? (
         <p className="text-[13px] text-muted py-3">
           {candidates.length === 0
             ? `Semua transaksi di filter ini sudah punya lokasi.${periodAll ? '' : ' Ganti periode ke Semua untuk melihat transaksi bulan lain.'}`
-            : 'Tidak ada yang cocok.'}
+            : `Tidak ada transaksi tanpa lokasi yang cocok dengan "${q.trim()}". Coba nominal tanpa titik atau kata lain.`}
         </p>
       ) : (
-        <ul className="divide-y divide-border">
-          {rows.map((t) => (
-            <li key={t.id} className={cx(busy === t.id && 'opacity-60')}>
-              <TxButton
-                t={t}
-                categoryMap={categoryMap}
-                accountMap={accountMap}
-                money={money}
-                label={`Pasang titik ke ${t.note || categoryMap[t.categoryId]?.name || 'transaksi'} ${formatDate(t.date)}`}
-                onClick={() => !busy && attach(t)}
-              />
-            </li>
-          ))}
-        </ul>
+        <>
+          <label className="flex items-center gap-3 min-h-11 text-[13px] text-muted cursor-pointer">
+            <Checkbox
+              checked={allRowsChosen}
+              indeterminate={rows.some((t) => chosen.has(t.id))}
+              onChange={toggleRows}
+            />
+            Pilih semua yang tampil ({rows.length})
+          </label>
+          <ul className="divide-y divide-border border-t border-border">
+            {rows.map((t) => (
+              <li key={t.id}>
+                <label className="flex items-center gap-3 cursor-pointer hover:bg-surface-2/60 lg:-mx-2 lg:px-2 lg:rounded-md">
+                  <Checkbox checked={chosen.has(t.id)} onChange={() => toggle(t.id)} />
+                  <TxInfo t={t} categoryMap={categoryMap} accountMap={accountMap} money={money} />
+                </label>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
       {candidates.length > rows.length && !needle && (
         <p className="text-[13px] text-muted pt-2">Menampilkan 50 terbaru. Cari untuk menemukan yang lain.</p>
       )}
+      {/* Aksi menempel di bawah daftar yang digulir, supaya jumlah terpilih selalu terlihat. */}
+      {picked.length > 0 && (
+        <div className="sticky bottom-0 -mx-4 lg:-mx-5 mt-3 px-4 lg:px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-bg border-t border-border">
+          {err && <p className="text-[13px] text-negative mb-2" role="alert">{err}</p>}
+          <div className="flex items-center gap-2">
+            <p className="flex-1 min-w-0 text-[13px] text-muted tnum truncate">
+              <span className="text-fg font-medium">{picked.length}</span> dipilih · {money(pickedTotal)}
+            </p>
+            <Button size="sm" variant="ghost" onClick={() => setChosen(new Set())} disabled={busy}>Batal</Button>
+            <Button size="sm" onClick={attach} disabled={busy}>
+              <Link2 size={15} aria-hidden="true" /> {busy ? 'Memasang…' : 'Pasang lokasi'}
+            </Button>
+          </div>
+        </div>
+      )}
     </section>
+  )
+}
+
+// Peta mini statis (Mapbox Static Images) untuk rincian layar penuh di HP: pin + lingkaran radius tempat.
+// Gaya peta sama dengan peta utama (light/dark ikut tema); "auto" membingkai lingkaran, jadi ganti radius = zoom ikut berubah
+// (keputusan owner).
+function MiniMap({ token, theme, lat, lng, radius, color }) {
+  const [failed, setFailed] = useState(false)
+  const hex = /^#[0-9a-f]{6}$/i.test(color || '') ? color.slice(1).toLowerCase() : '71717a'
+  const dLat = radius / 111320
+  const dLng = radius / (111320 * Math.cos((lat * Math.PI) / 180))
+  const ring = Array.from({ length: 33 }, (_, i) => {
+    const a = (i / 32) * 2 * Math.PI
+    return [+(lng + dLng * Math.cos(a)).toFixed(6), +(lat + dLat * Math.sin(a)).toFixed(6)]
+  })
+  const circle = {
+    type: 'Feature',
+    properties: { stroke: `#${hex}`, 'stroke-width': 2, fill: `#${hex}`, 'fill-opacity': 0.15 },
+    geometry: { type: 'Polygon', coordinates: [ring] },
+  }
+  const style = theme === 'dark' ? 'dark-v11' : 'light-v11'
+  const overlay = `geojson(${encodeURIComponent(JSON.stringify(circle))}),pin-l+${hex}(${lng},${lat})`
+  const src = `https://api.mapbox.com/styles/v1/mapbox/${style}/static/${overlay}/auto/640x280@2x?padding=48&access_token=${token}`
+  if (failed) return null
+  return (
+    <img
+      src={src}
+      alt={`Peta mini lokasi, lingkaran radius ${radius} m`}
+      onError={() => setFailed(true)}
+      className="block w-full aspect-[640/280] bg-surface-2 border-b border-border"
+    />
   )
 }

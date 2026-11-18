@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
+import { Check, Minus, X } from 'lucide-react'
 
 export function cx(...args) {
   return args.filter(Boolean).join(' ')
@@ -318,5 +318,35 @@ export function Toggle({ checked, onChange, disabled, className, label }) {
         )}
       />
     </button>
+  )
+}
+
+// ---------- Checkbox ----------
+// Input asli (keyboard, pembaca layar, label) dengan tampilan sendiri: kosong = isian abu seperti field, tercentang =
+// `fg` seperti Toggle (aksen oranye tidak dipakai). `indeterminate` = sebagian terpilih (mis. "Pilih semua").
+export function Checkbox({ checked, indeterminate = false, onChange, disabled, className, ...props }) {
+  const ref = useRef(null)
+  useEffect(() => { if (ref.current) ref.current.indeterminate = indeterminate && !checked }, [indeterminate, checked])
+  const Mark = checked ? Check : indeterminate ? Minus : null
+  return (
+    <span className={cx('relative inline-flex shrink-0 h-[18px] w-[18px]', className)}>
+      <input
+        ref={ref}
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        className={cx(
+          'peer appearance-none m-0 h-full w-full rounded-[5px] border transition-colors cursor-pointer',
+          'disabled:opacity-50 disabled:cursor-default',
+          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-fg',
+          checked || indeterminate ? 'bg-fg border-fg' : 'bg-surface-2 border-muted/50 hover:border-muted'
+        )}
+        {...props}
+      />
+      {Mark && (
+        <Mark size={13} strokeWidth={3} aria-hidden="true" className="absolute inset-0 m-auto text-bg pointer-events-none" />
+      )}
+    </span>
   )
 }
