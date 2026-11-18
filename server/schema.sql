@@ -43,6 +43,11 @@ CREATE TABLE IF NOT EXISTS transactions (
   installmentId  VARCHAR(40),
   statementPeriod VARCHAR(7),
   note           TEXT,
+  lat            DOUBLE,
+  lng            DOUBLE,
+  placeName      VARCHAR(255),
+  placeAddress   VARCHAR(500),
+  placeId        VARCHAR(80),
   INDEX idx_tx_date (date),
   INDEX idx_tx_account (accountId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

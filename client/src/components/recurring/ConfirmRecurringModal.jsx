@@ -59,15 +59,15 @@ export default function ConfirmRecurringModal({ open, item, onClose }) {
       }
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-2 border border-border">
+        <div className="flex items-center gap-3 py-1">
           <CategoryIcon name={cat?.icon || 'ReceiptText'} color={cat?.color || '#71717a'} size={18} />
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium text-fg truncate">{rec.name}</p>
-            <p className="text-2xs text-muted">
+            <p className="text-xs text-muted">
               {acc?.name} · {cat?.name} · jatuh tempo {formatDate(item.dueDate, { short: true })}
             </p>
           </div>
-          <span className="text-sm font-semibold text-fg tnum">{formatRupiah(rec.amount)}</span>
+          <span className="text-sm font-semibold text-fg tnum whitespace-nowrap shrink-0">{formatRupiah(rec.amount)}</span>
         </div>
 
         <Input
@@ -77,7 +77,7 @@ export default function ConfirmRecurringModal({ open, item, onClose }) {
           onChange={(e) => setDate(e.target.value)}
           autoFocus
         />
-        <p className="text-2xs text-muted -mt-2">
+        <p className="text-xs text-muted -mt-2">
           Boleh sebelum atau sesudah tanggal jatuh tempo. Tagihan tetap ditandai lunas untuk periode ini.
         </p>
 

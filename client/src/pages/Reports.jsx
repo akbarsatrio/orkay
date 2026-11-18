@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { ChevronLeft, ChevronRight, Printer, ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { Card, CardBody, CardHeader, Button, Progress, Empty } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
+import Money from '../components/ui/Money.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { formatRupiah, monthNamesID } from '../lib/format.js'
 import { monthlySummary, categoryBreakdown, filterMonth } from '../lib/selectors.js'
@@ -78,39 +79,39 @@ export default function Reports() {
   return (
     <div className="space-y-6">
       {/* Month picker */}
-      <Card className="p-4">
+      <div>
         <div className="flex items-center justify-between">
           <Button size="icon" variant="secondary" onClick={() => move(-1)}><ChevronLeft size={16} /></Button>
           <div className="text-center">
             <p className="text-lg font-bold text-fg">{monthNamesID[cursor.m]} {cursor.y}</p>
-            <p className="text-2xs text-muted">{summary.count} transaksi</p>
+            <p className="text-xs text-muted">{summary.count} transaksi</p>
           </div>
           <div className="flex items-center gap-2">
             <Button size="icon" variant="secondary" onClick={() => move(1)} disabled={isCurrentOrFuture}><ChevronRight size={16} /></Button>
             <Button size="icon" variant="secondary" onClick={() => window.print()} title="Cetak / simpan PDF"><Printer size={16} /></Button>
           </div>
         </div>
-      </Card>
+      </div>
 
       {summary.count === 0 ? (
         <Card><Empty icon={FileBarChart} title="Tidak ada data di bulan ini" description="Pilih bulan lain atau tambahkan transaksi." /></Card>
       ) : (
         <>
           {/* Big summary */}
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-3 gap-x-8 gap-y-6">
             <Card><CardBody>
               <div className="flex items-center gap-2 text-positive"><ArrowDownLeft size={15} /><span className="text-xs font-medium">Total Pemasukan</span></div>
-              <p className="text-2xl font-bold text-fg tnum mt-2">{formatRupiah(summary.income)}</p>
+              <Money value={summary.income} size="large" className="mt-2 text-fg" />
             </CardBody></Card>
             <Card><CardBody>
               <div className="flex items-center gap-2 text-negative"><ArrowUpRight size={15} /><span className="text-xs font-medium">Total Pengeluaran</span></div>
-              <p className="text-2xl font-bold text-fg tnum mt-2">{formatRupiah(summary.expense)}</p>
+              <Money value={summary.expense} size="giant" className="mt-2 text-fg" />
             </CardBody></Card>
-            <Card className={summary.net >= 0 ? 'bg-positive/[0.05]' : 'bg-negative/[0.05]'}><CardBody>
+            <Card><CardBody>
               <div className="flex items-center gap-2 text-muted"><Minus size={15} /><span className="text-xs font-medium">Selisih Bersih</span></div>
-              <p className={`text-2xl font-bold tnum mt-2 ${summary.net >= 0 ? 'text-positive' : 'text-negative'}`}>{formatRupiah(summary.net)}</p>
+              <Money value={summary.net} size="large" className={`mt-2 ${summary.net >= 0 ? 'text-positive' : 'text-negative'}`} />
               {netDelta != null && Number.isFinite(netDelta) && (
-                <p className="text-2xs text-muted mt-1">{netDelta >= 0 ? '▲' : '▼'} {Math.abs(netDelta).toFixed(0)}% vs bulan lalu</p>
+                <p className="text-xs text-muted mt-1">{netDelta >= 0 ? '▲' : '▼'} {Math.abs(netDelta).toFixed(0)}% vs bulan lalu</p>
               )}
             </CardBody></Card>
           </div>
@@ -118,14 +119,14 @@ export default function Reports() {
           {/* Comparison table */}
           <Card>
             <CardHeader title="Perbandingan dengan Bulan Lalu" subtitle={`${monthNamesID[prevDate.getMonth()]} ${prevDate.getFullYear()} → ${monthNamesID[cursor.m]} ${cursor.y}`} />
-            <CardBody className="p-0 overflow-x-auto">
+            <CardBody className="pb-0 pt-2 overflow-x-auto">
               <table className="w-full text-sm min-w-[420px]">
                 <thead>
-                  <tr className="text-2xs text-muted uppercase tracking-wide border-b border-border">
-                    <th className="text-left font-medium px-5 py-2.5">Metrik</th>
-                    <th className="text-right font-medium px-5 py-2.5">Bulan Lalu</th>
-                    <th className="text-right font-medium px-5 py-2.5">Bulan Ini</th>
-                    <th className="text-right font-medium px-5 py-2.5">Perubahan</th>
+                  <tr className="text-[13px] text-muted border-b border-border">
+                    <th className="text-left font-medium pl-0 pr-4 py-2.5">Metrik</th>
+                    <th className="text-right font-medium px-4 py-2.5">Bulan Lalu</th>
+                    <th className="text-right font-medium px-4 py-2.5">Bulan Ini</th>
+                    <th className="text-right font-medium pl-4 pr-0 py-2.5">Perubahan</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -134,13 +135,13 @@ export default function Reports() {
                     const colorClass = c.diff === 0 ? 'text-muted' : good ? 'text-positive' : 'text-negative'
                     return (
                       <tr key={c.label}>
-                        <td className="px-5 py-3 text-fg font-medium">{c.label}</td>
-                        <td className="px-5 py-3 text-right text-muted tnum">{formatRupiah(c.prev)}</td>
-                        <td className="px-5 py-3 text-right text-fg font-medium tnum">{formatRupiah(c.cur)}</td>
-                        <td className="px-5 py-3 text-right">
+                        <td className="pl-0 pr-4 py-3 text-fg font-medium">{c.label}</td>
+                        <td className="px-4 py-3 text-right text-muted tnum">{formatRupiah(c.prev)}</td>
+                        <td className="px-4 py-3 text-right text-fg font-medium tnum">{formatRupiah(c.cur)}</td>
+                        <td className="pl-4 pr-0 py-3 text-right">
                           <span className={`inline-flex items-center gap-1 tnum ${colorClass}`}>
                             {c.diff > 0 ? <TrendingUp size={13} /> : c.diff < 0 ? <TrendingDown size={13} /> : <Minus size={13} />}
-                            {c.pct != null ? `${Math.abs(c.pct).toFixed(0)}%` : '—'}
+                            {c.pct != null ? `${Math.abs(c.pct).toFixed(0)}%` : '-'}
                           </span>
                         </td>
                       </tr>
@@ -152,7 +153,7 @@ export default function Reports() {
           </Card>
 
           {/* Breakdowns */}
-          <div className="grid lg:grid-cols-2 gap-4">
+          <div className="grid lg:grid-cols-2 gap-x-8 gap-y-6">
             <Card>
               <CardHeader title="Rincian Pengeluaran" subtitle="Per kategori" />
               <CardBody className="space-y-3">
@@ -199,25 +200,25 @@ export default function Reports() {
           />
           <CardBody className="space-y-4">
             {/* Ringkasan aktivitas bulan ini */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              <div className="rounded-lg border border-border bg-surface-2/40 p-3">
-                <p className="text-2xs text-muted">Setoran bulan ini</p>
-                <p className="text-lg font-bold text-fg tnum mt-0.5">{formatRupiah(investMonth.contribution)}</p>
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-4">
+              <div>
+                <p className="text-xs text-muted">Setoran bulan ini</p>
+                <p className="text-lg font-bold text-fg tnum whitespace-nowrap mt-0.5">{formatRupiah(investMonth.contribution)}</p>
               </div>
-              <div className="rounded-lg border border-border bg-surface-2/40 p-3">
-                <p className="text-2xs text-muted">Tarikan bulan ini</p>
-                <p className="text-lg font-bold text-fg tnum mt-0.5">{formatRupiah(investMonth.withdrawal)}</p>
+              <div>
+                <p className="text-xs text-muted">Tarikan bulan ini</p>
+                <p className="text-lg font-bold text-fg tnum whitespace-nowrap mt-0.5">{formatRupiah(investMonth.withdrawal)}</p>
               </div>
-              <div className="rounded-lg border border-border bg-surface-2/40 p-3">
-                <p className="text-2xs text-muted">Untung/rugi bulan ini</p>
-                <p className={`text-lg font-bold tnum mt-0.5 ${investMonth.returnNet > 0 ? 'text-positive' : investMonth.returnNet < 0 ? 'text-negative' : 'text-fg'}`}>
+              <div>
+                <p className="text-xs text-muted">Untung/rugi bulan ini</p>
+                <p className={`text-lg font-bold tnum whitespace-nowrap mt-0.5 ${investMonth.returnNet > 0 ? 'text-positive' : investMonth.returnNet < 0 ? 'text-negative' : 'text-fg'}`}>
                   {investMonth.returnNet >= 0 ? '+' : '−'}{formatRupiah(Math.abs(investMonth.returnNet))}
                 </p>
               </div>
             </div>
 
             {(investMonth.fee + investMonth.tax) > 0 && (
-              <p className="text-2xs text-muted -mt-1">Biaya bulan ini: fee {formatRupiah(investMonth.fee)} · tax {formatRupiah(investMonth.tax)}</p>
+              <p className="text-xs text-muted">Biaya bulan ini: fee {formatRupiah(investMonth.fee)} · tax {formatRupiah(investMonth.tax)}</p>
             )}
 
             {!investMonth.hasActivity && (
@@ -226,19 +227,19 @@ export default function Reports() {
 
             {/* Per akun: nilai sekarang + untung/rugi total */}
             <div className="border-t border-border pt-3 space-y-2">
-              <p className="text-2xs font-semibold uppercase tracking-wide text-muted">Nilai portfolio per rekening</p>
+              <p className="text-[13px] text-muted">Nilai portfolio per rekening</p>
               {investAccounts.map((a) => {
                 const sum = investmentSummary[a.id] || { marketValue: 0, cumulativeReturn: 0, returnPct: 0 }
                 const ret = sum.cumulativeReturn || 0
                 const retColor = ret > 0 ? 'text-positive' : ret < 0 ? 'text-negative' : 'text-muted'
                 return (
-                  <div key={a.id} className="flex items-center gap-2.5 text-sm">
+                  <div key={a.id} className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-sm">
                     <span className="h-2.5 w-2.5 rounded-sm" style={{ background: a.color }} />
-                    <span className="text-fg flex-1">{a.name}</span>
-                    <span className={`text-xs tnum ${retColor}`}>
+                    <span className="text-fg flex-1 min-w-0">{a.name}</span>
+                    <span className={`text-xs tnum whitespace-nowrap ${retColor}`}>
                       {ret >= 0 ? '+' : '−'}{formatRupiah(Math.abs(ret))} ({(sum.returnPct || 0) >= 0 ? '+' : ''}{(sum.returnPct || 0).toFixed(1)}%)
                     </span>
-                    <span className="font-medium text-fg tnum w-28 text-right">{formatRupiah(sum.marketValue || 0)}</span>
+                    <span className="font-medium text-fg tnum whitespace-nowrap sm:w-28 text-right">{formatRupiah(sum.marketValue || 0)}</span>
                   </div>
                 )
               })}

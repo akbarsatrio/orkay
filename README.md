@@ -29,7 +29,8 @@ yang sama dan langsung sinkron.
 - **Budget** — batas pengeluaran per kategori + status pemakaian.
 - **Reports** — pengeluaran per kategori, ringkasan bulanan, tren, dan **ringkasan investasi**
   (nilai portfolio, setoran/tarikan & untung-rugi bulan berjalan, per rekening).
-- **Settings** — tanggal gajian (payDay) + opsi majukan ke hari kerja sebelumnya kalau jatuh di weekend/libur, tema (dark/light), mata uang.
+- **Settings** — tanggal gajian (payDay) + opsi majukan ke hari kerja sebelumnya kalau jatuh di weekend/libur, tema (ikut sistem/terang/gelap), versi tampilan (baru/lama, disimpan per perangkat), mata uang.
+- **Tampilan baru & lama** — tampilan baru jadi default; tampilan lama dibekukan di `client/src/legacy/` selama masa transisi dan bisa dipilih di Settings. Arah desain ada di [`DESIGN.md`](./DESIGN.md).
 - **Keamanan** — login PIN + lock screen + rate-limit anti brute-force.
 
 ---
@@ -86,8 +87,9 @@ Tiga komponen tambahan (masing-masing punya README sendiri):
 economic-analytic/
 ├── client/          React + Vite (web app)
 │   └── src/
-│       ├── pages/           Dashboard, Transactions, Accounts, Investments, Recurring, Budgets, Reports, Settings
-│       ├── components/      UI + form + modal
+│       ├── pages/           Dashboard, Transactions, Accounts, Investments, Recurring, Budgets, Reports, Settings (tampilan baru)
+│       ├── components/      UI + form + modal (tampilan baru)
+│       ├── legacy/          tampilan lama yang dibekukan (hapus folder ini saat transisi selesai)
 │       ├── context/         DataContext (state global)
 │       └── lib/             format, paylater, installments, recurring, investment (logic bisnis)
 ├── server/          Express + MySQL (backend + REST API)
@@ -188,6 +190,7 @@ Buka `http://localhost:5173` → muncul layar PIN → masukkan `APP_PIN`.
 | `DB_PASSWORD` | — | Password MySQL |
 | `DB_NAME` | `economic_analytic` | Nama database |
 | `CLIENT_DIST` | `../client/dist` | Folder hasil build React yang diserve saat production |
+| `MAPBOX_TOKEN` | — | Token publik Mapbox (`pk.…`) untuk menu **Peta Transaksi**. Dikirim ke app hanya setelah login PIN. Batasi URL token ke domain app di akun Mapbox. Tanpa token, menu Peta menampilkan pesan "Token Mapbox belum diatur". |
 
 Generate `AUTH_SECRET`:
 

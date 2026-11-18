@@ -5,18 +5,21 @@ import AuthGate from './AuthGate.jsx'
 import { ThemeProvider } from './context/ThemeContext.jsx'
 import { BalanceVisibilityProvider } from './context/BalanceVisibilityContext.jsx'
 import { ConfirmProvider } from './context/ConfirmContext.jsx'
+import { UiVersionProvider } from './context/UiVersionContext.jsx'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <ThemeProvider>
-        <BalanceVisibilityProvider>
-          <ConfirmProvider>
-            <AuthGate />
-          </ConfirmProvider>
-        </BalanceVisibilityProvider>
-      </ThemeProvider>
+      <UiVersionProvider>
+        <ThemeProvider>
+          <BalanceVisibilityProvider>
+            <ConfirmProvider>
+              <AuthGate />
+            </ConfirmProvider>
+          </BalanceVisibilityProvider>
+        </ThemeProvider>
+      </UiVersionProvider>
     </BrowserRouter>
   </React.StrictMode>
 )

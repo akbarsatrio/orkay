@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
-import { TrendingUp, Repeat, Target, FileBarChart, Settings, LogOut, X } from 'lucide-react'
+import { TrendingUp, Repeat, Target, FileBarChart, MapPinned, Settings, LogOut, X } from 'lucide-react'
 import { clearToken } from '../../lib/api.js'
 
 const moreNav = [
@@ -8,6 +8,7 @@ const moreNav = [
   { to: '/recurring', label: 'Tagihan Rutin', icon: Repeat },
   { to: '/budgets', label: 'Anggaran', icon: Target },
   { to: '/reports', label: 'Laporan', icon: FileBarChart },
+  { to: '/peta', label: 'Peta Transaksi', icon: MapPinned },
   { to: '/settings', label: 'Pengaturan', icon: Settings },
 ]
 
@@ -31,18 +32,19 @@ export default function MoreSheet({ open, onClose }) {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-[fadeIn_.15s_ease]"
         onClick={onClose}
       />
-      <div className="absolute inset-x-0 bottom-0 bg-surface border-t border-border rounded-t-2xl shadow-pop animate-[slideUp_.2s_ease] pb-[env(safe-area-inset-bottom)]">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <h3 className="text-sm font-semibold text-fg">Menu Lainnya</h3>
+      <div className="absolute inset-x-0 bottom-0 bg-bg rounded-t-2xl shadow-pop animate-[slideUp_.2s_ease] pb-[env(safe-area-inset-bottom)]">
+        <div className="flex items-center justify-between px-5 pt-5 pb-2">
+          <h2 className="text-xl font-bold text-fg">Menu Lainnya</h2>
           <button
             onClick={onClose}
-            className="text-muted hover:text-fg h-7 w-7 flex items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
+            aria-label="Tutup"
+            className="text-muted hover:text-fg h-9 w-9 touch:h-11 touch:w-11 -mr-2 flex items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
           >
             <X size={16} />
           </button>
         </div>
 
-        <nav className="grid grid-cols-2 gap-2 p-4">
+        <nav className="px-5" aria-label="Menu lainnya">
           {moreNav.map((item) => {
             const Icon = item.icon
             return (
@@ -52,29 +54,25 @@ export default function MoreSheet({ open, onClose }) {
                 onClick={onClose}
                 className={({ isActive }) =>
                   [
-                    'flex items-center gap-3 px-4 h-14 rounded-xl text-sm font-medium border transition-colors',
-                    isActive
-                      ? 'bg-accent/10 text-accent border-accent/30'
-                      : 'text-fg border-border hover:bg-surface-2',
+                    'flex items-center gap-3 h-14 text-base border-b border-border transition-colors',
+                    isActive ? 'text-accent font-semibold' : 'text-fg',
                   ].join(' ')
                 }
               >
-                <Icon size={18} strokeWidth={2} />
+                <Icon size={18} strokeWidth={2} aria-hidden="true" />
                 {item.label}
               </NavLink>
             )
           })}
-        </nav>
-
-        <div className="px-4 pb-5">
           <button
             onClick={() => { clearToken(); window.location.reload() }}
-            className="flex items-center justify-center gap-2.5 w-full px-3 h-11 rounded-xl text-sm font-medium text-negative bg-negative/10 hover:bg-negative/15 transition-colors"
+            className="flex items-center gap-3 w-full h-14 text-base font-medium text-negative"
           >
-            <LogOut size={17} />
+            <LogOut size={18} aria-hidden="true" />
             Kunci Aplikasi
           </button>
-        </div>
+        </nav>
+        <div className="h-3" />
       </div>
     </div>
   )

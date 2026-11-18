@@ -1,21 +1,24 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Pencil, Trash2, Wallet, ArrowDownLeft, ArrowUpRight, CreditCard, Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react'
-import { Card, CardBody, Button, Empty, Progress, Badge } from '../components/ui/index.jsx'
+import { Plus, Pencil, Trash2, Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown } from 'lucide-react'
+import { Card, Button, Empty, Progress } from '../components/ui/index.jsx'
+import Money from '../components/ui/Money.jsx'
+import SwipeRow, { editDeleteActions, useIsMobile } from '../components/ui/SwipeRow.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import AccountForm from '../components/accounts/AccountForm.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
 import { useConfirm } from '../context/ConfirmContext.jsx'
-import { formatRupiah, maskRupiah, formatDate } from '../lib/format.js'
+import { formatRupiah, maskRupiah } from '../lib/format.js'
 import { computeStatements } from '../lib/paylater.js'
 
 const typeLabels = { bank: 'Bank', ewallet: 'E-Wallet', cash: 'Tunai', paylater: 'Pay Later', investment: 'Investasi', other: 'Lainnya' }
 
 export default function Accounts() {
   const { accounts, accountBalances, totalBalance, totalDebt, payLaterInfo, investmentSummary, transactions, deleteAccount } = useData()
-  const { hidden, toggle } = useBalanceVisibility()
+  const { hidden } = useBalanceVisibility()
   const navigate = useNavigate()
+  const mobile = useIsMobile()
   const [form, setForm] = useState({ open: false, editing: null })
   const confirm = useConfirm()
 
@@ -52,32 +55,21 @@ export default function Accounts() {
 
   return (
     <div className="space-y-6">
-      {/* Total */}
-      <Card className="bg-gradient-to-br from-accent/[0.07] to-transparent">
-        <CardBody className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <p className="text-xs text-muted">Kekayaan bersih (saldo + investasi − utang pay later)</p>
-            <div className="flex items-center gap-2 mt-1">
-              <p className="text-3xl font-bold text-fg tnum">{maskRupiah(totalBalance, hidden)}</p>
-              <button
-                onClick={toggle}
-                title={hidden ? 'Tampilkan saldo' : 'Sembunyikan saldo'}
-                aria-label={hidden ? 'Tampilkan saldo' : 'Sembunyikan saldo'}
-                className="h-7 w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 transition-colors"
-              >
-                {hidden ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <p className="text-2xs text-muted mt-1">
-              {accounts.length} rekening
-              {totalDebt > 0 && <span className="text-negative"> · utang pay later {maskRupiah(totalDebt, hidden)}</span>}
-            </p>
+      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="min-w-0 flex-1">
+          <p className="text-[13px] font-medium text-muted">Kekayaan bersih (saldo + investasi − utang pay later)</p>
+          <div className="mt-2">
+            <Money size="giant" value={hidden ? 0 : totalBalance} hidden={hidden} className="text-fg" />
           </div>
-          <Button onClick={() => setForm({ open: true, editing: null })}>
-            <Plus size={16} /> Tambah Rekening
-          </Button>
-        </CardBody>
-      </Card>
+          <p className="text-[13px] text-muted mt-3">
+            {accounts.length} rekening
+            {totalDebt > 0 && <span className="text-negative"> · utang pay later <span className="tnum whitespace-nowrap">{maskRupiah(totalDebt, hidden)}</span></span>}
+          </p>
+        </div>
+        <Button className="shrink-0" onClick={() => setForm({ open: true, editing: null })}>
+          <Plus size={16} /> Tambah Rekening
+        </Button>
+      </section>
 
       {accounts.length === 0 ? (
         <Card>
@@ -89,25 +81,34 @@ export default function Accounts() {
           />
         </Card>
       ) : (
-        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-6">
           {accounts.map((acc) => {
+            // HP & tablet: geser = Ubah/Hapus, ketuk = Ubah (rekening investasi: ketuk = buka halaman Investasi).
+            const swipe = (onTap, children) => (
+              <SwipeRow
+                onTap={onTap}
+                actions={editDeleteActions(acc.name, () => setForm({ open: true, editing: acc }), () => handleDelete(acc))}
+              >
+                {children}
+              </SwipeRow>
+            )
             const editBtns = (
-              <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); setForm({ open: true, editing: acc }) }} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2">
-                  <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
+              <div className="hidden lg:flex gap-1 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 touch:opacity-100 transition-opacity">
+                <button onClick={(e) => { e.stopPropagation(); setForm({ open: true, editing: acc }) }} aria-label={`Ubah ${acc.name}`} title="Ubah" className="h-7 w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2">
+                  <Pencil size={13} aria-hidden="true" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(acc) }} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
-                  <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(acc) }} aria-label={`Hapus ${acc.name}`} title="Hapus" className="h-7 w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10">
+                  <Trash2 size={13} aria-hidden="true" />
                 </button>
               </div>
             )
             const header = (
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <CategoryIcon name={acc.icon} color={acc.color} size={18} />
-                  <div>
-                    <p className="text-sm font-semibold text-fg">{acc.name}</p>
-                    <p className="text-2xs text-muted">{typeLabels[acc.type] || typeLabels[acc.kind] || 'Lainnya'}</p>
+                  <div className="min-w-0">
+                    <p className="text-[15px] font-semibold text-fg truncate">{acc.name}</p>
+                    <p className="text-[13px] text-muted">{typeLabels[acc.type] || typeLabels[acc.kind] || 'Lainnya'}</p>
                   </div>
                 </div>
                 {editBtns}
@@ -122,25 +123,26 @@ export default function Accounts() {
               return (
                 <Card
                   key={acc.id}
-                  className="group relative overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
-                  onClick={() => navigate('/investments')}
+                  className="group relative pt-4 lg:cursor-pointer"
+                  onClick={mobile ? undefined : () => navigate('/investments')}
                 >
-                  <div className="absolute top-0 left-0 h-full w-1" style={{ background: acc.color }} />
-                  <CardBody>
+                  {swipe(() => navigate('/investments'), <div>
                     {header}
-                    <p className="text-2xl font-bold tnum mt-4 text-fg">{maskRupiah(sum.marketValue, hidden)}</p>
-                    <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-                      <div className="flex items-center gap-1.5 text-xs">
+                    <div className="mt-4">
+                      <Money value={hidden ? 0 : sum.marketValue} hidden={hidden} className="text-2xl font-semibold text-fg" />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 pt-3 border-t border-border">
+                      <div className="flex flex-wrap items-center gap-1.5 text-[13px]">
                         <RetIcon size={14} className={retColor} />
                         <span className="text-muted">Untung/rugi</span>
-                        <span className={`font-medium tnum ${retColor}`}>
+                        <span className={`font-medium tnum whitespace-nowrap ${retColor}`}>
                           {(ret >= 0 ? '+' : '−') + formatRupiah(Math.abs(ret)).replace('Rp', 'Rp')}
                           {(sum.netInvested || 0) > 0 && ` (${sum.returnPct >= 0 ? '+' : ''}${(sum.returnPct || 0).toFixed(1)}%)`}
                         </span>
                       </div>
                     </div>
-                    <p className="text-2xs text-muted mt-2">Modal bersih {maskRupiah(sum.netInvested || 0, hidden)} · kelola di halaman Investasi</p>
-                  </CardBody>
+                    <p className="text-[13px] text-muted mt-2">Modal bersih <span className="tnum whitespace-nowrap">{maskRupiah(sum.netInvested || 0, hidden)}</span> · kelola di halaman Investasi</p>
+                  </div>)}
                 </Card>
               )
             }
@@ -151,37 +153,38 @@ export default function Accounts() {
               const statements = computeStatements(acc, transactions)
               const currentUnpaid = statements.filter((s) => s.unpaid > 0).sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]
               return (
-                <Card key={acc.id} className="group relative overflow-hidden">
-                  <div className="absolute top-0 left-0 h-full w-1" style={{ background: acc.color }} />
-                  <CardBody>
+                <Card key={acc.id} className="group relative pt-4">
+                  {swipe(() => setForm({ open: true, editing: acc }), <div>
                     {header}
                     <div className="mt-4">
-                      <p className="text-2xs text-muted">Sisa limit</p>
-                      <p className="text-2xl font-bold tnum text-fg">{maskRupiah(info.available, hidden)}</p>
-                    </div>
-                    <div className="mt-3">
-                      <Progress value={info.used} max={info.limit || 1} color={pct >= 90 ? 'rgb(var(--negative))' : pct >= 70 ? 'rgb(var(--warning))' : 'rgb(var(--accent))'} />
-                      <div className="flex justify-between mt-1.5 text-2xs">
-                        <span className="text-muted tnum">Terpakai {maskRupiah(info.used, hidden)}</span>
-                        <span className="text-muted tnum">Limit {maskRupiah(info.limit, hidden)}</span>
+                      <p className="text-[13px] font-medium text-muted">Sisa limit</p>
+                      <div className="mt-1">
+                        <Money value={hidden ? 0 : info.available} hidden={hidden} className="text-2xl font-semibold text-fg" />
                       </div>
                     </div>
-                    <div className="mt-3 pt-3 border-t border-border text-xs">
+                    <div className="mt-4">
+                      <Progress value={info.used} max={info.limit || 1} color={pct >= 90 ? 'rgb(var(--negative))' : pct >= 70 ? 'rgb(var(--warning))' : 'rgb(var(--fg))'} />
+                      <div className="flex flex-wrap justify-between gap-x-3 gap-y-1 mt-1.5 text-[13px]">
+                        <span className="text-muted tnum whitespace-nowrap">Terpakai {maskRupiah(info.used, hidden)}</span>
+                        <span className="text-muted tnum whitespace-nowrap">Limit {maskRupiah(info.limit, hidden)}</span>
+                      </div>
+                    </div>
+                    <div className="mt-4 pt-3 border-t border-border text-[13px]">
                       {currentUnpaid ? (
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-3">
                           <span className="text-muted">Tagihan belum lunas</span>
-                          <span className="tnum font-medium text-fg">{maskRupiah(currentUnpaid.unpaid, hidden)}</span>
+                          <span className="tnum whitespace-nowrap font-semibold text-fg">{maskRupiah(currentUnpaid.unpaid, hidden)}</span>
                         </div>
                       ) : (
                         <span className="text-muted">Tidak ada tagihan tertunda</span>
                       )}
-                      <p className="text-2xs text-muted mt-1">
+                      <p className="text-xs text-muted mt-1">
                         {acc.billingModel === 'anniversary'
                           ? 'Cicilan jatuh tempo di tanggal transaksi tiap bulan'
                           : `Closing tgl ${acc.closingDay} · jatuh tempo tgl ${acc.dueDay}`}
                       </p>
                     </div>
-                  </CardBody>
+                  </div>)}
                 </Card>
               )
             }
@@ -189,33 +192,37 @@ export default function Accounts() {
             const balance = accountBalances[acc.id] || 0
             const { inc, exp } = flowFor(acc.id)
             return (
-              <Card key={acc.id} className="group relative overflow-hidden">
-                <div className="absolute top-0 left-0 h-full w-1" style={{ background: acc.color }} />
-                <CardBody>
+              <Card key={acc.id} className="group relative pt-4">
+                {swipe(() => setForm({ open: true, editing: acc }), <div>
                   {header}
-                  <p className={`text-2xl font-bold tnum mt-4 ${balance < 0 ? 'text-negative' : 'text-fg'}`}>
-                    {maskRupiah(balance, hidden)}
-                  </p>
-                  <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border">
-                    <div className="flex items-center gap-1.5 text-xs">
+                  <div className="mt-4">
+                    <Money value={hidden ? 0 : balance} hidden={hidden} className={`text-2xl font-semibold ${balance < 0 ? 'text-negative' : 'text-fg'}`} />
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 pt-3 border-t border-border">
+                    <div className="flex items-center gap-1.5 text-[13px]">
                       <ArrowDownLeft size={14} className="text-positive" />
                       <span className="text-muted">Masuk</span>
-                      <span className="font-medium text-fg tnum">{formatRupiah(inc)}</span>
+                      <span className="font-medium text-fg tnum whitespace-nowrap">{formatRupiah(inc)}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs">
+                    <div className="flex items-center gap-1.5 text-[13px]">
                       <ArrowUpRight size={14} className="text-negative" />
                       <span className="text-muted">Keluar</span>
-                      <span className="font-medium text-fg tnum">{formatRupiah(exp)}</span>
+                      <span className="font-medium text-fg tnum whitespace-nowrap">{formatRupiah(exp)}</span>
                     </div>
                   </div>
-                </CardBody>
+                </div>)}
               </Card>
             )
           })}
         </div>
       )}
 
-      <AccountForm open={form.open} editing={form.editing} onClose={() => setForm({ open: false, editing: null })} />
+      <AccountForm
+        open={form.open}
+        editing={form.editing}
+        onClose={() => setForm({ open: false, editing: null })}
+        onDelete={() => { const acc = form.editing; setForm({ open: false, editing: null }); handleDelete(acc) }}
+      />
     </div>
   )
 }

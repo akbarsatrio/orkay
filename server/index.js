@@ -83,6 +83,9 @@ app.use('/api/paylater', paylater)
 app.use('/api/investments', investments)
 app.use('/api/admin', admin)
 
+// Konfigurasi klien yang butuh login (token peta tidak ikut di bundle JS publik).
+app.get('/api/config', (req, res) => res.json({ mapboxToken: config.mapboxToken }))
+
 // ---- Serve React build di production (SPA fallback) ----
 if (config.isProd) {
   if (existsSync(config.clientDist)) {
