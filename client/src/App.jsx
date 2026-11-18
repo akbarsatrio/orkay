@@ -6,6 +6,7 @@ import { Button } from './components/ui/index.jsx'
 import Sidebar from './components/layout/Sidebar.jsx'
 import Topbar from './components/layout/Topbar.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
+import NewUiNotice from './components/layout/NewUiNotice.jsx'
 import TransactionForm from './components/transactions/TransactionForm.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Transactions from './pages/Transactions.jsx'
@@ -50,13 +51,11 @@ export default function App() {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-bg gap-4 px-6 text-center">
-        <div className="h-11 w-11 rounded-full bg-negative/10 flex items-center justify-center">
-          <WifiOff size={20} className="text-negative" />
-        </div>
+        <WifiOff size={22} className="text-negative" aria-hidden="true" />
         <div>
           <p className="text-sm font-semibold text-fg">Gagal terhubung ke server</p>
           <p className="text-xs text-muted mt-1 max-w-sm">{error}</p>
-          <p className="text-2xs text-muted mt-2">Pastikan backend berjalan (npm run dev menjalankan server + client).</p>
+          <p className="text-xs text-muted mt-2">Pastikan backend berjalan (npm run dev menjalankan server + client).</p>
         </div>
         <Button onClick={bootstrap}>Coba Lagi</Button>
       </div>
@@ -65,26 +64,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex bg-bg theme-transition">
-      <Sidebar />
+      <Sidebar onQuickAdd={() => setTxOpen(true)} />
 
-      <div className="flex-1 min-w-0 flex flex-col">
-        <Topbar
-          title={m.title}
-          subtitle={m.subtitle}
-          onQuickAdd={() => setTxOpen(true)}
-        />
-        <main className="flex-1 px-4 sm:px-6 py-6 pb-24 lg:pb-6 max-w-[1400px] w-full mx-auto overflow-x-hidden">
-          <Routes>
-            <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
-            <Route path="/transactions" element={<Transactions />} />
-            <Route path="/accounts" element={<Accounts />} />
-            <Route path="/investments" element={<Investments />} />
-            <Route path="/recurring" element={<Recurring />} />
-            <Route path="/budgets" element={<Budgets />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </main>
+      <div className="flex-1 min-w-0 px-4 sm:px-6 lg:px-10 pb-[calc(6.5rem+env(safe-area-inset-bottom))] lg:pb-12">
+        <div className="max-w-[1280px] w-full mx-auto">
+          <Topbar title={m.title} subtitle={m.subtitle} />
+          <NewUiNotice />
+          <main>
+            <Routes>
+              <Route path="/" element={<Dashboard onAddTransaction={() => setTxOpen(true)} />} />
+              <Route path="/transactions" element={<Transactions />} />
+              <Route path="/accounts" element={<Accounts />} />
+              <Route path="/investments" element={<Investments />} />
+              <Route path="/recurring" element={<Recurring />} />
+              <Route path="/budgets" element={<Budgets />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </main>
+        </div>
       </div>
 
       <BottomNav onQuickAdd={() => setTxOpen(true)} />

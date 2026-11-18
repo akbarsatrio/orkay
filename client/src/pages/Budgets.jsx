@@ -36,19 +36,19 @@ export default function Budgets() {
 
   return (
     <div className="space-y-6">
-      <div className="grid sm:grid-cols-3 gap-4">
+      <div className="grid sm:grid-cols-3 gap-x-8 gap-y-6">
         <Card><CardBody>
-          <p className="text-xs text-muted">Total anggaran ({monthNamesID[now.getMonth()]})</p>
-          <p className="text-2xl font-bold text-fg tnum mt-1">{formatRupiah(totalLimit)}</p>
+          <p className="text-[13px] font-medium text-muted">Total anggaran ({monthNamesID[now.getMonth()]})</p>
+          <p className="text-2xl font-bold text-fg tnum whitespace-nowrap mt-1">{formatRupiah(totalLimit)}</p>
         </CardBody></Card>
         <Card><CardBody>
-          <p className="text-xs text-muted">Terpakai</p>
-          <p className="text-2xl font-bold tnum mt-1 text-fg">{formatRupiah(totalSpent)}</p>
+          <p className="text-[13px] font-medium text-muted">Terpakai</p>
+          <p className="text-2xl font-bold tnum whitespace-nowrap mt-1 text-fg">{formatRupiah(totalSpent)}</p>
           <div className="mt-2"><Progress value={totalSpent} max={totalLimit || 1} /></div>
         </CardBody></Card>
-        <Card><CardBody className="flex items-center justify-between">
+        <Card><CardBody className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-muted">Lewat batas</p>
+            <p className="text-[13px] font-medium text-muted">Lewat batas</p>
             <p className={`text-2xl font-bold tnum mt-1 ${overCount ? 'text-negative' : 'text-positive'}`}>{overCount}</p>
           </div>
           <Button onClick={() => setModal({ open: true, editing: null })}><Plus size={16} /> Atur</Button>
@@ -57,7 +57,7 @@ export default function Budgets() {
 
       <Card>
         <CardHeader title="Anggaran per Kategori" subtitle="Batas pengeluaran bulan ini. Bar berubah warna saat mendekati / melewati limit." />
-        <CardBody className="space-y-4">
+        <CardBody className="divide-y divide-border [&>*:last-child]:pb-0">
           {rows.length === 0 ? (
             <Empty
               icon={Target}
@@ -67,16 +67,16 @@ export default function Budgets() {
             />
           ) : (
             rows.map((r) => (
-              <div key={r.id} className="group">
+              <div key={r.id} className="group py-4 first:pt-0 last:pb-0">
                 <div className="flex items-center gap-3 mb-2">
                   <CategoryIcon name={r.cat.icon} color={r.cat.color} size={16} />
-                  <span className="text-sm font-medium text-fg flex-1">{r.cat.name}</span>
+                  <span className="text-sm font-medium text-fg flex-1 min-w-0 truncate">{r.cat.name}</span>
                   {r.pct >= 100 ? (
                     <Badge className="text-negative border-negative/30 bg-negative/10"><AlertTriangle size={11} /> Lewat</Badge>
                   ) : r.pct >= 85 ? (
                     <Badge className="text-warning border-warning/30 bg-warning/10">Hampir habis</Badge>
                   ) : null}
-                  <button onClick={() => setModal({ open: true, editing: r })} className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-fg active:bg-surface-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
+                  <button onClick={() => setModal({ open: true, editing: r })} className="h-9 w-9 lg:h-6 lg:w-6 touch:h-11 touch:w-11 shrink-0 flex items-center justify-center rounded-md text-muted hover:text-fg active:bg-surface-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100">
                     <Pencil size={15} className="lg:hidden" /><Pencil size={12} className="hidden lg:block" />
                   </button>
                   <button
@@ -86,15 +86,15 @@ export default function Budgets() {
                       detail: 'Transaksi di kategori ini tidak terpengaruh.',
                       onConfirm: () => deleteBudget(r.id),
                     })}
-                    className="h-9 w-9 lg:h-6 lg:w-6 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100"
+                    className="h-9 w-9 lg:h-6 lg:w-6 touch:h-11 touch:w-11 shrink-0 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100"
                   >
                     <Trash2 size={15} className="lg:hidden" /><Trash2 size={12} className="hidden lg:block" />
                   </button>
                 </div>
                 <Progress value={r.spent} max={r.limit} />
-                <div className="flex items-center justify-between mt-1.5 text-xs">
-                  <span className="text-muted tnum">{formatRupiah(r.spent)} <span className="text-muted/60">/ {formatRupiah(r.limit)}</span></span>
-                  <span className={`tnum font-medium ${r.remaining < 0 ? 'text-negative' : 'text-muted'}`}>
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 mt-1.5 text-xs">
+                  <span className="text-muted tnum whitespace-nowrap">{formatRupiah(r.spent)} <span className="text-muted/60">/ {formatRupiah(r.limit)}</span></span>
+                  <span className={`tnum whitespace-nowrap font-medium ${r.remaining < 0 ? 'text-negative' : 'text-muted'}`}>
                     {r.remaining < 0 ? `Lewat ${formatRupiah(-r.remaining)}` : `Sisa ${formatRupiah(r.remaining)}`}
                   </span>
                 </div>
@@ -150,7 +150,7 @@ function BudgetModal({ open, onClose, editing, categories, existing, onSave }) {
           {available.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </Select>
         <div>
-          <span className="block text-xs font-medium text-muted mb-1.5">Batas per bulan</span>
+          <span className="block text-[13px] font-medium text-muted mb-1.5">Batas per bulan</span>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rp</span>
             <input
@@ -158,7 +158,7 @@ function BudgetModal({ open, onClose, editing, categories, existing, onSave }) {
               value={limitStr}
               onChange={(e) => { const v = parseNumber(e.target.value); setLimitStr(v ? formatNumber(v) : '') }}
               placeholder="0"
-              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm font-medium text-fg tnum focus:border-accent outline-none"
+              className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm font-medium text-fg tnum focus:border-fg outline-none transition-colors"
             />
           </div>
         </div>

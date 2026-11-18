@@ -278,7 +278,7 @@ export default function TransactionForm({ open, onClose, editing }) {
               value={amountStr}
               onChange={handleAmount}
               placeholder="0"
-              className="w-full h-11 pl-9 pr-3 rounded-lg bg-surface border border-border text-lg font-semibold text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+              className="w-full h-12 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-xl font-semibold text-fg tnum placeholder:text-muted focus:border-fg outline-none transition-colors"
             />
           </div>
         </div>
@@ -295,7 +295,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                   <option key={a.id} value={a.id} disabled={a.id === form.toAccountId}>{a.name}</option>
                 ))}
               </Select>
-              <div className="h-9 flex items-center justify-center text-muted">
+              <div className="h-9 touch:h-11 flex items-center justify-center text-muted">
                 <ArrowRight size={16} />
               </div>
               <Select label="Ke" value={form.toAccountId} onChange={(e) => set({ toAccountId: e.target.value })}>
@@ -304,10 +304,10 @@ export default function TransactionForm({ open, onClose, editing }) {
                   <option key={a.id} value={a.id} disabled={a.id === form.fromAccountId}>{a.name}</option>
                 ))}
               </Select>
-              <p className="col-span-3 text-2xs text-muted -mt-1">Transfer hanya antar rekening cash. Bayar tagihan pay later lewat menu Pay Later.</p>
+              <p className="col-span-3 text-xs text-muted -mt-1">Transfer hanya antar rekening cash. Bayar tagihan pay later lewat menu Pay Later.</p>
             </div>
             {form.fromAccountId && form.fromAccountId === form.toAccountId && (
-              <p className="text-2xs text-negative">Rekening asal dan tujuan tidak boleh sama.</p>
+              <p className="text-xs text-negative">Rekening asal dan tujuan tidak boleh sama.</p>
             )}
 
             <div className="grid grid-cols-2 gap-3">
@@ -320,13 +320,13 @@ export default function TransactionForm({ open, onClose, editing }) {
                     value={feeStr}
                     onChange={handleFee}
                     placeholder="0"
-                    className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+                    className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum placeholder:text-muted focus:border-fg outline-none transition-colors"
                   />
                 </div>
               </div>
               {Number(form.fee) > 0 && (
                 <Select label="Kategori biaya" value={form.feeCategoryId} onChange={(e) => set({ feeCategoryId: e.target.value })}>
-                  <option value="">— Tidak dicatat —</option>
+                  <option value="">Tidak dicatat</option>
                   {expenseCats.map((c) => (
                     <option key={c.id} value={c.id}>{c.name}</option>
                   ))}
@@ -353,7 +353,7 @@ export default function TransactionForm({ open, onClose, editing }) {
 
             {isIncome && (
               <Select label="Sumber Pemasukan (opsional)" value={form.incomeSourceId} onChange={(e) => set({ incomeSourceId: e.target.value })}>
-                <option value="">— Tidak ditentukan —</option>
+                <option value="">Tidak ditentukan</option>
                 {incomeSources.map((s) => (
                   <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
@@ -361,10 +361,10 @@ export default function TransactionForm({ open, onClose, editing }) {
             )}
 
             {canInstallment && (
-              <div className="rounded-lg border border-border bg-surface-2/40 p-3 space-y-3">
+              <div className="border-t border-border pt-3 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2 text-sm font-medium text-fg">
-                    <CreditCard size={15} className="text-accent" /> Cicilan
+                    <CreditCard size={15} className="text-muted" /> Cicilan
                   </span>
                   <Toggle checked={form.installment} onChange={(v) => set({ installment: v })} />
                 </div>
@@ -379,7 +379,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                             key={t}
                             type="button"
                             onClick={() => set({ tenorMode: 'preset', tenor: t })}
-                            className={`h-8 px-3 rounded-lg text-xs font-medium border transition-colors ${form.tenorMode === 'preset' && form.tenor === t ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:text-fg'}`}
+                            className={`h-8 touch:h-11 px-3 rounded-md text-xs font-medium border transition-colors ${form.tenorMode === 'preset' && form.tenor === t ? 'border-fg bg-surface-2 text-fg' : 'border-border text-muted hover:text-fg'}`}
                           >
                             {t}x
                           </button>
@@ -387,7 +387,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                         <button
                           type="button"
                           onClick={() => set({ tenorMode: 'custom' })}
-                          className={`h-8 px-3 rounded-lg text-xs font-medium border transition-colors ${form.tenorMode === 'custom' ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:text-fg'}`}
+                          className={`h-8 touch:h-11 px-3 rounded-md text-xs font-medium border transition-colors ${form.tenorMode === 'custom' ? 'border-fg bg-surface-2 text-fg' : 'border-border text-muted hover:text-fg'}`}
                         >
                           Custom
                         </button>
@@ -399,7 +399,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                             value={form.customTenor}
                             onChange={(e) => set({ customTenor: e.target.value.replace(/[^\d]/g, '') })}
                             placeholder="mis. 15"
-                            className="w-full h-9 pl-3 pr-8 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum focus:border-accent outline-none"
+                            className="w-full h-9 touch:h-11 pl-3 pr-8 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum focus:border-fg outline-none transition-colors"
                           />
                           <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">x</span>
                         </div>
@@ -437,7 +437,7 @@ export default function TransactionForm({ open, onClose, editing }) {
                               value={interestStr}
                               onChange={handleInterest}
                               placeholder="0"
-className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum focus:border-accent outline-none"
+                              className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum focus:border-fg outline-none transition-colors"
                             />
                           </div>
                         ) : (
@@ -448,11 +448,11 @@ className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-
                                 value={form.interestPct}
                                 onChange={(e) => set({ interestPct: e.target.value.replace(/[^\d.,]/g, '') })}
                                 placeholder="0"
-                                className="w-full h-9 pl-3 pr-8 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum focus:border-accent outline-none"
+                                className="w-full h-9 touch:h-11 pl-3 pr-8 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum focus:border-fg outline-none transition-colors"
                               />
                               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted">%</span>
                             </div>
-                            <p className="text-2xs text-muted mt-1">
+                            <p className="text-xs text-muted mt-1">
                               {parseFloat(String(form.interestPct).replace(',', '.')) > 0
                                 ? `${form.interestPct}% dari pokok = ${formatRupiah(interestRp)}/bln (flat)`
                                 : 'Persen flat dari harga pokok, per bulan.'}
@@ -470,20 +470,20 @@ className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-
                             value={monthlyStr}
                             onChange={handleMonthly}
                             placeholder="0"
-                            className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-sm text-fg tnum focus:border-accent outline-none"
+                            className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum focus:border-fg outline-none transition-colors"
                           />
                         </div>
                       </div>
                     )}
 
-                    <div className="rounded-lg bg-accent/[0.06] border border-accent/20 p-3 text-sm">
-                      <div className="flex justify-between text-fg">
+                    <div className="rounded-md bg-surface-2 p-3 text-sm">
+                      <div className="flex flex-wrap justify-between gap-x-3 text-fg">
                         <span className="text-muted">Tagihan / bulan</span>
-                        <span className="font-semibold tnum">{formatRupiah(computedMonthly)}</span>
+                        <span className="font-semibold tnum whitespace-nowrap">{formatRupiah(computedMonthly)}</span>
                       </div>
-                      <div className="flex justify-between text-2xs text-muted mt-1">
+                      <div className="flex flex-wrap justify-between gap-x-3 text-xs text-muted mt-1">
                         <span>Total {effectiveTenor}x</span>
-                        <span className="tnum">{formatRupiah(computedMonthly * effectiveTenor)}</span>
+                        <span className="tnum whitespace-nowrap">{formatRupiah(computedMonthly * effectiveTenor)}</span>
                       </div>
                     </div>
                   </>
@@ -498,7 +498,7 @@ className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-
         <Textarea label={useInstallment ? 'Nama barang / catatan' : 'Catatan (opsional)'} rows={2} value={form.note} onChange={(e) => set({ note: e.target.value })} placeholder={isTransfer ? 'mis. Top up GoPay' : useInstallment ? 'mis. iPhone 15' : 'mis. Makan siang di kantin'} />
 
         {!accountKindValid && (form.accountId || form.fromAccountId || form.toAccountId) && (
-          <p className="text-2xs text-warning">
+          <p className="text-xs text-warning">
             Rekening yang dipilih tidak valid untuk tipe transaksi ini. Pilih rekening cash{form.type === 'expense' ? ' atau pay later' : ''}.
           </p>
         )}

@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useRef, useState } from 'react'
 import { AlertTriangle, Trash2 } from 'lucide-react'
-import { Button, Modal } from '../components/ui/index.jsx'
+import * as newUi from '../components/ui/index.jsx'
+import * as legacyUi from '../legacy/components/ui/index.jsx'
+import { useUiVersion } from './UiVersionContext.jsx'
 
 const ConfirmContext = createContext(null)
 
@@ -8,6 +10,9 @@ const ConfirmContext = createContext(null)
 // confirm({ title, message, detail?, confirmLabel?, onConfirm }). onConfirm dijalankan dari dialog:
 // dialog tetap terbuka selama proses, dan menampilkan pesan error kalau gagal (tidak ditutup diam-diam).
 export function ConfirmProvider({ children }) {
+  const { ui } = useUiVersion()
+  // Tampilan lama tetap memakai komponen lamanya sendiri (hapus cabang ini saat tampilan lama dihapus).
+  const { Button, Modal } = ui === 'legacy' ? legacyUi : newUi
   const [req, setReq] = useState(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')

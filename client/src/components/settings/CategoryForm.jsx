@@ -81,7 +81,7 @@ export default function CategoryForm({ open, onClose, editing }) {
               <button
                 key={c}
                 onClick={() => set({ color: c })}
-                className={`h-7 w-7 rounded-full transition-transform ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-surface scale-110' : ''}`}
+                className={`h-7 w-7 touch:h-11 touch:w-11 rounded-full transition-transform ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-surface scale-110' : ''}`}
                 style={{ background: c, '--tw-ring-color': c }}
               />
             ))}
@@ -90,13 +90,13 @@ export default function CategoryForm({ open, onClose, editing }) {
 
         <div>
           <span className="block text-xs font-medium text-muted mb-2">Ikon</span>
-          <div className="grid grid-cols-8 gap-2">
+          <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
             {ICONS.map((ic) => (
               <button
                 key={ic}
                 onClick={() => set({ icon: ic })}
-                className={`h-9 flex items-center justify-center rounded-lg border transition-colors ${
-                  form.icon === ic ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:text-fg hover:bg-surface-2'
+                className={`h-9 touch:h-11 flex items-center justify-center rounded-md border transition-colors ${
+                  form.icon === ic ? 'border-fg bg-surface-2 text-fg' : 'border-border text-muted hover:text-fg hover:bg-surface-2'
                 }`}
               >
                 <CategoryIcon name={ic} color="currentColor" size={16} boxed={false} />

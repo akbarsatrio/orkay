@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Check } from 'lucide-react'
 import { Modal, Button, Input, Select } from '../ui/index.jsx'
+import Money from '../ui/Money.jsx'
 import { useData } from '../../context/DataContext.jsx'
-import { formatRupiah, formatDate, toISODate } from '../../lib/format.js'
+import { formatDate, toISODate } from '../../lib/format.js'
 
 /**
  * Modal bayar tagihan pay later.
@@ -69,14 +70,14 @@ export default function PayBillModal({ open, item, onClose }) {
       }
     >
       <div className="space-y-4">
-        <div className="rounded-lg bg-surface-2 border border-border p-3">
+        <div className="rounded-md bg-surface-2 p-3">
           <p className="text-sm font-medium text-fg">
-            {isInstallment ? `${item.installment.name} — cicilan ${item.termin}/${item.installment.tenor}` : `Tagihan ${acc.name}`}
+            {isInstallment ? `${item.installment.name} · cicilan ${item.termin}/${item.installment.tenor}` : `Tagihan ${acc.name}`}
           </p>
-          <p className="text-2xs text-muted mt-0.5">
+          <p className="text-xs text-muted mt-0.5">
             {acc.name} · jatuh tempo {formatDate(item.dueDate, { short: true })}
           </p>
-          <p className="text-xl font-bold text-fg tnum mt-2">{formatRupiah(amount)}</p>
+          <Money value={amount} size="large" className="block mt-2 text-fg" />
         </div>
 
         <Select label="Bayar dari rekening" value={fromAccountId} onChange={(e) => setFromAccountId(e.target.value)}>
@@ -86,7 +87,7 @@ export default function PayBillModal({ open, item, onClose }) {
           ))}
         </Select>
         {cashAccounts.length === 0 && (
-          <p className="text-2xs text-warning">Belum ada rekening cash untuk membayar. Tambahkan rekening dulu.</p>
+          <p className="text-xs text-warning">Belum ada rekening cash untuk membayar. Tambahkan rekening dulu.</p>
         )}
 
         <Input type="date" label="Tanggal bayar" value={date} onChange={(e) => setDate(e.target.value)} />

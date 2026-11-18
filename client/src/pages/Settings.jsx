@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import {
-  Plus, Pencil, Trash2, RefreshCw, CalendarDays, Tag, Coins, AlertTriangle, Check, Bomb,
+  Plus, Pencil, Trash2, RefreshCw, CalendarDays, Tag, Coins, AlertTriangle, Bomb,
 } from 'lucide-react'
-import { Card, CardHeader, CardBody, Button, Input, Badge, Empty, Modal, Toggle } from '../components/ui/index.jsx'
+import { Card, CardHeader, CardBody, Button, Input, Badge, Empty, Modal, Toggle, Segmented } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import CategoryForm from '../components/settings/CategoryForm.jsx'
 import { useData } from '../context/DataContext.jsx'
+import { useUiVersion } from '../context/UiVersionContext.jsx'
+import { useTheme } from '../context/ThemeContext.jsx'
 import { useConfirm } from '../context/ConfirmContext.jsx'
 import { fetchHolidays } from '../lib/holidays.js'
 import { getPaydayDate } from '../lib/payday.js'
@@ -17,6 +19,8 @@ export default function Settings() {
     deleteCategory, addIncomeSource, updateIncomeSource, deleteIncomeSource,
     updateSettings, destroyData,
   } = useData()
+  const { ui, setUi } = useUiVersion()
+  const { pref: themePref, setPref: setThemePref } = useTheme()
 
   const [catForm, setCatForm] = useState({ open: false, editing: null })
   const [newSource, setNewSource] = useState('')
@@ -65,6 +69,38 @@ export default function Settings() {
 
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader title="Tampilan" />
+        <CardBody className="space-y-5">
+          <div>
+            <p className="text-[13px] font-medium text-muted mb-2">Versi tampilan</p>
+            <Segmented
+              options={[
+                { value: 'new', label: 'Tampilan baru' },
+                { value: 'legacy', label: 'Tampilan lama' },
+              ]}
+              value={ui}
+              onChange={setUi}
+            />
+            <p className="text-xs text-muted mt-2">
+              Tampilan lama masih bisa dipakai selama masa transisi. Pilihan ini tersimpan di perangkat ini saja.
+            </p>
+          </div>
+          <div>
+            <p className="text-[13px] font-medium text-muted mb-2">Tema</p>
+            <Segmented
+              options={[
+                { value: 'system', label: 'Ikut sistem' },
+                { value: 'light', label: 'Terang' },
+                { value: 'dark', label: 'Gelap' },
+              ]}
+              value={themePref}
+              onChange={setThemePref}
+            />
+          </div>
+        </CardBody>
+      </Card>
+
       {/* Payday config */}
       <Card>
         <CardHeader
@@ -83,10 +119,10 @@ export default function Settings() {
                 onChange={(e) => updateSettings({ payDay: Math.min(31, Math.max(1, Number(e.target.value) || 1)) })}
               />
             </div>
-            <div className="flex-1 rounded-lg bg-surface-2 border border-border px-4 py-3">
-              <p className="text-2xs text-muted mb-0.5">Gajian bulan {monthNamesID[now.getMonth()]} jatuh pada</p>
+            <div className="flex-1 rounded-md bg-surface-2 px-4 py-3">
+              <p className="text-xs text-muted mb-0.5">Gajian bulan {monthNamesID[now.getMonth()]} jatuh pada</p>
               <p className="text-sm font-semibold text-fg flex items-center gap-2">
-                <CalendarDays size={15} className="text-accent" />
+                <CalendarDays size={15} className="text-muted" />
                 {formatDate(nextPay.effective, { withDay: true })}
                 {nextPay.shifted && (
                   <Badge className="text-warning border-warning/30 bg-warning/10">
@@ -99,7 +135,7 @@ export default function Settings() {
           <label className="flex items-start justify-between gap-4 cursor-pointer">
             <span>
               <span className="block text-sm font-medium text-fg">Majukan kalau jatuh di weekend/libur</span>
-              <span className="block text-2xs text-muted mt-0.5">
+              <span className="block text-xs text-muted mt-0.5">
                 Gajian dianggap cair di hari kerja terdekat sebelumnya. Matikan kalau gajian kamu tetap cair di tanggalnya.
               </span>
             </span>
@@ -121,20 +157,20 @@ export default function Settings() {
         />
         <CardBody className="space-y-5">
           <div>
-            <p className="text-2xs font-semibold uppercase tracking-wide text-muted mb-2 flex items-center gap-1.5">
+            <p className="text-[13px] font-medium text-muted mb-2 flex items-center gap-1.5">
               <Tag size={12} /> Pengeluaran
             </p>
-            <div className="grid sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
               {expenseCats.map((c) => (
                 <CategoryRow key={c.id} cat={c} onEdit={() => setCatForm({ open: true, editing: c })} onDelete={() => askDeleteCategory(c)} />
               ))}
             </div>
           </div>
           <div>
-            <p className="text-2xs font-semibold uppercase tracking-wide text-muted mb-2 flex items-center gap-1.5">
+            <p className="text-[13px] font-medium text-muted mb-2 flex items-center gap-1.5">
               <Coins size={12} /> Pemasukan
             </p>
-            <div className="grid sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
               {incomeCats.map((c) => (
                 <CategoryRow key={c.id} cat={c} onEdit={() => setCatForm({ open: true, editing: c })} onDelete={() => askDeleteCategory(c)} />
               ))}
@@ -163,10 +199,10 @@ export default function Settings() {
           ) : (
             <div className="flex flex-wrap gap-2">
               {incomeSources.map((s) => (
-                <div key={s.id} className="inline-flex items-center gap-2 pl-3 pr-1.5 h-8 rounded-full bg-surface-2 border border-border text-sm">
+                <div key={s.id} className="inline-flex items-center gap-2 pl-3 pr-1.5 h-8 rounded-md bg-surface-2 text-sm">
                   <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
                   {s.name}
-                  <button onClick={() => askDeleteSource(s)} aria-label={`Hapus ${s.name}`} className="h-5 w-5 flex items-center justify-center rounded-full text-muted hover:text-negative hover:bg-negative/10">
+                  <button onClick={() => askDeleteSource(s)} aria-label={`Hapus ${s.name}`} className="h-5 w-5 touch:h-11 touch:w-11 touch:-my-1.5 flex items-center justify-center rounded-full text-muted hover:text-negative hover:bg-negative/10">
                     <Trash2 size={12} />
                   </button>
                 </div>
@@ -186,7 +222,7 @@ export default function Settings() {
               <select
                 value={holidayYear}
                 onChange={(e) => setHolidayYear(Number(e.target.value))}
-                className="h-8 px-2 rounded-lg bg-surface border border-border text-base sm:text-xs text-fg outline-none"
+                className="h-8 touch:h-11 px-2 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-xs text-fg outline-none focus:border-fg transition-colors"
               >
                 {[now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => (
                   <option key={y} value={y}>{y}</option>
@@ -204,12 +240,12 @@ export default function Settings() {
           ) : holidays.length === 0 ? (
             <Empty icon={CalendarDays} title="Gagal memuat" description="Cek koneksi internet lalu muat ulang." />
           ) : (
-            <div className="grid sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-72 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1.5 max-h-72 overflow-y-auto pr-1">
               {holidays.map((h) => (
                 <div key={h.date} className="flex items-center gap-2 py-1 text-sm border-b border-border/50 last:border-0">
                   <span className={`h-1.5 w-1.5 rounded-full ${h.type === 'holiday' ? 'bg-negative' : 'bg-warning'}`} />
                   <span className="text-muted text-xs tnum w-16">{formatDate(h.date, { short: true }).replace(` ${holidayYear}`, '')}</span>
-                  <span className="text-fg truncate flex-1">{h.name}</span>
+                  <span className="text-fg truncate flex-1 min-w-0">{h.name}</span>
                 </div>
               ))}
             </div>
@@ -218,13 +254,13 @@ export default function Settings() {
       </Card>
 
       {/* Danger zone */}
-      <Card className="border-negative/30">
+      <Card>
         <CardHeader title="Zona Berbahaya" subtitle="Tindakan di bawah ini tidak bisa dibatalkan. Lakukan dengan hati-hati." />
         <CardBody className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg border border-negative/30 bg-negative/[0.04]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-fg">Destroy Data</p>
-              <p className="text-2xs text-muted mt-0.5">
+              <p className="text-xs text-muted mt-0.5">
                 Hapus semua transaksi & anggaran, saldo rekening jadi 0. Kategori, sumber pemasukan, rekening & pengaturan tetap aman.
               </p>
             </div>
@@ -253,7 +289,7 @@ export default function Settings() {
         }
       >
         <div className="space-y-4">
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-negative/[0.06] border border-negative/25">
+          <div className="flex items-start gap-3">
             <AlertTriangle size={18} className="text-negative shrink-0 mt-0.5" />
             <p className="text-xs text-fg leading-relaxed">
               Tindakan ini <b>tidak bisa dibatalkan</b>. Pastikan kamu benar-benar ingin mengosongkan data.
@@ -261,8 +297,8 @@ export default function Settings() {
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-lg border border-border p-3">
-              <p className="text-2xs font-semibold uppercase tracking-wide text-negative mb-2">Akan dihapus</p>
+            <div>
+              <p className="text-[13px] font-medium text-negative mb-2">Akan dihapus</p>
               <ul className="space-y-1 text-xs text-muted">
                 <li>• Semua transaksi</li>
                 <li>• Semua anggaran</li>
@@ -270,8 +306,8 @@ export default function Settings() {
                 <li>• Riwayat bayar tagihan rutin</li>
               </ul>
             </div>
-            <div className="rounded-lg border border-border p-3">
-              <p className="text-2xs font-semibold uppercase tracking-wide text-positive mb-2">Tetap aman</p>
+            <div>
+              <p className="text-[13px] font-medium text-positive mb-2">Tetap aman</p>
               <ul className="space-y-1 text-xs text-muted">
                 <li>• Kategori</li>
                 <li>• Sumber pemasukan</li>
@@ -302,13 +338,13 @@ export default function Settings() {
 
 function CategoryRow({ cat, onEdit, onDelete }) {
   return (
-    <div className="group flex items-center gap-3 px-3 h-12 rounded-lg border border-border bg-surface hover:bg-surface-2 transition-colors">
+    <div className="group flex items-center gap-2 min-h-12 border-t border-border first:border-t-0 sm:[&:nth-child(2)]:border-t-0 hover:bg-surface-2/50 transition-colors">
       <CategoryIcon name={cat.icon} color={cat.color} size={16} />
-      <span className="text-sm text-fg flex-1 truncate">{cat.name}</span>
-      <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+      <span className="text-sm text-fg flex-1 min-w-0 truncate">{cat.name}</span>
+      <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100 transition-opacity">
         <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
       </button>
-      <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+      <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100 transition-opacity">
         <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
       </button>
     </div>

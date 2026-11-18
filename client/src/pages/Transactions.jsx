@@ -1,13 +1,23 @@
 import { useMemo, useState } from 'react'
 import {
-  Search, Plus, Pencil, Trash2, ArrowDownLeft, ArrowUpRight, ArrowLeftRight, ArrowRight, X, SlidersHorizontal,
+  Search, Plus, Pencil, Trash2, ArrowLeftRight, ArrowRight, X, SlidersHorizontal,
 } from 'lucide-react'
-import { Card, Button, Input, Select, Badge, Empty, Segmented, cx } from '../components/ui/index.jsx'
+import { Button, Input, Select, Empty, Segmented, cx } from '../components/ui/index.jsx'
+import Money from '../components/ui/Money.jsx'
+import RowMenu from '../components/ui/RowMenu.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
+import { BillIcon } from '../components/bills/BillRow.jsx'
 import TransactionForm from '../components/transactions/TransactionForm.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { useConfirm } from '../context/ConfirmContext.jsx'
 import { formatRupiah, formatDate, dayName } from '../lib/format.js'
+
+const TYPE_OPTIONS = [
+  { value: 'all', label: 'Semua' },
+  { value: 'income', label: 'Masuk' },
+  { value: 'expense', label: 'Keluar' },
+  { value: 'transfer', label: 'Transfer' },
+]
 
 export default function Transactions() {
   const { transactions, categories, accounts, categoryMap, accountMap, deleteTransaction } = useData()
@@ -78,65 +88,42 @@ export default function Transactions() {
   const clearFilters = () => { setQ(''); setType('all'); setCatFilter('all'); setAccFilter('all'); setFrom(''); setTo('') }
 
   return (
-    <div className="space-y-4">
-      {/* Filter bar */}
-      <Card className="p-4">
-        <div className="flex flex-col lg:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
+    <div className="space-y-6">
+      {/* Toolbar: cari + jenis selalu terlihat di desktop; filter lain di panel (HP: dibuka lewat tombol Filter) */}
+      <div>
+        <div className="flex gap-3">
+          <div className="relative flex-1 min-w-0">
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted" aria-hidden="true" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Cari catatan, kategori, rekening…"
-              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface-2 border border-border text-base sm:text-sm text-fg placeholder:text-muted/70 focus:border-accent outline-none"
+              aria-label="Cari transaksi"
+              className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg placeholder:text-muted focus:border-fg outline-none transition-colors"
             />
           </div>
-          <Segmented
-            className="hidden lg:inline-flex"
-            options={[
-              { value: 'all', label: 'Semua' },
-              { value: 'income', label: 'Masuk' },
-              { value: 'expense', label: 'Keluar' },
-              { value: 'transfer', label: 'Transfer' },
-            ]}
-            value={type}
-            onChange={setType}
-          />
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              className="lg:hidden flex-1 relative"
-              onClick={() => setShowFilters((s) => !s)}
-            >
-              <SlidersHorizontal size={16} /> Filter
-              {activeFilterCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-accent text-accent-fg text-2xs font-bold flex items-center justify-center">{activeFilterCount}</span>
-              )}
-            </Button>
-            <Button className="flex-1 lg:flex-none" onClick={() => setForm({ open: true, editing: null })}>
-              <Plus size={16} /> Tambah
-            </Button>
-          </div>
+          <Segmented className="hidden lg:inline-flex" options={TYPE_OPTIONS} value={type} onChange={setType} />
+          <Button
+            variant="secondary"
+            className="lg:hidden shrink-0 relative"
+            onClick={() => setShowFilters((s) => !s)}
+            aria-expanded={showFilters}
+          >
+            <SlidersHorizontal size={16} aria-hidden="true" /> Filter
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 h-5 min-w-5 px-1 rounded-full bg-accent text-accent-fg text-xs font-bold flex items-center justify-center">{activeFilterCount}</span>
+            )}
+          </Button>
         </div>
 
-        <div className={cx('mt-3', showFilters ? 'block' : 'hidden lg:block')}>
-          <Segmented
-            className="lg:hidden w-full mb-2"
-            options={[
-              { value: 'all', label: 'Semua' },
-              { value: 'income', label: 'Masuk' },
-              { value: 'expense', label: 'Keluar' },
-              { value: 'transfer', label: 'Transfer' },
-            ]}
-            value={type}
-            onChange={setType}
-          />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
-            <Select value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
+        <div className={cx('mt-4', showFilters ? 'block' : 'hidden lg:block')}>
+          <Segmented className="lg:hidden w-full mb-3" fill options={TYPE_OPTIONS} value={type} onChange={setType} />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-3 gap-y-3">
+            <Select label="Kategori" value={catFilter} onChange={(e) => setCatFilter(e.target.value)}>
               <option value="all">Semua kategori</option>
               {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </Select>
-            <Select value={accFilter} onChange={(e) => setAccFilter(e.target.value)}>
+            <Select label="Rekening" value={accFilter} onChange={(e) => setAccFilter(e.target.value)}>
               <option value="all">Semua rekening</option>
               {accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
             </Select>
@@ -146,44 +133,47 @@ export default function Transactions() {
         </div>
 
         {hasActiveFilter && (
-          <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border">
-            <span className="text-xs text-muted">{filtered.length} transaksi</span>
-            <span className="text-xs text-positive tnum">+{formatRupiah(totals.inc)}</span>
-            <span className="text-xs text-negative tnum">−{formatRupiah(totals.exp)}</span>
-            <button onClick={clearFilters} className="ml-auto text-xs text-muted hover:text-fg inline-flex items-center gap-1">
-              <X size={12} /> Reset filter
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-[13px]">
+            <span className="text-fg font-medium">{filtered.length} transaksi</span>
+            <span className="text-positive tnum whitespace-nowrap">+{formatRupiah(totals.inc)}</span>
+            <span className="text-negative tnum whitespace-nowrap">−{formatRupiah(totals.exp)}</span>
+            <button onClick={clearFilters} className="ml-auto touch:min-h-11 text-muted hover:text-fg inline-flex items-center gap-1">
+              <X size={13} aria-hidden="true" /> Reset filter
             </button>
           </div>
         )}
-      </Card>
+      </div>
 
-      {/* List */}
-      <Card>
+      {/* Daftar per hari */}
+      <section className="border-t border-rule min-w-0">
         {groups.length === 0 ? (
-          <Empty
-            icon={ArrowLeftRight}
-            title="Tidak ada transaksi"
-            description={hasActiveFilter ? 'Coba ubah atau reset filter.' : 'Mulai catat pemasukan & pengeluaran kamu.'}
-            action={!hasActiveFilter && <Button onClick={() => setForm({ open: true, editing: null })}><Plus size={16} /> Tambah Transaksi</Button>}
-          />
+          <div className="pt-5">
+            <Empty
+              icon={ArrowLeftRight}
+              title="Tidak ada transaksi"
+              description={hasActiveFilter ? 'Coba ubah atau reset filter.' : 'Mulai catat pemasukan & pengeluaran kamu.'}
+              action={!hasActiveFilter && <Button variant="accent" onClick={() => setForm({ open: true, editing: null })}><Plus size={16} /> Tambah Transaksi</Button>}
+            />
+          </div>
         ) : (
-          <div className="divide-y divide-border">
-            {groups.map(([date, items]) => {
-              const dayTotal = items.reduce((s, t) => {
-                if (t.type === 'income') return s + t.amount
-                if (t.type === 'expense') return s - t.amount
-                return s - (t.fee || 0) // transfer: hanya biaya admin yg mengurangi net
-              }, 0)
-              return (
-                <div key={date}>
-                  <div className="flex items-center justify-between px-4 sm:px-5 py-2 bg-surface-2 sticky top-16 z-10">
-                    <span className="text-xs font-medium text-muted">
-                      {dayName(date)}, {formatDate(date)}
-                    </span>
-                    <span className={`text-xs font-medium tnum ${dayTotal >= 0 ? 'text-positive' : 'text-negative'}`}>
-                      {dayTotal >= 0 ? '+' : '−'}{formatRupiah(Math.abs(dayTotal))}
-                    </span>
-                  </div>
+          groups.map(([date, items]) => {
+            const dayTotal = items.reduce((s, t) => {
+              if (t.type === 'income') return s + t.amount
+              if (t.type === 'expense') return s - t.amount
+              return s - (t.fee || 0) // transfer: hanya biaya admin yg mengurangi net
+            }, 0)
+            return (
+              <section key={date} aria-label={`${dayName(date)}, ${formatDate(date)}`}>
+                {/* Kepala hari menempel di atas saat di-scroll; isinya tanggal + total bersih hari itu */}
+                <div className="sticky top-0 z-10 bg-bg flex items-baseline justify-between gap-3 pt-5 pb-2 border-b border-border">
+                  <h2 className="text-[13px] font-semibold text-fg">
+                    {dayName(date)}, <span className="font-normal text-muted">{formatDate(date)}</span>
+                  </h2>
+                  <span className={`text-[13px] font-medium tnum whitespace-nowrap ${dayTotal >= 0 ? 'text-positive' : 'text-negative'}`}>
+                    {dayTotal >= 0 ? '+' : '−'}{formatRupiah(Math.abs(dayTotal))}
+                  </span>
+                </div>
+                <div className="divide-y divide-border">
                   {items.map((t) => (
                     <TxRow
                       key={t.id}
@@ -196,94 +186,99 @@ export default function Transactions() {
                     />
                   ))}
                 </div>
-              )
-            })}
-          </div>
+              </section>
+            )
+          })
         )}
-      </Card>
+      </section>
 
       <TransactionForm open={form.open} editing={form.editing} onClose={() => setForm({ open: false, editing: null })} />
     </div>
   )
 }
 
+function AccountDot({ acc }) {
+  return (
+    <span className="inline-flex items-center gap-1 min-w-0">
+      <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ background: acc?.color || '#71717a' }} aria-hidden="true" />
+      <span className="truncate">{acc?.name || '-'}</span>
+    </span>
+  )
+}
+
+const actionBtn =
+  'h-9 w-9 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted transition-colors'
+
+// Kolom: ikon 34px | judul + keterangan (satu baris, terpotong rapi) | nominal rata kanan | aksi.
+// Desktop: ubah/hapus muncul saat kursor di atas baris, ruangnya tetap dipesan supaya nominal selalu lurus.
+// HP: ubah/hapus digabung di menu "⋯" supaya judul & keterangan tidak terpotong terlalu pendek.
 function TxRow({ tx, cat, acc, accountMap, onEdit, onDelete }) {
   const isTransfer = tx.type === 'transfer'
   const isIncome = tx.type === 'income'
-
-  if (isTransfer) {
-    const fromAcc = accountMap[tx.fromAccountId]
-    const toAcc = accountMap[tx.toAccountId]
-    return (
-      <div className="group flex items-center gap-3 px-5 py-3 hover:bg-surface-2/50 transition-colors">
-        <span className="inline-flex items-center justify-center rounded-lg shrink-0 h-9 w-9 bg-accent/10 text-accent">
-          <ArrowLeftRight size={17} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-fg truncate">{tx.note || 'Transfer'}</p>
-          <div className="flex items-center gap-1.5 mt-0.5 text-2xs text-muted">
-            <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: fromAcc?.color || '#71717a' }} />
-              {fromAcc?.name || '—'}
-            </span>
-            <ArrowRight size={11} className="text-muted/60" />
-            <span className="inline-flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full" style={{ background: toAcc?.color || '#71717a' }} />
-              {toAcc?.name || '—'}
-            </span>
-            {tx.fee > 0 && <span className="text-muted/70">· biaya {formatRupiah(tx.fee)}</span>}
-          </div>
-        </div>
-        <div className="text-sm font-semibold tnum shrink-0 text-fg">
-          <span className="inline-flex items-center gap-1 text-muted">
-            <ArrowLeftRight size={12} />
-            {formatRupiah(tx.amount)}
-          </span>
-        </div>
-        <div className="flex gap-1 shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-          <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50">
-            <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
-          </button>
-          <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
-            <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
-          </button>
-        </div>
-      </div>
-    )
-  }
+  const fromAcc = isTransfer ? accountMap[tx.fromAccountId] : null
+  const toAcc = isTransfer ? accountMap[tx.toAccountId] : null
 
   return (
-    <div className="group flex items-center gap-3 px-5 py-3 hover:bg-surface-2/50 transition-colors">
-      <CategoryIcon name={cat?.icon || 'Circle'} color={cat?.color || '#71717a'} size={18} />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-fg truncate">{tx.note || cat?.name || 'Transaksi'}</p>
-        <div className="flex items-center gap-1.5 mt-0.5">
-          <span className="text-2xs text-muted">{cat?.name}</span>
-          {acc && (
+    <div className="group grid grid-cols-[34px_minmax(0,1fr)_auto_auto] items-center gap-x-3 sm:gap-x-4 py-3">
+      {isTransfer
+        ? <BillIcon icon={ArrowLeftRight} />
+        : <CategoryIcon name={cat?.icon || 'Circle'} color={cat?.color || '#71717a'} size={16} />}
+
+      <div className="min-w-0">
+        <p className="text-[15px] font-medium text-fg truncate">
+          {isTransfer ? tx.note || 'Transfer' : tx.note || cat?.name || 'Transaksi'}
+        </p>
+        <div className="flex items-center gap-x-1.5 mt-0.5 text-[13px] text-muted min-w-0 overflow-hidden whitespace-nowrap">
+          {isTransfer ? (
             <>
-              <span className="text-muted/40">·</span>
-              <span className="inline-flex items-center gap-1 text-2xs text-muted">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: acc.color }} />
-                {acc.name}
-              </span>
+              <AccountDot acc={fromAcc} />
+              <ArrowRight size={12} className="shrink-0" aria-label="ke" />
+              <AccountDot acc={toAcc} />
+              {tx.fee > 0 && <span className="tnum shrink-0">· biaya {formatRupiah(tx.fee)}</span>}
+            </>
+          ) : (
+            <>
+              <span className="truncate">{cat?.name}</span>
+              {acc && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <AccountDot acc={acc} />
+                </>
+              )}
             </>
           )}
         </div>
       </div>
-      <div className={`text-sm font-semibold tnum shrink-0 ${isIncome ? 'text-positive' : 'text-fg'}`}>
-        <span className="inline-flex items-center gap-1">
-          {isIncome ? <ArrowDownLeft size={13} /> : <ArrowUpRight size={13} className="text-negative" />}
-          {isIncome ? '+' : '−'}{formatRupiah(tx.amount)}
+
+      {isTransfer ? (
+        <span className="inline-flex items-center gap-1 text-[15px] font-semibold text-muted">
+          <ArrowLeftRight size={13} aria-label="Transfer" />
+          <Money value={tx.amount} />
         </span>
-      </div>
-      <div className="flex gap-1 shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-        <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50">
-          <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
+      ) : (
+        <Money
+          value={tx.amount}
+          sign={isIncome ? '+' : '-'}
+          className={`text-[15px] font-semibold ${isIncome ? 'text-positive' : 'text-fg'}`}
+        />
+      )}
+
+      <div className="hidden sm:flex gap-1 shrink-0 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 touch:opacity-100 transition-opacity">
+        <button onClick={onEdit} aria-label="Ubah transaksi" title="Ubah" className={`${actionBtn} hover:text-fg hover:bg-surface-2`}>
+          <Pencil size={15} aria-hidden="true" />
         </button>
-        <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
-          <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
+        <button onClick={onDelete} aria-label="Hapus transaksi" title="Hapus" className={`${actionBtn} hover:text-negative hover:bg-negative/10`}>
+          <Trash2 size={15} aria-hidden="true" />
         </button>
       </div>
+      <RowMenu
+        className="sm:hidden -mr-2"
+        label="Aksi transaksi"
+        items={[
+          { label: 'Ubah', icon: Pencil, onSelect: onEdit },
+          { label: 'Hapus', icon: Trash2, onSelect: onDelete, danger: true },
+        ]}
+      />
     </div>
   )
 }

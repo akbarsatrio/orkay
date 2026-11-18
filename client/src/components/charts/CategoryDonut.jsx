@@ -34,7 +34,7 @@ export default function CategoryDonut({ data }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-2xs text-muted">Total</span>
+          <span className="text-xs text-muted">Total</span>
           <span className="text-sm font-bold text-fg tnum">{formatRupiah(total)}</span>
         </div>
       </div>
@@ -45,9 +45,9 @@ export default function CategoryDonut({ data }) {
           return (
             <div key={d.name} className="flex items-center gap-2.5 text-sm">
               <span className="h-2.5 w-2.5 rounded-sm shrink-0" style={{ background: d.color }} />
-              <span className="text-fg truncate flex-1">{d.name}</span>
+              <span className="text-fg truncate flex-1 min-w-0">{d.name}</span>
               <span className="text-muted text-xs tnum">{pct}%</span>
-              <span className="font-medium text-fg tnum w-24 text-right">{formatRupiah(d.value)}</span>
+              <span className="font-medium text-fg tnum min-w-[6rem] text-right whitespace-nowrap">{formatRupiah(d.value)}</span>
             </div>
           )
         })}

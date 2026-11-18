@@ -194,7 +194,7 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Select label="Rekening" value={form.accountId} onChange={(e) => set({ accountId: e.target.value })}>
-            {investAccounts.length === 0 && <option value="">— belum ada —</option>}
+            {investAccounts.length === 0 && <option value="">Belum ada</option>}
             {investAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </Select>
           <Input type="date" label="Tanggal" value={form.date} onChange={(e) => set({ date: e.target.value })} />
@@ -218,16 +218,16 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
 
         {hasMoneyMove && (
           <Select label={cashLabel} value={form.cashAccountId} onChange={(e) => set({ cashAccountId: e.target.value })}>
-            {cashAccounts.length === 0 && <option value="">— belum ada rekening —</option>}
+            {cashAccounts.length === 0 && <option value="">Belum ada rekening</option>}
             {cashAccounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </Select>
         )}
 
         {isWithdraw && (
-          <div className="rounded-lg border border-border bg-surface-2/40 p-3 space-y-3">
+          <div className="space-y-3">
             {/* FEE */}
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-fg">Ada biaya admin (fee)?</span>
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-[13px] font-medium text-fg">Ada biaya admin (fee)?</span>
               <Toggle checked={form.feeEnabled} onChange={(v) => set({ feeEnabled: v })} />
             </div>
             {form.feeEnabled && (
@@ -249,8 +249,8 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
             )}
 
             {/* TAX */}
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-xs font-medium text-fg">Ada pajak (tax)?</span>
+            <div className="flex items-center justify-between gap-3 pt-1">
+              <span className="text-[13px] font-medium text-fg">Ada pajak (tax)?</span>
               <Toggle checked={form.taxEnabled} onChange={(v) => set({ taxEnabled: v })} />
             </div>
             {form.taxEnabled && (
@@ -272,7 +272,7 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
                 </div>
                 {form.taxMode === 'percent' && (
                   <div>
-                    <span className="block text-2xs font-medium text-muted mb-1.5">Basis pajak (beda bursa beda aturan)</span>
+                    <span className="block text-[13px] font-medium text-muted mb-1.5">Basis pajak (beda bursa beda aturan)</span>
                     <Segmented
                       fill
                       options={[
@@ -294,13 +294,13 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
             label="Nilai portfolio sekarang (dari bursa)"
             value={marketStr}
             onChange={handleMarket}
-            hint="Terisi otomatis dari nilai lalu + setor − tarik. Ubah kalau nilai real di bursa beda — selisihnya jadi untung/rugi periode ini."
+            hint="Terisi otomatis dari nilai lalu + setor − tarik. Ubah kalau nilai real di bursa beda, selisihnya jadi untung/rugi periode ini."
           />
           {isMarketEstimate && parseNumber(marketStr) > 0 ? (
-            <p className="text-2xs text-warning/90 mt-1">≈ estimasi (belum dikoreksi). Cek nilai real di bursa & ubah bila perlu.</p>
+            <p className="text-xs text-warning/90 mt-1">≈ estimasi (belum dikoreksi). Cek nilai real di bursa & ubah bila perlu.</p>
           ) : marketTouched ? (
-            <button type="button" onClick={useEstimate} className="text-2xs text-accent hover:underline mt-1">
-              ↺ Pakai estimasi ({formatRupiah(baselineMarket)})
+            <button type="button" onClick={useEstimate} className="text-xs font-medium text-fg underline-offset-2 hover:underline mt-1 touch:min-h-11 text-left">
+              ↺ Pakai estimasi (<span className="tnum whitespace-nowrap">{formatRupiah(baselineMarket)}</span>)
             </button>
           ) : null}
         </div>
@@ -308,10 +308,10 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
         <Input label="Catatan (opsional)" value={form.note} onChange={(e) => set({ note: e.target.value })} placeholder="mis. beli saham BBRI, DCA bulanan" />
 
         {/* Preview kalkulasi */}
-        <div className="rounded-lg border border-border bg-surface-2/40 p-3 space-y-1.5 text-xs">
-          <p className="text-2xs font-semibold uppercase tracking-wide text-muted mb-1">Perhitungan Orkay</p>
+        <div className="rounded-md bg-surface-2 p-3 space-y-1.5 text-[13px]">
+          <p className="text-[13px] font-medium text-muted mb-1">Perhitungan Orkay</p>
           {prevMarketValue === null ? (
-            <Row label="Nilai periode lalu" value="— (baru mulai)" />
+            <Row label="Nilai periode lalu" value="- (baru mulai)" />
           ) : (
             <Row label="Nilai periode lalu" value={formatRupiah(prevMarketValue)} />
           )}
@@ -339,7 +339,7 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
             </>
           )}
           {prevMarketValue === null && (
-            <p className="text-2xs text-muted pt-1">Periode pertama: untung/rugi selalu 0 (belum ada pembanding).</p>
+            <p className="text-xs text-muted pt-1">Periode pertama: untung/rugi selalu 0 (belum ada pembanding).</p>
           )}
         </div>
       </div>
@@ -350,7 +350,7 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
 function RupiahField({ label, value, onChange, hint }) {
   return (
     <div>
-      <span className="block text-xs font-medium text-muted mb-1.5">{label}</span>
+      <span className="block text-[13px] font-medium text-muted mb-1.5">{label}</span>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rp</span>
         <input
@@ -358,19 +358,19 @@ function RupiahField({ label, value, onChange, hint }) {
           value={value}
           onChange={onChange}
           placeholder="0"
-          className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+          className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum placeholder:text-muted focus:border-fg outline-none transition-colors"
         />
       </div>
-      {hint && <span className="block text-2xs text-muted mt-1">{hint}</span>}
+      {hint && <span className="block text-xs text-muted mt-1">{hint}</span>}
     </div>
   )
 }
 
 function Row({ label, value, valueClass = '' }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted">{label}</span>
-      <span className={`tnum ${valueClass || 'text-fg'}`}>{value}</span>
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-muted min-w-0">{label}</span>
+      <span className={`tnum whitespace-nowrap shrink-0 ${valueClass || 'text-fg'}`}>{value}</span>
     </div>
   )
 }

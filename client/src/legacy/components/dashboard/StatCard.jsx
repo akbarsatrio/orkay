@@ -1,6 +1,6 @@
 import { Card, CardBody } from '../ui/index.jsx'
 import { TrendingUp, TrendingDown } from 'lucide-react'
-import { maskRupiah } from '../../lib/format.js'
+import { maskRupiah } from '../../../lib/format.js'
 
 export default function StatCard({ label, value, icon: Icon, tone = 'default', delta, deltaInverse = false, hidden = false }) {
   const tones = {

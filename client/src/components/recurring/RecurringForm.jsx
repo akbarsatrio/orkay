@@ -59,7 +59,7 @@ export default function RecurringForm({ open, onClose, editing }) {
       <div className="space-y-4">
         <Input label="Nama tagihan" value={form.name} onChange={(e) => set({ name: e.target.value })} placeholder="mis. Kos, Internet, Netflix" autoFocus />
         <div>
-          <span className="block text-xs font-medium text-muted mb-1.5">Nominal per bulan</span>
+          <span className="block text-[13px] font-medium text-muted mb-1.5">Nominal per bulan</span>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rp</span>
             <input
@@ -67,11 +67,11 @@ export default function RecurringForm({ open, onClose, editing }) {
               value={amtStr}
               onChange={handleAmt}
               placeholder="0"
-              className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm font-medium text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+              className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm font-medium text-fg tnum placeholder:text-muted focus:border-fg outline-none transition-colors"
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 min-[360px]:grid-cols-2 gap-3">
           <Select label="Kategori" value={form.categoryId} onChange={(e) => set({ categoryId: e.target.value })}>
             <option value="">Pilih kategori</option>
             {expenseCats.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

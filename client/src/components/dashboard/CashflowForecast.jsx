@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { TrendingDown, ShieldCheck, AlertTriangle, XCircle, Info } from 'lucide-react'
-import { Card, CardBody, Badge, Segmented, Toggle } from '../ui/index.jsx'
+import { Badge, Segmented, Toggle } from '../ui/index.jsx'
+import Money from '../ui/Money.jsx'
 import { maskRupiah, toISODate } from '../../lib/format.js'
 import { estimateDailyBurn, projectDiscretionary, forecastToPayday } from '../../lib/selectors.js'
 
@@ -67,80 +68,78 @@ export default function CashflowForecast({ totalBalance, bills, transactions, pa
   }, [paydayISO, ref])
 
   return (
-    <Card className="min-w-0">
-      <CardBody>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-accent">
-            <TrendingDown size={16} />
-            <span className="text-xs font-semibold uppercase tracking-wide">Proyeksi Sampai Gajian</span>
-          </div>
-          <Badge className={meta.tone}>
-            <Icon size={12} /> {meta.label}
-          </Badge>
-        </div>
-
-        <p className={`text-2xl font-bold mt-3 ${meta.accent}`}>
-          {maskRupiah(forecast.proyeksi, hidden)}
+    <section aria-label="Proyeksi Sampai Gajian" className="min-w-0">
+      <div className="flex items-center justify-between gap-2">
+        <p className="flex items-center gap-1.5 text-[13px] font-medium text-muted">
+          <TrendingDown size={14} aria-hidden="true" />
+          Proyeksi Sampai Gajian
         </p>
-        <p className="text-sm text-muted mt-1">{narrative(forecast, includeBurn)}</p>
+        <Badge className={meta.tone}>
+          <Icon size={12} aria-hidden="true" /> {meta.label}
+        </Badge>
+      </div>
 
+      <div className="mt-3">
+        <Money value={forecast.proyeksi} hidden={hidden} size="giant" className={meta.accent} />
+      </div>
+      <p className="text-base text-fg mt-2">{narrative(forecast, includeBurn)}</p>
+
+      {includeBurn && (
+        <div className="mt-4 space-y-2">
+          <Segmented options={METHODS} value={method} onChange={setMethod} fill />
+          <div className="flex items-start gap-2 px-1">
+            <Info size={13} className="text-muted mt-0.5 shrink-0" aria-hidden="true" />
+            <p className="text-xs text-muted leading-relaxed">
+              {METHODS.find((m) => m.value === method)?.desc}
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-4 space-y-1.5 text-sm">
+        <div className="flex flex-wrap items-center justify-between gap-x-3">
+          <span className="text-muted">Saldo sekarang</span>
+          <Money value={forecast.saldoSekarang} hidden={hidden} className="text-fg" />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-x-3">
+          <span className="text-muted">
+            Tagihan{typeof daysToPay === 'number' ? ` (${daysToPay} hari)` : ''}
+          </span>
+          <Money value={forecast.tagihanTotal} hidden={hidden} sign="-" className="text-negative" />
+        </div>
         {includeBurn && (
-          <div className="mt-3 space-y-2">
-            <Segmented options={METHODS} value={method} onChange={setMethod} fill />
-            <div className="flex items-start gap-2 rounded-lg border border-border bg-surface-2 px-3 py-2">
-              <Info size={13} className="text-accent mt-0.5 shrink-0" />
-              <p className="text-2xs text-muted leading-relaxed">
-                {METHODS.find((m) => m.value === method)?.desc}
-              </p>
+          <div className="flex flex-wrap items-start justify-between gap-x-3">
+            <div className="min-w-0">
+              <span className="text-muted">Perkiraan belanja</span>
+              {method === 'weekpart' && (
+                <p className="text-xs text-muted mt-0.5">
+                  {dayParts.weekday} hari kerja · {dayParts.weekend} weekend
+                </p>
+              )}
             </div>
+            <Money value={forecast.belanjaEstimasi} hidden={hidden} sign="-" className="text-negative" />
           </div>
         )}
+        <div className="flex flex-wrap items-center justify-between gap-x-3 border-t border-border pt-1.5 font-semibold">
+          <span className="text-fg">Proyeksi saldo</span>
+          <Money value={forecast.proyeksi} hidden={hidden} className={meta.accent} />
+        </div>
+      </div>
 
-        <div className="mt-4 space-y-1.5 text-sm">
-          <div className="flex items-center justify-between">
-            <span className="text-muted">Saldo sekarang</span>
-            <span className="text-fg tnum">{maskRupiah(forecast.saldoSekarang, hidden)}</span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted">
-              Tagihan{typeof daysToPay === 'number' ? ` (${daysToPay} hari)` : ''}
-            </span>
-            <span className="text-negative tnum">− {maskRupiah(forecast.tagihanTotal, hidden)}</span>
-          </div>
-          {includeBurn && (
-            <div className="flex items-start justify-between">
-              <div className="min-w-0">
-                <span className="text-muted">Perkiraan belanja</span>
-                {method === 'weekpart' && (
-                  <p className="text-2xs text-muted/80 mt-0.5">
-                    {dayParts.weekday} hari kerja · {dayParts.weekend} weekend
-                  </p>
-                )}
-              </div>
-              <span className="text-negative tnum shrink-0">− {maskRupiah(forecast.belanjaEstimasi, hidden)}</span>
-            </div>
+      <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-fg">Sertakan perkiraan belanja</p>
+          {includeBurn && method === 'weekpart' && (
+            <p className="text-xs text-muted mt-0.5">
+              Hari kerja ≈ {maskRupiah(estimate.weekday, hidden)}/hari · Weekend ≈ {maskRupiah(estimate.weekend, hidden)}/hari
+            </p>
           )}
-          <div className="flex items-center justify-between border-t border-border pt-1.5 font-semibold">
-            <span className="text-fg">Proyeksi saldo</span>
-            <span className={`tnum ${meta.accent}`}>{maskRupiah(forecast.proyeksi, hidden)}</span>
-          </div>
+          {includeBurn && method !== 'weekpart' && estimate.perDay > 0 && (
+            <p className="text-xs text-muted mt-0.5">≈ {maskRupiah(estimate.perDay, hidden)}/hari</p>
+          )}
         </div>
-
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-3">
-          <div className="min-w-0">
-            <p className="text-xs font-medium text-fg">Sertakan perkiraan belanja</p>
-            {includeBurn && method === 'weekpart' && (
-              <p className="text-2xs text-muted mt-0.5">
-                Hari kerja ≈ {maskRupiah(estimate.weekday, hidden)}/hari · Weekend ≈ {maskRupiah(estimate.weekend, hidden)}/hari
-              </p>
-            )}
-            {includeBurn && method !== 'weekpart' && estimate.perDay > 0 && (
-              <p className="text-2xs text-muted mt-0.5">≈ {maskRupiah(estimate.perDay, hidden)}/hari</p>
-            )}
-          </div>
-          <Toggle checked={includeBurn} onChange={setIncludeBurn} />
-        </div>
-      </CardBody>
-    </Card>
+        <Toggle checked={includeBurn} onChange={setIncludeBurn} />
+      </div>
+    </section>
   )
 }

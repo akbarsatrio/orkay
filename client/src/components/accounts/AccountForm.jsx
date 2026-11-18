@@ -99,7 +99,7 @@ export default function AccountForm({ open, onClose, editing }) {
 
           {isInvestment ? null : isPaylater ? (
             <div>
-              <span className="block text-xs font-medium text-muted mb-1.5">Limit</span>
+              <span className="block text-[13px] font-medium text-muted mb-1.5">Limit</span>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rp</span>
                 <input
@@ -107,13 +107,13 @@ export default function AccountForm({ open, onClose, editing }) {
                   value={limitStr}
                   onChange={handleLimit}
                   placeholder="0"
-                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+                  className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum placeholder:text-muted focus:border-fg outline-none transition-colors"
                 />
               </div>
             </div>
           ) : (
             <div>
-              <span className="block text-xs font-medium text-muted mb-1.5">Saldo awal</span>
+              <span className="block text-[13px] font-medium text-muted mb-1.5">Saldo awal</span>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rp</span>
                 <input
@@ -121,7 +121,7 @@ export default function AccountForm({ open, onClose, editing }) {
                   value={balStr}
                   onChange={handleBal}
                   placeholder="0"
-                  className="w-full h-9 pl-9 pr-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg tnum placeholder:text-muted/50 focus:border-accent outline-none"
+                  className="w-full h-9 touch:h-11 pl-9 pr-3 rounded-md bg-surface-2 border border-border hover:border-muted/50 focus:bg-bg text-base sm:text-sm text-fg tnum placeholder:text-muted focus:border-fg outline-none transition-colors"
                 />
               </div>
             </div>
@@ -129,8 +129,8 @@ export default function AccountForm({ open, onClose, editing }) {
         </div>
 
         {isPaylater && (
-          <div className="rounded-lg border border-border bg-surface-2/40 p-3 space-y-3">
-            <p className="text-2xs font-semibold uppercase tracking-wide text-muted">Model Tagihan Cicilan</p>
+          <div className="space-y-3">
+            <p className="text-[13px] font-medium text-muted">Model Tagihan Cicilan</p>
             <Segmented
               className="w-full"
               options={[
@@ -142,7 +142,7 @@ export default function AccountForm({ open, onClose, editing }) {
             />
 
             {form.billingModel === 'anniversary' ? (
-              <p className="text-2xs text-muted leading-relaxed">
+              <p className="text-xs text-muted leading-relaxed">
                 Cicilan jatuh tempo di <b>tanggal yang sama</b> dengan tanggal transaksi, tiap bulan berikutnya
                 sampai lunas. Contoh: kredit tgl 15 Mei, 3x → 15 Jun, 15 Jul, 15 Agu.
               </p>
@@ -153,7 +153,7 @@ export default function AccountForm({ open, onClose, editing }) {
                   <Input type="number" min={1} max={31} label="Jatuh tempo tgl" value={form.dueDay} onChange={(e) => set({ dueDay: e.target.value })} />
                   <Input type="number" min={0} max={3} label="Due +bulan" value={form.dueMonthOffset} onChange={(e) => set({ dueMonthOffset: e.target.value })} />
                 </div>
-                <p className="text-2xs text-muted leading-relaxed">
+                <p className="text-xs text-muted leading-relaxed">
                   Transaksi setelah tanggal closing masuk tagihan bulan berikutnya. Jatuh tempo = tanggal jatuh tempo pada {form.dueMonthOffset} bulan setelah closing.
                 </p>
               </>
@@ -162,24 +162,28 @@ export default function AccountForm({ open, onClose, editing }) {
         )}
 
         {isInvestment && (
-          <div className="rounded-lg border border-border bg-surface-2/40 p-3">
-            <p className="text-2xs text-muted leading-relaxed">
-              Rekening investasi tidak pakai saldo awal. Nilai portfolio & untung/rugi dihitung dari
-              <b> catatan periode</b> (setoran, tarikan, nilai portfolio) yang kamu input di halaman Investasi.
-            </p>
-          </div>
+          <p className="text-xs text-muted leading-relaxed">
+            Rekening investasi tidak pakai saldo awal. Nilai portfolio & untung/rugi dihitung dari
+            <b> catatan periode</b> (setoran, tarikan, nilai portfolio) yang kamu input di halaman Investasi.
+          </p>
         )}
 
         <div>
-          <span className="block text-xs font-medium text-muted mb-2">Warna</span>
-          <div className="flex flex-wrap gap-2">
+          <span className="block text-[13px] font-medium text-muted mb-2">Warna</span>
+          <div className="flex flex-wrap gap-2 touch:gap-1">
             {COLORS.map((c) => (
               <button
                 key={c}
+                type="button"
                 onClick={() => set({ color: c })}
-                className={`h-7 w-7 rounded-full transition-transform ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-surface scale-110' : ''}`}
-                style={{ background: c, '--tw-ring-color': c }}
-              />
+                aria-pressed={form.color === c}
+                className="h-9 w-9 touch:h-11 touch:w-11 flex items-center justify-center rounded-full"
+              >
+                <span
+                  className={`h-7 w-7 rounded-full transition-transform ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-surface scale-110' : ''}`}
+                  style={{ background: c, '--tw-ring-color': c }}
+                />
+              </button>
             ))}
           </div>
         </div>
