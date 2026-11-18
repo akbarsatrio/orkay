@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Plus, Target, Trash2, AlertTriangle, Pencil } from 'lucide-react'
 import { Card, CardBody, CardHeader, Button, Progress, Empty, Modal, Select, Badge, FormDeleteButton } from '../components/ui/index.jsx'
+import Money from '../components/ui/Money.jsx'
 import SwipeRow, { editDeleteActions } from '../components/ui/SwipeRow.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import { useData } from '../context/DataContext.jsx'
@@ -41,36 +42,45 @@ export default function Budgets() {
   const totalSpent = rows.reduce((s, r) => s + r.spent, 0)
   const overCount = rows.filter((r) => r.pct >= 100).length
 
+  const openNew = () => setModal({ open: true, editing: null })
+
   return (
     <div className="space-y-6">
-      <div className="grid sm:grid-cols-3 gap-x-8 gap-y-6">
-        <Card><CardBody>
-          <p className="text-[13px] font-medium text-muted">Total anggaran ({monthNamesID[now.getMonth()]})</p>
-          <p className="text-2xl font-bold text-fg tnum whitespace-nowrap mt-1">{formatRupiah(totalLimit)}</p>
-        </CardBody></Card>
-        <Card><CardBody>
+      {/* Ringkasan: "Terpakai" jadi angka raksasa (fokus layar), bar total di bawahnya,
+          total anggaran & jumlah yang lewat batas jadi satu baris keterangan. */}
+      <section className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <p className="text-[13px] font-medium text-muted">Terpakai</p>
-          <p className="text-2xl font-bold tnum whitespace-nowrap mt-1 text-fg">{formatRupiah(totalSpent)}</p>
-          <div className="mt-2"><Progress value={totalSpent} max={totalLimit || 1} /></div>
-        </CardBody></Card>
-        <Card><CardBody className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[13px] font-medium text-muted">Lewat batas</p>
-            <p className={`text-2xl font-bold tnum mt-1 ${overCount ? 'text-negative' : 'text-positive'}`}>{overCount}</p>
+          <div className="mt-2">
+            <Money size="giant" value={totalSpent} className="text-fg" />
           </div>
-          <Button onClick={() => setModal({ open: true, editing: null })}><Plus size={16} /> Atur</Button>
-        </CardBody></Card>
-      </div>
+          <div className="mt-3 max-w-xl">
+            <Progress value={totalSpent} max={totalLimit || 1} />
+          </div>
+          <p className="flex flex-wrap gap-x-3 gap-y-1 text-[13px] text-muted mt-3">
+            <span>
+              Total anggaran ({monthNamesID[now.getMonth()]}){' '}
+              <b className="font-semibold text-fg tnum whitespace-nowrap">{formatRupiah(totalLimit)}</b>
+            </span>
+            <span aria-hidden="true">·</span>
+            <span>
+              Lewat batas{' '}
+              <b className={`font-semibold tnum ${overCount ? 'text-negative' : 'text-positive'}`}>{overCount}</b>
+            </span>
+          </p>
+        </div>
+        <Button className="shrink-0" onClick={openNew}><Plus size={16} /> Atur</Button>
+      </section>
 
       <Card>
         <CardHeader title="Anggaran per Kategori" subtitle="Batas pengeluaran bulan ini. Bar berubah warna saat mendekati / melewati limit." />
-        <CardBody className="divide-y divide-border pt-0">
+        <CardBody className="divide-y divide-border pt-1">
           {rows.length === 0 ? (
             <Empty
               icon={Target}
               title="Belum ada anggaran"
               description="Tetapkan batas pengeluaran untuk kategori tertentu agar lebih terkontrol."
-              action={<Button onClick={() => setModal({ open: true, editing: null })}><Plus size={16} /> Atur Anggaran</Button>}
+              action={<Button onClick={openNew}><Plus size={16} /> Atur Anggaran</Button>}
             />
           ) : (
             rows.map((r) => (
@@ -79,34 +89,37 @@ export default function Budgets() {
                 onTap={() => setModal({ open: true, editing: r })}
                 actions={editDeleteActions(`anggaran ${r.cat.name}`, () => setModal({ open: true, editing: r }), () => askDelete(r))}
               >
-              <div className="group py-4">
-                <div className="flex items-center gap-3 mb-2">
+                {/* Baris 1: ikon 34px | nama + badge | sisa (penentu keputusan: masih bisa belanja berapa) | aksi desktop.
+                    Baris 2 (mulai sejajar nama, selebar sisa baris): bar + terpakai / limit. */}
+                <div className="group grid grid-cols-[34px_minmax(0,1fr)_auto] lg:grid-cols-[34px_minmax(0,1fr)_auto_4.5rem] items-center gap-x-3 sm:gap-x-4 py-3.5">
                   <CategoryIcon name={r.cat.icon} color={r.cat.color} size={16} />
-                  <span className="text-sm font-medium text-fg flex-1 min-w-0 truncate">{r.cat.name}</span>
-                  {r.pct >= 100 ? (
-                    <Badge className="text-negative border-negative/30 bg-negative/10"><AlertTriangle size={11} /> Lewat</Badge>
-                  ) : r.pct >= 85 ? (
-                    <Badge className="text-warning border-warning/30 bg-warning/10">Hampir habis</Badge>
-                  ) : null}
-                  <button onClick={() => setModal({ open: true, editing: r })} aria-label={`Ubah anggaran ${r.cat.name}`} className="hidden lg:flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 touch:opacity-100 touch:h-11 touch:w-11">
-                    <Pencil size={12} aria-hidden="true" />
-                  </button>
-                  <button
-                    onClick={() => askDelete(r)}
-                    aria-label={`Hapus anggaran ${r.cat.name}`}
-                    className="hidden lg:flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 touch:opacity-100 touch:h-11 touch:w-11"
-                  >
-                    <Trash2 size={12} aria-hidden="true" />
-                  </button>
-                </div>
-                <Progress value={r.spent} max={r.limit} />
-                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 mt-1.5 text-xs">
-                  <span className="text-muted tnum whitespace-nowrap">{formatRupiah(r.spent)} <span className="text-muted/60">/ {formatRupiah(r.limit)}</span></span>
-                  <span className={`tnum whitespace-nowrap font-medium ${r.remaining < 0 ? 'text-negative' : 'text-muted'}`}>
+                  <p className="flex flex-wrap items-center gap-x-2 gap-y-1 min-w-0">
+                    <span className="text-[15px] font-medium text-fg truncate max-w-full">{r.cat.name}</span>
+                    {r.pct >= 100 ? (
+                      <Badge className="text-negative border-negative/30 bg-negative/10"><AlertTriangle size={11} aria-hidden="true" /> Lewat</Badge>
+                    ) : r.pct >= 85 ? (
+                      <Badge className="text-warning border-warning/30 bg-warning/10">Hampir habis</Badge>
+                    ) : null}
+                  </p>
+                  <p className={`text-right text-base font-semibold tnum whitespace-nowrap ${r.remaining < 0 ? 'text-negative' : 'text-fg'}`}>
                     {r.remaining < 0 ? `Lewat ${formatRupiah(-r.remaining)}` : `Sisa ${formatRupiah(r.remaining)}`}
-                  </span>
+                  </p>
+                  <div className="hidden lg:flex justify-end gap-1 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 transition-opacity">
+                    <button onClick={() => setModal({ open: true, editing: r })} aria-label={`Ubah anggaran ${r.cat.name}`} title="Ubah" className="h-8 w-8 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2">
+                      <Pencil size={14} aria-hidden="true" />
+                    </button>
+                    <button onClick={() => askDelete(r)} aria-label={`Hapus anggaran ${r.cat.name}`} title="Hapus" className="h-8 w-8 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10">
+                      <Trash2 size={14} aria-hidden="true" />
+                    </button>
+                  </div>
+                  <div className="col-start-2 col-span-2 mt-2">
+                    <Progress value={r.spent} max={r.limit} />
+                    <p className="flex flex-wrap justify-between gap-x-3 text-[13px] text-muted tnum mt-1.5">
+                      <span className="whitespace-nowrap">Terpakai {formatRupiah(r.spent)}</span>
+                      <span className="whitespace-nowrap">Limit {formatRupiah(r.limit)}</span>
+                    </p>
+                  </div>
                 </div>
-              </div>
               </SwipeRow>
             ))
           )}

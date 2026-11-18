@@ -1,6 +1,7 @@
 import { createContext, useContext, useLayoutEffect, useState } from 'react'
 import { load, save } from '../lib/storage.js'
 import { syncThemeColor } from '../lib/themeColor.js'
+import { syncBrandAssets } from '../lib/brandAssets.js'
 
 // Pilihan tampilan per perangkat selama masa transisi: 'new' (default) atau 'legacy'.
 // Saat tampilan lama dihapus: hapus provider ini, folder src/legacy/, dan kunci storage 'ui'.
@@ -13,6 +14,7 @@ export function UiVersionProvider({ children }) {
     document.documentElement.dataset.ui = ui
     save('ui', ui)
     syncThemeColor()
+    syncBrandAssets(ui)
   }, [ui])
 
   return <UiVersionContext.Provider value={{ ui, setUi }}>{children}</UiVersionContext.Provider>

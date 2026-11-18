@@ -38,7 +38,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-bg gap-3">
         <div className="h-10 w-10 rounded-xl flex items-center justify-center">
-          <img src="/wallet.svg" alt="Orkay" className="h-full w-full" />
+          <img src="/wallet-new.svg" alt="Orkay" className="h-full w-full" />
         </div>
         <div className="flex items-center gap-2 text-muted text-sm">
           <Loader2 size={16} className="animate-spin" />
