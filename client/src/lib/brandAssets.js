@@ -2,7 +2,7 @@
 // index.html memuat aset tampilan baru (default); fungsi ini menukar ke aset lama bila perangkat memilih tampilan lama.
 // Catatan: ikon aplikasi yang sudah ter-install di layar utama tidak ikut berganti; ia memakai ikon saat install.
 const ASSETS = {
-  new: { logo: '/wallet-new.svg', touch: '/apple-touch-icon-new.png', manifest: '/manifest-new.webmanifest' },
+  new: { logo: '/logo-new.svg', touch: '/apple-touch-icon-new.png', manifest: '/manifest-new.webmanifest' },
   legacy: { logo: '/wallet.svg', touch: '/apple-touch-icon.png', manifest: '/manifest.webmanifest' },
 }
 

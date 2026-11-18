@@ -1,8 +1,9 @@
 import { lazy, Suspense, useState } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
-import { Loader2, WifiOff, Wallet } from 'lucide-react'
+import { Loader2, WifiOff } from 'lucide-react'
 import { useData } from './context/DataContext.jsx'
 import { Button } from './components/ui/index.jsx'
+import Wordmark from './components/Wordmark.jsx'
 import Sidebar from './components/layout/Sidebar.jsx'
 import Topbar from './components/layout/Topbar.jsx'
 import BottomNav from './components/layout/BottomNav.jsx'
@@ -49,9 +50,7 @@ export default function App() {
   if (loading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-bg gap-3">
-        <div className="h-10 w-10 rounded-xl flex items-center justify-center">
-          <img src="/wallet-new.svg" alt="Orkay" className="h-full w-full" />
-        </div>
+        <Wordmark className="h-10 w-auto text-fg" />
         <div className="flex items-center gap-2 text-muted text-sm">
           <Loader2 size={16} className="animate-spin" />
           Memuat data…
