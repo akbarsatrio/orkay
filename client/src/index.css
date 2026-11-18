@@ -37,6 +37,59 @@
   border-color: rgb(var(--border));
 }
 
+/* Font per tampilan: Inter (lama), Instrument Sans (baru). Lihat DESIGN.md > Tipografi. */
+:root {
+  --font-sans: 'Inter';
+}
+[data-ui='new'] {
+  --font-sans: 'Instrument Sans';
+}
+
+/* Palet tampilan baru: putih bersih + hitam pekat + aksen oranye bata (DESIGN.md > Warna).
+   Semua teks >= 4.5:1 di atas bg, surface-2, dan badge ber-tint 10%. Token tampilan lama di :root/.dark tidak diubah. */
+:root[data-ui='new']:not(.dark) {
+  --bg: 255 255 255;
+  --surface: 255 255 255;
+  --surface-2: 244 244 245;
+  --border: 229 229 229;
+  --muted: 97 97 97;
+  --fg: 10 10 10;
+  --accent: 194 65 12;
+  --accent-fg: 255 255 255;
+  --positive: 21 115 55;
+  --negative: 190 18 60;
+  --negative-fg: 255 255 255;
+  --warning: 138 88 6;
+  /* Garis bagian (lebih tegas dari --border pemisah baris). */
+  --rule: 10 10 10;
+  /* Sidebar gelap (rail) di kedua tema: identitas shell + memisahkan navigasi dari konten putih. */
+  --rail: 10 10 10;
+  --rail-fg: 245 245 245;
+  --rail-muted: 163 163 163;
+  --rail-accent: 249 115 22;
+  --rail-line: 38 38 38;
+}
+:root[data-ui='new'].dark {
+  --bg: 10 10 10;
+  --surface: 10 10 10;
+  --surface-2: 28 28 28;
+  --border: 38 38 38;
+  --muted: 163 163 163;
+  --fg: 245 245 245;
+  --accent: 249 115 22;
+  --accent-fg: 10 10 10;
+  --positive: 74 222 128;
+  --negative: 251 113 133;
+  --negative-fg: 10 10 10;
+  --warning: 250 204 21;
+  --rule: 82 82 82;
+  --rail: 22 22 22;
+  --rail-fg: 245 245 245;
+  --rail-muted: 163 163 163;
+  --rail-accent: 249 115 22;
+  --rail-line: 44 44 44;
+}
+
 html {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
@@ -47,10 +100,37 @@ body {
   font-feature-settings: 'cv11', 'ss01';
 }
 
+/* cv11/ss01 adalah fitur Inter; di Instrument Sans ss01 mengganti bentuk huruf. */
+[data-ui='new'] body {
+  font-feature-settings: normal;
+}
+
 /* Angka finansial rapi berbaris */
 .tnum {
   font-variant-numeric: tabular-nums;
   font-feature-settings: 'tnum';
+}
+
+/* Angka raksasa & besar (tampilan baru): ukuran dibatasi lebar wadah supaya nominal tidak pernah terpotong.
+   --w75 / --w100 = lebar teks dalam em pada wdth 75 / 100, dihitung di components/ui/Money.jsx. */
+.money-fit {
+  container-type: inline-size;
+}
+.money-fit > .money {
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum';
+  white-space: nowrap;
+  font-stretch: 100%;
+  font-size: min(var(--money-max), calc(100cqi / var(--w100)));
+}
+@media (max-width: 639px) {
+  .money-fit > .money {
+    font-stretch: 75%;
+    font-size: min(var(--money-max), calc(100cqi / var(--w75)));
+  }
 }
 
 /* Scrollbar halus */

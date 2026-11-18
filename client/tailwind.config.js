@@ -17,9 +17,17 @@ export default {
         negative: 'rgb(var(--negative) / <alpha-value>)',
         'negative-fg': 'rgb(var(--negative-fg) / <alpha-value>)',
         warning: 'rgb(var(--warning) / <alpha-value>)',
+        // Hanya didefinisikan untuk tampilan baru: garis bagian & sidebar gelap.
+        rule: 'rgb(var(--rule) / <alpha-value>)',
+        rail: 'rgb(var(--rail) / <alpha-value>)',
+        'rail-fg': 'rgb(var(--rail-fg) / <alpha-value>)',
+        'rail-muted': 'rgb(var(--rail-muted) / <alpha-value>)',
+        'rail-accent': 'rgb(var(--rail-accent) / <alpha-value>)',
+        'rail-line': 'rgb(var(--rail-line) / <alpha-value>)',
       },
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        // Inter untuk tampilan lama, Instrument Sans untuk tampilan baru (lihat --font-sans di index.css).
+        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         '2xs': ['0.6875rem', { lineHeight: '1rem' }],
@@ -33,5 +41,9 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // `touch:` = layar sentuh; dipakai tampilan baru untuk target sentuh 44px.
+    // Diawali `html` supaya menang dari `sm:`/`lg:` (media query responsif dicetak setelah varian plugin).
+    ({ addVariant }) => addVariant('touch', '@media (pointer: coarse) { html & }'),
+  ],
 }

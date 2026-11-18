@@ -11,12 +11,12 @@ export default function CashflowBar({ data }) {
         <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--border))" vertical={false} />
         <XAxis
           dataKey="label"
-          tick={{ fontSize: 11, fill: 'rgb(var(--muted))' }}
+          tick={{ fontSize: 12, fill: 'rgb(var(--muted))' }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: 'rgb(var(--muted))' }}
+          tick={{ fontSize: 12, fill: 'rgb(var(--muted))' }}
           axisLine={false}
           tickLine={false}
           width={52}

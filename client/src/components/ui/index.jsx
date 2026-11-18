@@ -6,53 +6,61 @@ export function cx(...args) {
 }
 
 // ---------- Card ----------
+// Tampilan baru tidak memakai kotak: "Card" adalah bagian halaman yang diawali garis bagian (`border-rule`),
+// sedangkan baris di dalamnya dipisah garis abu `border-border` (DESIGN.md > Bentuk).
+// Jarak: garis -> isi selalu 20px (pt-5); jarak antar bagian diatur halaman (space-y-6 = 24px, sama dengan judul halaman -> isi).
+// Nama komponen dipertahankan supaya pemakaiannya sama di semua halaman.
 export function Card({ className, children, ...props }) {
   return (
-    <div
-      className={cx('bg-surface border border-border rounded-card shadow-card', className)}
-      {...props}
-    >
+    <section className={cx('border-t border-rule pt-5 min-w-0', className)} {...props}>
       {children}
-    </div>
+    </section>
   )
 }
 
 export function CardHeader({ title, subtitle, action, className }) {
   return (
-    <div className={cx('flex items-start justify-between gap-3 px-5 pt-5', className)}>
-      <div>
-        <h3 className="text-sm font-semibold text-fg">{title}</h3>
-        {subtitle && <p className="text-xs text-muted mt-0.5">{subtitle}</p>}
+    <div className={cx('flex items-start justify-between gap-3', className)}>
+      <div className="min-w-0">
+        <h2 className="text-lg font-semibold text-fg leading-snug">{title}</h2>
+        {subtitle && <p className="text-[13px] text-muted mt-0.5">{subtitle}</p>}
       </div>
       {action}
     </div>
   )
 }
 
+// Padding bawaan hanya dipasang kalau pemanggil tidak memberi padding sendiri: utilitas padding Tailwind
+// tidak saling menimpa sesuai urutan class, jadi `pt-4` + `p-0` akan tetap ber-padding.
+// `first:pt-0`: tanpa CardHeader, isi langsung mulai 20px di bawah garis (dari padding Card).
+const HAS_PADDING = /(^|\s)p[xytblr]?-/
 export function CardBody({ className, children }) {
-  return <div className={cx('p-5', className)}>{children}</div>
+  return <div className={cx(!HAS_PADDING.test(className || '') && 'pt-4 first:pt-0', className)}>{children}</div>
 }
 
 // ---------- Button ----------
+// primary = aksi utama halaman (hitam). accent = satu-satunya aksi oranye: Tambah Transaksi global.
 const btnVariants = {
-  primary: 'bg-accent text-accent-fg hover:opacity-90 shadow-sm',
-  secondary: 'bg-surface-2 text-fg hover:bg-border/60 border border-border',
+  primary: 'bg-fg text-bg hover:opacity-85',
+  accent: 'bg-accent text-accent-fg hover:opacity-90',
+  secondary: 'bg-surface-2 text-fg hover:bg-border',
   ghost: 'text-muted hover:text-fg hover:bg-surface-2',
   danger: 'bg-negative text-negative-fg hover:opacity-90',
-  outline: 'border border-border text-fg hover:bg-surface-2',
+  outline: 'border border-fg/20 text-fg hover:bg-surface-2',
 }
+// `touch:` menaikkan target ke 44px di layar sentuh (DESIGN.md > Responsif).
 const btnSizes = {
-  sm: 'h-8 px-3 text-xs gap-1.5',
-  md: 'h-9 px-4 text-sm gap-2',
+  sm: 'h-8 touch:h-11 px-3 text-xs touch:text-sm gap-1.5',
+  md: 'h-9 touch:h-11 px-4 text-sm gap-2',
   lg: 'h-11 px-5 text-sm gap-2',
-  icon: 'h-9 w-9 justify-center',
+  icon: 'h-9 w-9 touch:h-11 touch:w-11 justify-center',
 }
 
 export function Button({ variant = 'primary', size = 'md', className, children, ...props }) {
   return (
     <button
       className={cx(
-        'inline-flex items-center justify-center rounded-lg font-medium transition-colors',
+        'inline-flex items-center justify-center rounded-md font-medium transition-colors',
         'disabled:opacity-50 disabled:pointer-events-none select-none active:scale-[0.97]',
         btnVariants[variant],
         btnSizes[size],
@@ -65,21 +73,40 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
   )
 }
 
+// Tombol Hapus di footer form edit (HP & tablet): alternatif satu ketukan untuk aksi hapus yang di layar daftar
+// hanya muncul lewat geser (SwipeRow). Di desktop hapus tetap lewat tombol di baris.
+export function FormDeleteButton({ onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="lg:hidden mr-auto inline-flex items-center justify-center h-9 touch:h-11 px-3 -ml-3 rounded-md text-sm font-medium text-negative hover:bg-negative/10 disabled:opacity-50 transition-colors"
+    >
+      Hapus
+    </button>
+  )
+}
+
 // ---------- Input ----------
+// Field berisi abu muda dengan garis tipis; garis hitam muncul saat fokus. Dipakai juga oleh input mentah di halaman.
+export const fieldClass =
+  'rounded-md bg-surface-2 border border-border text-fg placeholder:text-muted hover:border-muted/50 focus:border-fg focus:bg-bg outline-none transition-colors'
+
 export function Input({ className, label, hint, autoComplete = 'off', ...props }) {
   return (
     <label className="block">
-      {label && <span className="block text-xs font-medium text-muted mb-1.5">{label}</span>}
+      {label && <span className="block text-[13px] font-medium text-muted mb-1.5">{label}</span>}
       <input
         autoComplete={autoComplete}
         className={cx(
-          'w-full h-9 px-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg',
-          'placeholder:text-muted/70 focus:border-accent focus:ring-0 outline-none transition-colors',
+          'w-full h-9 touch:h-11 px-3 text-base sm:text-sm',
+          fieldClass,
           className
         )}
         {...props}
       />
-      {hint && <span className="block text-2xs text-muted mt-1">{hint}</span>}
+      {hint && <span className="block text-xs text-muted mt-1">{hint}</span>}
     </label>
   )
 }
@@ -87,11 +114,11 @@ export function Input({ className, label, hint, autoComplete = 'off', ...props }
 export function Select({ className, label, children, ...props }) {
   return (
     <label className="block">
-      {label && <span className="block text-xs font-medium text-muted mb-1.5">{label}</span>}
+      {label && <span className="block text-[13px] font-medium text-muted mb-1.5">{label}</span>}
       <select
         className={cx(
-          'w-full h-9 px-3 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg',
-          'focus:border-accent outline-none transition-colors appearance-none cursor-pointer',
+          'w-full h-9 touch:h-11 px-3 text-base sm:text-sm appearance-none cursor-pointer',
+          fieldClass,
           'bg-[length:16px] bg-[right_0.6rem_center] bg-no-repeat',
           className
         )}
@@ -110,11 +137,11 @@ export function Select({ className, label, children, ...props }) {
 export function Textarea({ className, label, ...props }) {
   return (
     <label className="block">
-      {label && <span className="block text-xs font-medium text-muted mb-1.5">{label}</span>}
+      {label && <span className="block text-[13px] font-medium text-muted mb-1.5">{label}</span>}
       <textarea
         className={cx(
-          'w-full px-3 py-2 rounded-lg bg-surface border border-border text-base sm:text-sm text-fg',
-          'placeholder:text-muted/70 focus:border-accent outline-none transition-colors resize-none',
+          'w-full px-3 py-2 text-base sm:text-sm resize-none',
+          fieldClass,
           className
         )}
         {...props}
@@ -128,7 +155,7 @@ export function Badge({ color, children, className, dot }) {
   return (
     <span
       className={cx(
-        'inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-medium',
+        'inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium',
         'bg-surface-2 text-fg border border-border',
         className
       )}
@@ -144,7 +171,8 @@ export function Badge({ color, children, className, dot }) {
 // ---------- Progress ----------
 export function Progress({ value, max = 100, color }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100))
-  const barColor = color || (pct >= 100 ? 'rgb(var(--negative))' : pct >= 85 ? 'rgb(var(--warning))' : 'rgb(var(--accent))')
+  // Warna status: normal = fg (aksen oranye hanya untuk Tambah Transaksi), >= 85% = warning, >= 100% = negative.
+  const barColor = color || (pct >= 100 ? 'rgb(var(--negative))' : pct >= 85 ? 'rgb(var(--warning))' : 'rgb(var(--fg))')
   return (
     <div className="h-2 w-full rounded-full bg-surface-2 overflow-hidden">
       <div
@@ -205,10 +233,11 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
         )}
       >
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <h3 className="text-sm font-semibold text-fg">{title}</h3>
+          <h3 className="text-base font-semibold text-fg">{title}</h3>
           <button
             onClick={onClose}
-            className="text-muted hover:text-fg h-9 w-9 sm:h-7 sm:w-7 flex items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
+            aria-label="Tutup"
+            className="text-muted hover:text-fg h-9 w-9 touch:h-11 touch:w-11 -mr-2 flex items-center justify-center rounded-md hover:bg-surface-2 transition-colors"
           >
             <X size={18} className="sm:hidden" />
             <X size={16} className="hidden sm:block" />
@@ -228,14 +257,10 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
 // ---------- Empty state ----------
 export function Empty({ icon: Icon, title, description, action }) {
   return (
-    <div className="flex flex-col items-center justify-center py-14 px-6 text-center">
-      {Icon && (
-        <div className="h-11 w-11 rounded-full bg-surface-2 flex items-center justify-center mb-3">
-          <Icon size={20} className="text-muted" />
-        </div>
-      )}
+    <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
+      {Icon && <Icon size={22} className="text-muted mb-3" aria-hidden="true" />}
       <p className="text-sm font-medium text-fg">{title}</p>
-      {description && <p className="text-xs text-muted mt-1 max-w-xs">{description}</p>}
+      {description && <p className="text-[13px] text-muted mt-1 max-w-xs">{description}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   )
@@ -245,7 +270,7 @@ export function Empty({ icon: Icon, title, description, action }) {
 export function Segmented({ options, value, onChange, className, fill }) {
   return (
     <div className={cx(
-      'p-0.5 bg-surface-2 rounded-lg border border-border',
+      'p-0.5 bg-surface-2 rounded-md',
       fill ? 'flex w-full' : 'inline-flex max-w-full overflow-x-auto no-scrollbar',
       className
     )}>
@@ -254,7 +279,8 @@ export function Segmented({ options, value, onChange, className, fill }) {
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={cx(
-            'px-3 h-8 sm:h-7 text-xs font-medium rounded-md transition-colors whitespace-nowrap',
+            // Tinggi total (tombol + padding wadah 2px x 2) = 36px, sama dengan Input/Button md; layar sentuh 44px.
+            'px-3 h-8 touch:h-10 text-[13px] touch:text-sm font-medium rounded-md transition-colors whitespace-nowrap',
             fill ? 'flex-1' : 'shrink-0',
             value === opt.value ? 'bg-surface text-fg shadow-sm' : 'text-muted hover:text-fg'
           )}
@@ -267,24 +293,28 @@ export function Segmented({ options, value, onChange, className, fill }) {
 }
 
 // ---------- Toggle / Switch ----------
-export function Toggle({ checked, onChange, disabled, className }) {
+export function Toggle({ checked, onChange, disabled, className, label }) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
+      aria-label={label}
+      title={label}
       disabled={disabled}
       onClick={() => !disabled && onChange(!checked)}
       className={cx(
-        'relative inline-flex items-center shrink-0 h-6 w-11 rounded-full transition-colors duration-200 outline-none',
+        'relative inline-flex items-center shrink-0 h-6 w-11 rounded-full transition-colors duration-200',
+        // Area sentuh 44px tanpa membesarkan tampilan.
+        "touch:before:absolute touch:before:-inset-2.5 touch:before:content-['']",
         'disabled:opacity-50 disabled:pointer-events-none',
-        checked ? 'bg-accent' : 'bg-border',
+        checked ? 'bg-fg' : 'bg-border',
         className
       )}
     >
       <span
         className={cx(
-          'inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200',
+          'inline-block h-5 w-5 rounded-full bg-surface shadow-sm transition-transform duration-200',
           checked ? 'translate-x-[22px]' : 'translate-x-0.5'
         )}
       />

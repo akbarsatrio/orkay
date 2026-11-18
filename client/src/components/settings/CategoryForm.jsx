@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, Button, Input, Segmented } from '../ui/index.jsx'
+import { Modal, Button, Input, Segmented, FormDeleteButton } from '../ui/index.jsx'
 import CategoryIcon from '../CategoryIcon.jsx'
 import { useData } from '../../context/DataContext.jsx'
 
@@ -14,7 +14,7 @@ const COLORS = [
   '#0ea5e9', '#4f46e5', '#8b5cf6', '#ec4899', '#71717a', '#0f766e',
 ]
 
-export default function CategoryForm({ open, onClose, editing }) {
+export default function CategoryForm({ open, onClose, editing, onDelete }) {
   const { addCategory, updateCategory } = useData()
   const [form, setForm] = useState({ name: '', type: 'expense', icon: 'ShoppingBag', color: '#4f46e5' })
 
@@ -42,6 +42,7 @@ export default function CategoryForm({ open, onClose, editing }) {
       title={editing ? 'Edit Kategori' : 'Kategori Baru'}
       footer={
         <>
+          {editing && onDelete && <FormDeleteButton onClick={onDelete} />}
           <Button variant="secondary" onClick={onClose}>Batal</Button>
           <Button onClick={handleSave} disabled={!canSave}>Simpan</Button>
         </>
@@ -81,7 +82,7 @@ export default function CategoryForm({ open, onClose, editing }) {
               <button
                 key={c}
                 onClick={() => set({ color: c })}
-                className={`h-7 w-7 rounded-full transition-transform ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-surface scale-110' : ''}`}
+                className={`h-7 w-7 touch:h-11 touch:w-11 rounded-full transition-transform ${form.color === c ? 'ring-2 ring-offset-2 ring-offset-surface scale-110' : ''}`}
                 style={{ background: c, '--tw-ring-color': c }}
               />
             ))}
@@ -90,13 +91,13 @@ export default function CategoryForm({ open, onClose, editing }) {
 
         <div>
           <span className="block text-xs font-medium text-muted mb-2">Ikon</span>
-          <div className="grid grid-cols-8 gap-2">
+          <div className="grid grid-cols-6 sm:grid-cols-8 gap-2">
             {ICONS.map((ic) => (
               <button
                 key={ic}
                 onClick={() => set({ icon: ic })}
-                className={`h-9 flex items-center justify-center rounded-lg border transition-colors ${
-                  form.icon === ic ? 'border-accent bg-accent/10 text-accent' : 'border-border text-muted hover:text-fg hover:bg-surface-2'
+                className={`h-9 touch:h-11 flex items-center justify-center rounded-md border transition-colors ${
+                  form.icon === ic ? 'border-fg bg-surface-2 text-fg' : 'border-border text-muted hover:text-fg hover:bg-surface-2'
                 }`}
               >
                 <CategoryIcon name={ic} color="currentColor" size={16} boxed={false} />
