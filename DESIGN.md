@@ -97,15 +97,20 @@ Fokus dibuat lewat ukuran di posisi yang sudah ada, bukan dengan memindah atau m
 - **Peta dasar Mapbox `light-v11` / `dark-v11`** ikut tema: peta monokrom supaya warna kategori pada titik terbaca; aksen
   oranye tidak dipakai di peta.
 - **Tempat** (untuk rincian, Cluster, Heatmap): transaksi dengan `placeId` sama digabung; titik GPS tanpa `placeId` ikut
-  tempat terdekat ≤ 50 m; dua `placeId` berbeda tidak pernah digabung (toko bersebelahan di mal tetap terpisah). Logika di
-  `lib/places.js`. Tempat/titik yang dibuka diberi **lingkaran 50 m** (isian `fg` 8% + garis putus-putus) dan catatan
-  "Transaksi dari titik GPS dalam lingkaran 50 m ikut tempat ini", supaya aturan penggabungan terlihat, bukan tersembunyi.
+  tempat terdekat yang lingkarannya mencakup titik itu; dua `placeId` berbeda tidak pernah digabung (toko bersebelahan di
+  mal tetap terpisah). Logika di `lib/places.js`. **Radius tempat default 20 m (keputusan owner)**, atau diatur manual
+  10 / 20 / 50 / 100 m (`Segmented`) di "Titik dipilih" dan saat mengubah tempat; disimpan di kolom `placeRadius`
+  transaksinya (NULL = default). Titik dengan radius manual diproses lebih dulu supaya jadi pusat tempatnya. Tempat/titik
+  yang dibuka diberi **lingkaran sesuai radiusnya** (isian `fg` 8% + garis putus-putus, ikut berubah saat radius dipilih)
+  dan catatan "Transaksi dari titik GPS dalam lingkaran N m ikut tempat ini", supaya aturan penggabungan terlihat, bukan
+  tersembunyi.
 - **Titik (keputusan owner)**: satu titik per transaksi di koordinat aslinya, tanpa penggabungan; warna = kategori
   transaksinya, luas sebanding nominal (akar, 5–14 px, lebih kecil dari titik tempat karena bisa bertumpuk). Ketuk titik =
   rincian tempatnya. **Cluster**: lingkaran `fg` berlabel total ringkas tanpa "Rp" ("80 rb", "1,2 jt") supaya muat; label
   jadi "N trx" saat saldo disembunyikan. **Heatmap**: ramp kuning → merah tua (konvensi "makin panas makin banyak"), bobot
   nominal atau frekuensi; di zoom dekat memudar jadi titik tempat supaya tetap bisa diketuk.
-- **Rincian tempat**: nama bisa diubah (ikon pensil di judul, berlaku untuk semua transaksi tempat itu di semua periode),
+- **Rincian tempat**: nama dan radius bisa diubah (ikon pensil di judul, berlaku untuk semua transaksi tempat itu di semua
+  periode; kalau tempatnya pecah/gabung karena radius baru, panel ikut ke tempat baru transaksinya),
   dan dua aksi lebar penuh yang sama dengan "Titik dipilih": **Buat transaksi baru di sini** (primer) dan **Pasang ke
   transaksi lama** (sekunder). Lebar penuh & bertumpuk supaya terbaca sebagai sepasang pilihan, bukan dua tombol beda
   ukuran yang membungkus.

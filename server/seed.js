@@ -31,18 +31,21 @@ const trimOrNull = (v, max) => {
 
 // Lokasi opsional: lat & lng harus lengkap dan valid, kalau tidak semua kolom lokasi dikosongkan.
 // Transfer tidak punya tempat, jadi lokasinya selalu kosong.
+// placeRadius: meter bulat 5–500 kalau diatur manual; di luar itu NULL (pakai default client).
 export function normalizeLocation(t) {
   const lat = t.lat == null || t.lat === '' ? NaN : Number(t.lat)
   const lng = t.lng == null || t.lng === '' ? NaN : Number(t.lng)
   const valid = t.type !== 'transfer' && Number.isFinite(lat) && Number.isFinite(lng)
     && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
-  if (!valid) return { lat: null, lng: null, placeName: null, placeAddress: null, placeId: null }
+  if (!valid) return { lat: null, lng: null, placeName: null, placeAddress: null, placeId: null, placeRadius: null }
+  const radius = t.placeRadius == null || t.placeRadius === '' ? NaN : Number(t.placeRadius)
   return {
     lat,
     lng,
     placeName: trimOrNull(t.placeName, 255),
     placeAddress: trimOrNull(t.placeAddress, 500),
     placeId: trimOrNull(t.placeId, 80),
+    placeRadius: Number.isInteger(radius) && radius >= 5 && radius <= 500 ? radius : null,
   }
 }
 

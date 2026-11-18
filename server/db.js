@@ -82,6 +82,8 @@ async function migrateSchema() {
     ['transactions', 'placeName', 'VARCHAR(255)'],
     ['transactions', 'placeAddress', 'VARCHAR(500)'],
     ['transactions', 'placeId', 'VARCHAR(80)'],
+    // Radius tempat (meter) yang diatur manual; NULL = default di client/src/lib/places.js.
+    ['transactions', 'placeRadius', 'SMALLINT'],
     ['investment_snapshots', 'cashAccountId', 'VARCHAR(40)'],
     ['investment_snapshots', 'linkedTxId', 'VARCHAR(40)'],
     ['settings', 'payDayShift', 'TINYINT(1) NOT NULL DEFAULT 1'],

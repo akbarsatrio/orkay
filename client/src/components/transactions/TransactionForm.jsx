@@ -5,7 +5,7 @@ import LocationField from './LocationField.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber, toISODate, formatRupiah } from '../../lib/format.js'
 import { load, save } from '../../lib/storage.js'
-import { groupPlaces, hasLocation, locationOf } from '../../lib/places.js'
+import { groupPlaces, hasLocation, locationOf, NO_LOCATION } from '../../lib/places.js'
 
 const empty = (type = 'expense') => ({
   type,
@@ -25,6 +25,7 @@ const empty = (type = 'expense') => ({
   placeName: '',
   placeAddress: '',
   placeId: null,
+  placeRadius: null,
   // cicilan
   installment: false,
   tenorMode: 'preset', // 'preset' | 'custom'
@@ -204,7 +205,7 @@ export default function TransactionForm({ open, onClose, editing, onDelete, defa
           categoryId: form.categoryId,
           accountId: form.accountId,
           note: form.note.trim(),
-          ...(locationOf(form) || { lat: null, lng: null, placeName: null, placeAddress: null, placeId: null }),
+          ...(locationOf(form) || NO_LOCATION),
         }
         if (isIncome && form.incomeSourceId) payload.incomeSourceId = form.incomeSourceId
         if (editing) await updateTransaction(editing.id, payload)
@@ -533,7 +534,7 @@ export default function TransactionForm({ open, onClose, editing, onDelete, defa
                 label="Tambah lokasi"
                 onChange={(v) => {
                   setShowLocation(v)
-                  if (!v) set({ lat: null, lng: null, placeName: '', placeAddress: '', placeId: null })
+                  if (!v) set({ ...NO_LOCATION, placeName: '', placeAddress: '' })
                 }}
               />
             </div>
@@ -541,7 +542,7 @@ export default function TransactionForm({ open, onClose, editing, onDelete, defa
               <LocationField
                 label={null}
                 value={locationOf(form)}
-                onChange={(loc) => set(loc || { lat: null, lng: null, placeName: '', placeAddress: '', placeId: null })}
+                onChange={(loc) => set(loc || { ...NO_LOCATION, placeName: '', placeAddress: '' })}
                 savedPlaces={savedPlaces}
                 bias={locationOf(form) || searchBias}
               />

@@ -24,9 +24,8 @@ const MODE_LAYERS = {
 }
 const ALL_LAYERS = ['heat', 'heat-points', 'tx-points', 'tx-selected', 'cluster-circles', 'cluster-labels', 'cluster-points', 'selected']
 const CLICKABLE = ['tx-points', 'cluster-circles', 'cluster-points', 'heat-points']
-const RADIUS_M = 50 // sama dengan SAME_PLACE_RADIUS_M di lib/places.js
 
-// Lingkaran berjari-jari meter sebagai poligon (64 titik), untuk area 50 m tempat/titik yang dibuka.
+// Lingkaran berjari-jari meter sebagai poligon (64 titik), untuk area tempat/titik yang dibuka.
 function circleGeoJSON(center, meters) {
   if (!center) return { type: 'FeatureCollection', features: [] }
   const dLat = meters / 111320
@@ -98,7 +97,7 @@ function addLayers(map, { maxAmount, hidden }) {
   map.addSource('txs', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } })
   map.addSource('radius', { type: 'geojson', data: circleGeoJSON(null) })
 
-  // Area 50 m di bawah semua titik: isian tipis + garis putus-putus warna teks.
+  // Area radius tempat di bawah semua titik: isian tipis + garis putus-putus warna teks.
   map.addLayer({ id: 'radius-fill', type: 'fill', source: 'radius', paint: { 'fill-color': fg, 'fill-opacity': 0.08 } })
   map.addLayer({ id: 'radius-line', type: 'line', source: 'radius', paint: { 'line-color': fg, 'line-width': 1.5, 'line-opacity': 0.6, 'line-dasharray': [2, 2] } })
 
@@ -179,7 +178,7 @@ function addLayers(map, { maxAmount, hidden }) {
  * fitKey: berubah = peta menyesuaikan ke semua titik (dipakai saat filter berubah).
  * insets: area yang tertutup panel mengambang { top, right, bottom, left } dalam px.
  * keepVisible: { lat, lng } titik/tempat yang sedang dibuka; peta digeser kalau tertutup panel.
- * radiusAt: { lat, lng } pusat lingkaran 50 m (tempat/titik yang dibuka), atau null.
+ * radiusAt: { lat, lng, radius } pusat & jari-jari (meter) lingkaran tempat/titik yang dibuka, atau null.
  * Callback: onSelectPlace(key), onPick({ lat, lng }) (ketuk peta / Enter di peta), onError(kind).
  */
 export default function MapCanvas({
@@ -339,12 +338,12 @@ export default function MapCanvas({
     map.setFilter('tx-selected', ['==', ['get', 'key'], selectedKey || ''])
   }, [selectedKey, styleReady])
 
-  // Lingkaran 50 m di sekitar tempat/titik yang dibuka.
+  // Lingkaran radius tempat/titik yang dibuka.
   useEffect(() => {
     const map = mapRef.current
     if (!map || !styleReady || !map.getSource('radius')) return
-    map.getSource('radius').setData(circleGeoJSON(radiusAt ? { lat: radiusAt.lat, lng: radiusAt.lng } : null, RADIUS_M))
-  }, [radiusAt?.lat, radiusAt?.lng, styleReady])
+    map.getSource('radius').setData(circleGeoJSON(radiusAt ? { lat: radiusAt.lat, lng: radiusAt.lng } : null, radiusAt?.radius))
+  }, [radiusAt?.lat, radiusAt?.lng, radiusAt?.radius, styleReady])
 
   // Pin titik yang dipilih.
   useEffect(() => {

@@ -6,15 +6,15 @@ import { normalizeTx } from '../seed.js'
 const router = Router()
 
 const INSERT_SQL = `INSERT INTO transactions
-  (id,type,date,amount,categoryId,accountId,incomeSourceId,fromAccountId,toAccountId,fee,feeCategoryId,recurringId,installmentId,statementPeriod,note,lat,lng,placeName,placeAddress,placeId)
-  VALUES (:id,:type,:date,:amount,:categoryId,:accountId,:incomeSourceId,:fromAccountId,:toAccountId,:fee,:feeCategoryId,:recurringId,:installmentId,:statementPeriod,:note,:lat,:lng,:placeName,:placeAddress,:placeId)`
+  (id,type,date,amount,categoryId,accountId,incomeSourceId,fromAccountId,toAccountId,fee,feeCategoryId,recurringId,installmentId,statementPeriod,note,lat,lng,placeName,placeAddress,placeId,placeRadius)
+  VALUES (:id,:type,:date,:amount,:categoryId,:accountId,:incomeSourceId,:fromAccountId,:toAccountId,:fee,:feeCategoryId,:recurringId,:installmentId,:statementPeriod,:note,:lat,:lng,:placeName,:placeAddress,:placeId,:placeRadius)`
 
 const UPDATE_SQL = `UPDATE transactions SET
   type=:type, date=:date, amount=:amount, categoryId=:categoryId, accountId=:accountId,
   incomeSourceId=:incomeSourceId, fromAccountId=:fromAccountId, toAccountId=:toAccountId,
   fee=:fee, feeCategoryId=:feeCategoryId, recurringId=:recurringId,
   installmentId=:installmentId, statementPeriod=:statementPeriod, note=:note,
-  lat=:lat, lng=:lng, placeName=:placeName, placeAddress=:placeAddress, placeId=:placeId
+  lat=:lat, lng=:lng, placeName=:placeName, placeAddress=:placeAddress, placeId=:placeId, placeRadius=:placeRadius
   WHERE id=:id`
 
 // Ambil kind beberapa akun sekaligus -> { id: kind }

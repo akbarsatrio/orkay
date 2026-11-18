@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   placeName      VARCHAR(255),
   placeAddress   VARCHAR(500),
   placeId        VARCHAR(80),
+  placeRadius    SMALLINT,
   INDEX idx_tx_date (date),
   INDEX idx_tx_account (accountId)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

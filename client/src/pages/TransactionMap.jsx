@@ -14,7 +14,7 @@ import { useBalanceVisibility } from '../context/BalanceVisibilityContext.jsx'
 import { useConfirm } from '../context/ConfirmContext.jsx'
 import { api } from '../lib/api.js'
 import { formatDate, formatRupiah, maskRupiah, monthNamesID } from '../lib/format.js'
-import { groupPlaces, hasLocation, topCategoryId } from '../lib/places.js'
+import { DEFAULT_PLACE_RADIUS_M, PLACE_RADIUS_OPTIONS, groupPlaces, hasLocation, topCategoryId } from '../lib/places.js'
 
 let tokenCache = null
 function useMapboxToken() {
@@ -65,7 +65,7 @@ export default function TransactionMap() {
   const [mode, setMode] = useState('clusters')
   const [heatWeight, setHeatWeight] = useState('amount')
   const [selectedKey, setSelectedKey] = useState(null)
-  const [picked, setPicked] = useState(null) // { lat, lng, placeName, placeAddress, placeId }
+  const [picked, setPicked] = useState(null) // { lat, lng, placeName, placeAddress, placeId, placeRadius }
   const [attaching, setAttaching] = useState(false)
   const [focus, setFocus] = useState(null)
   const [hover, setHover] = useState(null) // { kind: 'tx', id, at } | { kind: 'places', keys, at }
@@ -126,8 +126,17 @@ export default function TransactionMap() {
   // Ganti mode/filter menyembunyikan layer tanpa event mouseleave, jadi tooltip dibersihkan di sini.
   useEffect(() => { setHover(null) }, [mode, fitKey])
 
-  // Tempat terpilih hilang dari filter → kembali ke daftar.
-  useEffect(() => { if (selectedKey && !selected) setSelectedKey(null) }, [selectedKey, selected])
+  // Tempat terpilih hilang → ikuti transaksinya ke tempat barunya (radius diubah bisa memecah/menggabung tempat);
+  // kalau transaksinya tidak ada lagi di filter, kembali ke daftar.
+  const selectedTx = useRef(null)
+  useEffect(() => { if (selected) selectedTx.current = selected.txs[0]?.id }, [selected])
+  useEffect(() => {
+    if (!selectedKey || selected) return
+    const hit = places.find((p) => p.txs.some((t) => t.id === selectedTx.current))
+    setSelectedKey(hit ? hit.key : null)
+  }, [selectedKey, selected, places])
+  // Radius yang sedang diubah di rincian tempat, supaya lingkaran di peta langsung ikut.
+  const [draftRadius, setDraftRadius] = useState(null)
 
   // Setelah titik dipakai untuk transaksi (baru atau lama), pilih tempatnya dan lepas pin.
   useEffect(() => {
@@ -151,7 +160,7 @@ export default function TransactionMap() {
   const pickPoint = (pt) => {
     setSelectedKey(null)
     setAttaching(false)
-    setPicked({ lat: pt.lat, lng: pt.lng, placeName: '', placeAddress: '', placeId: null })
+    setPicked({ lat: pt.lat, lng: pt.lng, placeName: '', placeAddress: '', placeId: null, placeRadius: null })
     revealPanel()
   }
 
@@ -164,16 +173,16 @@ export default function TransactionMap() {
 
   const newAt = (loc) => setForm({ open: true, editing: null, defaults: { type, ...loc } })
   // Lokasi tujuan "Pasang ke transaksi lama": titik yang dipilih, atau tempat yang sedang dibuka.
-  const placeLoc = (p) => ({ lat: p.lat, lng: p.lng, placeName: p.name, placeAddress: p.address, placeId: p.placeId })
+  const placeLoc = (p) => ({ lat: p.lat, lng: p.lng, placeName: p.name, placeAddress: p.address, placeId: p.placeId, placeRadius: p.placeRadius })
   const target = picked || (selected && placeLoc(selected))
   const attachTo = async (t) => {
     await updateTransaction(t.id, { ...target })
     if (!picked) setAttaching(false) // tempat yang sudah ada: kembali ke rinciannya (transaksi baru langsung terlihat)
   }
-  // Ganti nama tempat = ganti placeName di semua transaksi tempat itu (semua periode, bukan hanya yang lolos filter).
-  const renamePlace = async (place, name) => {
+  // Ubah tempat = ganti placeName & placeRadius di semua transaksi tempat itu (semua periode, bukan hanya yang lolos filter).
+  const updatePlace = async (place, { name, radius }) => {
     const full = allPlaces.find((g) => g.txs.some((t) => t.id === place.txs[0].id)) || place
-    await Promise.all(full.txs.map((t) => updateTransaction(t.id, { placeName: name.trim() })))
+    await Promise.all(full.txs.map((t) => updateTransaction(t.id, { placeName: name.trim(), placeRadius: radius })))
   }
 
   const catOptions = categories.filter((c) => c.type === type)
@@ -216,7 +225,8 @@ export default function TransactionMap() {
         accountMap={accountMap}
         money={money}
         onClose={() => setSelectedKey(null)}
-        onRename={(name) => renamePlace(selected, name)}
+        onSave={(patch) => updatePlace(selected, patch)}
+        onDraftRadius={setDraftRadius}
         onCreate={() => newAt(placeLoc(selected))}
         onAttach={() => setAttaching(true)}
         onEdit={(t) => setForm({ open: true, editing: t, defaults: null })}
@@ -247,7 +257,9 @@ export default function TransactionMap() {
         theme={theme}
         places={places}
         located={txPoints}
-        radiusAt={picked || selected}
+        radiusAt={picked
+          ? { ...picked, radius: picked.placeRadius || DEFAULT_PLACE_RADIUS_M }
+          : selected && { ...selected, radius: draftRadius || selected.radius }}
         mode={mode}
         heatWeight={heatWeight}
         hidden={hidden}
@@ -594,28 +606,34 @@ function LocationActions({ onCreate, onAttach }) {
   )
 }
 
-// Lingkaran 50 m di peta = batas titik GPS yang ikut tempat ini (lib/places.js).
-function RadiusNote() {
-  return <p className="text-[13px] text-muted mt-1">Transaksi dari titik GPS dalam lingkaran 50 m ikut tempat ini.</p>
+// Lingkaran di peta = batas titik GPS yang ikut tempat ini (lib/places.js).
+function RadiusNote({ radius }) {
+  return <p className="text-[13px] text-muted mt-1">Transaksi dari titik GPS dalam lingkaran {radius} m ikut tempat ini.</p>
 }
 
-function PlaceDetail({ place, type, categoryMap, accountMap, money, onClose, onRename, onCreate, onAttach, onEdit }) {
+function PlaceDetail({ place, type, categoryMap, accountMap, money, onClose, onSave, onDraftRadius, onCreate, onAttach, onEdit }) {
   const top = categoryMap[topCategoryId(place)]
   const [editing, setEditing] = useState(false)
   const [name, setName] = useState(place.name)
+  const [radius, setRadius] = useState(place.radius)
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState('')
 
+  // Pratinjau lingkaran di peta hanya selama mode ubah.
+  useEffect(() => { onDraftRadius(editing ? radius : null) }, [editing, radius, onDraftRadius])
+  useEffect(() => () => onDraftRadius(null), [onDraftRadius])
+
+  const startEdit = () => { setName(place.name); setRadius(place.radius); setErr(''); setEditing(true) }
   const save = async () => {
     setSaving(true)
     setErr('')
-    try { await onRename(name); setEditing(false) } catch (e) { setErr(e.message || 'Gagal mengganti nama') } finally { setSaving(false) }
+    try { await onSave({ name, radius }); setEditing(false) } catch (e) { setErr(e.message || 'Gagal menyimpan tempat') } finally { setSaving(false) }
   }
 
   return (
     <section aria-label={`Rincian ${place.name || 'titik'}`}>
       {editing ? (
-        <div className="pt-4 mb-3 space-y-2">
+        <div className="pt-4 mb-3 space-y-3">
           <label className="block">
             <span className="block text-[13px] font-medium text-muted mb-1.5">Nama tempat</span>
             <input
@@ -627,11 +645,16 @@ function PlaceDetail({ place, type, categoryMap, accountMap, money, onClose, onR
               className={cx(fieldClass, 'w-full h-9 touch:h-11 px-3 text-base sm:text-sm')}
             />
           </label>
+          <div role="group" aria-label="Radius tempat">
+            <span className="block text-[13px] font-medium text-muted mb-1.5">Radius tempat</span>
+            <Segmented fill options={RADIUS_CHOICES} value={radius} onChange={setRadius} />
+            <RadiusNote radius={radius} />
+          </div>
           <p className="text-[13px] text-muted">Berlaku untuk {place.count > 1 ? 'semua transaksi' : 'transaksi'} di tempat ini.</p>
           {err && <p className="text-[13px] text-negative" role="alert">{err}</p>}
           <div className="flex gap-2">
             <Button size="sm" onClick={save} disabled={saving}>{saving ? 'Menyimpan…' : 'Simpan'}</Button>
-            <Button size="sm" variant="secondary" onClick={() => { setName(place.name); setEditing(false) }} disabled={saving}>Batal</Button>
+            <Button size="sm" variant="secondary" onClick={() => setEditing(false)} disabled={saving}>Batal</Button>
           </div>
         </div>
       ) : (
@@ -639,13 +662,13 @@ function PlaceDetail({ place, type, categoryMap, accountMap, money, onClose, onR
           title={place.name || 'Titik tanpa nama'}
           onClose={onClose}
           action={(
-            <Button size="icon" variant="ghost" onClick={() => { setName(place.name); setEditing(true) }} aria-label="Ubah nama tempat" title="Ubah nama tempat" className="shrink-0">
+            <Button size="icon" variant="ghost" onClick={startEdit} aria-label="Ubah tempat" title="Ubah nama & radius tempat" className="shrink-0">
               <Pencil size={15} aria-hidden="true" />
             </Button>
           )}
         >
           <p className="text-[13px] text-muted">{place.address || `${place.lat.toFixed(5)}, ${place.lng.toFixed(5)}`}</p>
-          <RadiusNote />
+          <RadiusNote radius={place.radius} />
         </PanelHeader>
       )}
 
@@ -698,12 +721,16 @@ function TxButton({ t, categoryMap, accountMap, money, onClick, label }) {
   )
 }
 
+// Pilihan radius manual (lib/places.js), dipakai di "Titik dipilih" dan ubah tempat.
+const RADIUS_CHOICES = PLACE_RADIUS_OPTIONS.map((m) => ({ value: m, label: `${m} m` }))
+
 function PickedPanel({ picked, savedPlaces, onChange, onClose, onCreate, onAttach }) {
+  const radius = picked.placeRadius || DEFAULT_PLACE_RADIUS_M
   return (
     <section aria-label="Titik dipilih">
       <PanelHeader title="Titik dipilih" onClose={onClose}>
         <p className="text-[13px] text-muted tnum">{picked.lat.toFixed(5)}, {picked.lng.toFixed(5)}</p>
-        <RadiusNote />
+        <RadiusNote radius={radius} />
       </PanelHeader>
       <div className="space-y-4">
         <label className="block">
@@ -716,8 +743,16 @@ function PickedPanel({ picked, savedPlaces, onChange, onClose, onCreate, onAttac
           />
           {picked.placeAddress && <span className="block text-[13px] text-muted mt-1">{picked.placeAddress}</span>}
         </label>
+        <div role="group" aria-label="Radius tempat">
+          <span className="block text-[13px] font-medium text-muted mb-1.5">Radius tempat</span>
+          <Segmented fill options={RADIUS_CHOICES} value={radius} onChange={(m) => onChange({ ...picked, placeRadius: m })} />
+        </div>
         {!picked.placeId && (
-          <NearbySuggestions point={picked} savedPlaces={savedPlaces} onSelect={(loc) => onChange(loc)} />
+          <NearbySuggestions
+            point={picked}
+            savedPlaces={savedPlaces}
+            onSelect={(loc) => onChange({ ...loc, placeRadius: loc.placeRadius || picked.placeRadius })}
+          />
         )}
         <div className="pt-1"><LocationActions onCreate={onCreate} onAttach={onAttach} /></div>
       </div>

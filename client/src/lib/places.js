@@ -1,8 +1,10 @@
 // Pengelompokan transaksi berlokasi menjadi "tempat".
 // Aturan (keputusan owner): transaksi dengan placeId sama = satu tempat; transaksi tanpa placeId (titik GPS / pin)
-// ikut tempat terdekat dalam radius 50 m. Dua placeId berbeda tidak pernah digabung (toko bersebelahan di mal tetap terpisah).
+// ikut tempat terdekat yang lingkarannya mencakup titik itu. Radius tempat default 20 m, atau diatur manual per tempat
+// (placeRadius, disimpan di transaksinya). Dua placeId berbeda tidak pernah digabung (toko bersebelahan di mal tetap terpisah).
 
-export const SAME_PLACE_RADIUS_M = 50
+export const DEFAULT_PLACE_RADIUS_M = 20
+export const PLACE_RADIUS_OPTIONS = [10, 20, 50, 100]
 
 export const hasLocation = (t) => t.lat != null && t.lng != null
 
@@ -27,7 +29,8 @@ function mostFrequent(values) {
 
 /**
  * txs: transaksi (boleh campur; yang tanpa lokasi dilewati).
- * Hasil: [{ key, lat, lng, name, address, placeId, total, count, txs, lastDate, categoryTotals }] urut total terbesar.
+ * Hasil: [{ key, lat, lng, name, address, placeId, placeRadius, radius, total, count, txs, lastDate, categoryTotals }]
+ * urut total terbesar. placeRadius = radius manual (atau null), radius = radius efektif dalam meter.
  */
 export function groupPlaces(txs) {
   const located = txs.filter(hasLocation)
@@ -45,18 +48,20 @@ export function groupPlaces(txs) {
     }
     g.txs.push(t)
   }
+  for (const g of groups) g.placeRadius = mostFrequent(g.txs.map((t) => t.placeRadius)) || null
 
-  // 2) Titik tanpa placeId: gabung ke tempat terdekat <= 50 m, kalau tidak ada jadi tempat baru.
-  for (const t of located) {
-    if (t.placeId) continue
+  // 2) Titik tanpa placeId: gabung ke tempat terdekat yang radiusnya mencakup titik ini, kalau tidak ada jadi tempat baru.
+  // Titik dengan radius manual diproses dulu supaya jadi pusat tempatnya, bukan ikut titik GPS di dekatnya.
+  const pins = located.filter((t) => !t.placeId).sort((a, b) => (b.placeRadius != null) - (a.placeRadius != null))
+  for (const t of pins) {
     let best = null
     let bestD = Infinity
     for (const g of groups) {
       const d = distanceM(g, t)
-      if (d <= SAME_PLACE_RADIUS_M && d < bestD) { best = g; bestD = d }
+      if (d <= (g.placeRadius || DEFAULT_PLACE_RADIUS_M) && d < bestD) { best = g; bestD = d }
     }
     if (best) best.txs.push(t)
-    else groups.push({ key: `g:${t.id}`, placeId: null, lat: t.lat, lng: t.lng, txs: [t] })
+    else groups.push({ key: `g:${t.id}`, placeId: null, placeRadius: t.placeRadius || null, lat: t.lat, lng: t.lng, txs: [t] })
   }
 
   return groups
@@ -71,6 +76,7 @@ export function groupPlaces(txs) {
       }
       return {
         ...g,
+        radius: g.placeRadius || DEFAULT_PLACE_RADIUS_M,
         name: mostFrequent(g.txs.map((t) => t.placeName)),
         address: mostFrequent(g.txs.map((t) => t.placeAddress)),
         total,
@@ -94,7 +100,10 @@ export function topCategoryId(place) {
 // Lokasi milik satu transaksi dalam bentuk yang dipakai form & API.
 export function locationOf(t) {
   if (!hasLocation(t)) return null
-  return { lat: t.lat, lng: t.lng, placeName: t.placeName || '', placeAddress: t.placeAddress || '', placeId: t.placeId || null }
+  return {
+    lat: t.lat, lng: t.lng, placeName: t.placeName || '', placeAddress: t.placeAddress || '', placeId: t.placeId || null,
+    placeRadius: t.placeRadius || null,
+  }
 }
 
-export const NO_LOCATION = { lat: null, lng: null, placeName: null, placeAddress: null, placeId: null }
+export const NO_LOCATION = { lat: null, lng: null, placeName: null, placeAddress: null, placeId: null, placeRadius: null }

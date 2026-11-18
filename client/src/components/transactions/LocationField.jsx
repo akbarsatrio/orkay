@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { Search, LocateFixed, MapPin, History, X, Loader2 } from 'lucide-react'
 import { Button, fieldClass, cx } from '../ui/index.jsx'
 import { searchPlaces, nearbyPlaces, OSM_ATTRIBUTION, OSM_COPYRIGHT_URL } from '../../lib/osm.js'
-import { distanceM, SAME_PLACE_RADIUS_M } from '../../lib/places.js'
+import { distanceM } from '../../lib/places.js'
 
-// Lokasi dari tempat tersimpan (hasil groupPlaces) dalam bentuk nilai field.
-const fromSaved = (p) => ({ lat: p.lat, lng: p.lng, placeName: p.name, placeAddress: p.address, placeId: p.placeId })
+// Lokasi dari tempat tersimpan (hasil groupPlaces) dalam bentuk nilai field; radius manual tempatnya ikut.
+const fromSaved = (p) => ({ lat: p.lat, lng: p.lng, placeName: p.name, placeAddress: p.address, placeId: p.placeId, placeRadius: p.placeRadius })
 
 export function PlaceRow({ icon: Icon = MapPin, name, address, onSelect }) {
   return (
@@ -36,7 +36,7 @@ export function OsmAttribution() {
   )
 }
 
-// Daftar saran tempat di sekitar satu titik: tempat yang pernah dipakai (<= 50 m) dulu, lalu tempat OSM terdekat.
+// Daftar saran tempat di sekitar satu titik: tempat yang pernah dipakai (titik di dalam radiusnya) dulu, lalu tempat OSM terdekat.
 export function NearbySuggestions({ point, savedPlaces = [], onSelect }) {
   const [osm, setOsm] = useState(null)
   const [failed, setFailed] = useState(false)
@@ -52,7 +52,7 @@ export function NearbySuggestions({ point, savedPlaces = [], onSelect }) {
   }, [point.lat, point.lng])
 
   const saved = useMemo(
-    () => savedPlaces.filter((p) => p.name && distanceM(p, point) <= SAME_PLACE_RADIUS_M).slice(0, 3),
+    () => savedPlaces.filter((p) => p.name && distanceM(p, point) <= p.radius).slice(0, 3),
     [savedPlaces, point]
   )
   const savedIds = new Set(saved.map((p) => p.placeId).filter(Boolean))
@@ -82,7 +82,7 @@ export function NearbySuggestions({ point, savedPlaces = [], onSelect }) {
 
 /**
  * Lokasi transaksi (opsional): lokasi saat ini (GPS), cari tempat (OSM), atau tempat yang pernah dipakai.
- * value: { lat, lng, placeName, placeAddress, placeId } | null. onChange(value | null).
+ * value: { lat, lng, placeName, placeAddress, placeId, placeRadius } | null. onChange(value | null).
  * savedPlaces: hasil groupPlaces() dari transaksi yang sudah ada. bias: { lat, lng } untuk mengutamakan hasil terdekat.
  */
 export default function LocationField({ value, onChange, savedPlaces = [], bias, label = 'Lokasi (opsional)' }) {
@@ -136,7 +136,7 @@ export default function LocationField({ value, onChange, savedPlaces = [], bias,
         setLocating(false)
         const point = { lat: pos.coords.latitude, lng: pos.coords.longitude }
         setGps({ ...point, accuracy: Math.round(pos.coords.accuracy) })
-        pick({ ...point, placeName: '', placeAddress: '', placeId: null })
+        pick({ ...point, placeName: '', placeAddress: '', placeId: null, placeRadius: null })
       },
       (err) => {
         setLocating(false)
