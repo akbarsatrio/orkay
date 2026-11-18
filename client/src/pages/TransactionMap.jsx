@@ -68,6 +68,7 @@ export default function TransactionMap() {
   const [picked, setPicked] = useState(null) // { lat, lng, placeName, placeAddress, placeId }
   const [attaching, setAttaching] = useState(false)
   const [focus, setFocus] = useState(null)
+  const [hover, setHover] = useState(null) // { kind: 'tx', id, at } | { kind: 'places', keys, at }
   const [mapError, setMapError] = useState(null)
   const [form, setForm] = useState({ open: false, editing: null, defaults: null })
   const [filterOpen, setFilterOpen] = useState(false) // HP: panel atas melebar menampilkan semua filter
@@ -122,6 +123,8 @@ export default function TransactionMap() {
   const total = located.reduce((s, t) => s + t.amount, 0)
   const selected = places.find((p) => p.key === selectedKey) || null
   const fitKey = `${type}|${period}|${monthPrefix}|${categoryId}|${accountId}`
+  // Ganti mode/filter menyembunyikan layer tanpa event mouseleave, jadi tooltip dibersihkan di sini.
+  useEffect(() => { setHover(null) }, [mode, fitKey])
 
   // Tempat terpilih hilang dari filter → kembali ke daftar.
   useEffect(() => { if (selectedKey && !selected) setSelectedKey(null) }, [selectedKey, selected])
@@ -256,6 +259,7 @@ export default function TransactionMap() {
         onSelectPlace={(key) => selectPlace(key)}
         onPick={pickPoint}
         onError={setMapError}
+        onHover={setHover}
         insets={insets}
         className="h-full w-full"
       />
@@ -314,6 +318,17 @@ export default function TransactionMap() {
       style={{ '--inset-right': `${insets.right}px`, '--inset-bottom': `${insets.bottom}px` }}
     >
       <div className="absolute inset-0">{mapArea}</div>
+      {hover && (
+        <MapTooltip
+          hover={hover}
+          txPoints={txPoints}
+          places={places}
+          categoryMap={categoryMap}
+          accountMap={accountMap}
+          money={money}
+          bounds={{ width: shellRef.current?.clientWidth || 0, right: insets.right }}
+        />
+      )}
 
       {/* Panel atas: satu baris (judul, bulan, Filter, mode). Filter lain dilipat di balik tombol Filter. */}
       <div
@@ -431,6 +446,93 @@ export default function TransactionMap() {
 // Panel mengambang di atas peta. Bayangan = elevasi di atas peta (bukan dekorasi); radius xl membedakan panel dari
 // tombol & isian (rounded-md).
 const FLOAT = 'rounded-xl bg-bg border border-border shadow-pop'
+
+// Tooltip titik (desktop, hover). Satu transaksi: rinciannya. Tempat/cluster: 3 transaksi terbesar, "+N lainnya", total.
+// Melayang di atas titik (di bawahnya kalau titik dekat tepi atas), tidak menangkap kursor.
+const TIP_W = 256
+function MapTooltip({ hover, txPoints, places, categoryMap, accountMap, money, bounds }) {
+  // Ringkasan beberapa transaksi: 3 terbesar, "+N lainnya", total.
+  const summaryOf = (title, list) => {
+    const txs = [...list].sort((a, b) => b.amount - a.amount)
+    const total = txs.reduce((s, t) => s + t.amount, 0)
+    return (
+      <>
+        <p className="text-sm font-semibold text-fg truncate">{title}</p>
+        <ul className="mt-2 space-y-1.5">
+          {txs.slice(0, 3).map((t) => {
+            const cat = categoryMap[t.categoryId]
+            return (
+              <li key={t.id} className="flex items-center gap-2 text-[13px]">
+                <span className="h-2 w-2 rounded-full shrink-0" style={{ background: cat?.color || '#71717a' }} aria-hidden="true" />
+                <span className="flex-1 min-w-0 truncate text-fg">{t.note || cat?.name || 'Transaksi'}</span>
+                <span className="tnum text-fg whitespace-nowrap">{money(t.amount)}</span>
+              </li>
+            )
+          })}
+        </ul>
+        {txs.length > 3 && <p className="text-[13px] text-muted mt-1.5">+{txs.length - 3} lainnya</p>}
+        <div className="flex items-baseline justify-between gap-3 mt-2 pt-2 border-t border-border">
+          <span className="text-[13px] text-muted">Total {txs.length} transaksi</span>
+          <span className="text-sm font-bold text-fg tnum whitespace-nowrap">{money(total)}</span>
+        </div>
+      </>
+    )
+  }
+
+  let body
+  if (hover.kind === 'tx') {
+    const t = txPoints.find((x) => x.id === hover.id)
+    if (!t) return null
+    // Transaksi di koordinat yang persis sama bertumpuk jadi satu titik: tampilkan semuanya, bukan hanya yang paling atas.
+    const same = txPoints.filter((x) => x.lat === t.lat && x.lng === t.lng)
+    if (same.length > 1) {
+      body = summaryOf(places.find((p) => p.key === t.placeKey)?.name || t.placeName || 'Titik tanpa nama', same)
+    } else {
+      const cat = categoryMap[t.categoryId]
+      body = (
+        <>
+          <div className="flex items-center gap-2.5">
+            <CategoryIcon name={cat?.icon} color={cat?.color} size={13} />
+            <p className="flex-1 min-w-0 text-sm font-medium text-fg truncate">{t.note || cat?.name || 'Transaksi'}</p>
+          </div>
+          <p className="text-lg font-bold text-fg tnum mt-2 leading-tight">{money(t.amount)}</p>
+          <p className="text-[13px] text-muted mt-0.5 truncate">
+            {formatDate(t.date, { short: true })} · {cat?.name || 'Tanpa kategori'}{accountMap[t.accountId] ? ` · ${accountMap[t.accountId].name}` : ''}
+          </p>
+          {t.placeName && (
+            <p className="text-[13px] text-muted mt-1 flex items-center gap-1.5 truncate">
+              <MapPinned size={12} className="shrink-0" aria-hidden="true" /> {t.placeName}
+            </p>
+          )}
+        </>
+      )
+    }
+  } else {
+    const group = places.filter((p) => hover.keys.includes(p.key))
+    const txs = group.flatMap((p) => p.txs)
+    if (!txs.length) return null
+    body = summaryOf(group.length === 1 ? group[0].name || 'Titik tanpa nama' : `${group.length} tempat`, txs)
+  }
+
+  // Jaga tooltip tetap di area peta yang terlihat (tidak masuk ke bawah panel kanan).
+  const maxX = Math.max(TIP_W / 2 + 8, bounds.width - bounds.right - TIP_W / 2 - 8)
+  const x = Math.min(Math.max(hover.at.x, TIP_W / 2 + 8), maxX)
+  const below = hover.at.y < 220
+  return (
+    <div
+      role="tooltip"
+      className="absolute z-20 pointer-events-none rounded-lg bg-bg border border-border shadow-pop p-3"
+      style={{
+        width: TIP_W,
+        left: x,
+        top: hover.at.y,
+        transform: below ? 'translate(-50%, 18px)' : 'translate(-50%, calc(-100% - 18px))',
+      }}
+    >
+      {body}
+    </div>
+  )
+}
 
 function MapMessage({ icon = MapPinned, spin, title, description }) {
   const Icon = icon

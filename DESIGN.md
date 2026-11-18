@@ -109,6 +109,12 @@ Fokus dibuat lewat ukuran di posisi yang sudah ada, bukan dengan memindah atau m
   dan dua aksi lebar penuh yang sama dengan "Titik dipilih": **Buat transaksi baru di sini** (primer) dan **Pasang ke
   transaksi lama** (sekunder). Lebar penuh & bertumpuk supaya terbaca sebagai sepasang pilihan, bukan dua tombol beda
   ukuran yang membungkus.
+- **Tooltip saat hover (desktop/perangkat dengan kursor; di layar sentuh ketuk = rincian)**: melayang di atas titik
+  (di bawahnya kalau titik dekat tepi atas), dijaga tetap di area peta yang tidak tertutup panel, tidak menangkap kursor,
+  hilang saat peta bergerak. Isi: **Titik** = satu transaksi (catatan/kategori, nominal besar, tanggal · kategori ·
+  rekening, nama tempat); kalau beberapa transaksi berkoordinat persis sama (bertumpuk), ringkasannya. **Cluster** dan
+  titik tempat = 3 transaksi terbesar, "+N lainnya", dan "Total N transaksi" + nominal. Nominal ikut tombol sembunyikan
+  saldo. Bentuk sama dengan panel mengambang tapi `rounded-lg` (lebih kecil, sementara).
 - **Peta penuh, kontrol mengambang (keputusan owner).** Peta memenuhi area konten dari tepi sidebar sampai tepi kanan,
   setinggi layar, tanpa Topbar & padding halaman (`App.jsx` → `fullBleed`). Semua kontrol berupa **panel mengambang**:
   `rounded-xl` (lebih besar dari tombol/isian `rounded-md` supaya terbaca sebagai wadah), latar `bg` padat, garis `border`,
@@ -289,7 +295,7 @@ Kandidat dari owner: Host Grotesk, Space Grotesk, Instrument Sans. Dicek dari fi
   dan tombol tambah melayang di HP.
 - Input: isian abu `surface-2` + garis tipis `border` saat diam, garis hitam saat fokus (`fieldClass` di
   `components/ui/index.jsx`, dipakai juga oleh input mentah). Garis gelap permanen terlalu kontras tanpa kotak di sekitarnya.
-- Shadow: hanya sheet, modal, tombol tambah melayang di HP, dan panel mengambang di atas Peta Transaksi
+- Shadow: hanya sheet, modal, tombol tambah melayang di HP, panel mengambang dan tooltip di atas Peta Transaksi
   (elevasi di atas peta). Blur: hanya backdrop modal/sheet.
   Gradien: tidak ada.
 

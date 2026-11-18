@@ -76,7 +76,7 @@ function txGeoJSON(txs) {
     features: txs.map((t) => ({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [t.lng, t.lat] },
-      properties: { amount: t.amount, color: t.color, key: t.placeKey, r: 5 + 9 * Math.sqrt(t.amount / max) },
+      properties: { id: t.id, amount: t.amount, color: t.color, key: t.placeKey, r: 5 + 9 * Math.sqrt(t.amount / max) },
     })),
   }
 }
@@ -184,14 +184,14 @@ function addLayers(map, { maxAmount, hidden }) {
  */
 export default function MapCanvas({
   token, theme, places, located, mode, heatWeight, hidden, selectedKey, picked, fitKey, focus, keepVisible, radiusAt,
-  onSelectPlace, onPick, onError, insets, className,
+  onSelectPlace, onPick, onError, onHover, insets, className,
 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const markerRef = useRef(null)
   const [styleReady, setStyleReady] = useState(0) // naik tiap style selesai dimuat (awal & ganti tema)
   const latest = useRef({})
-  latest.current = { places, located, mode, heatWeight, hidden, selectedKey, insets, onSelectPlace, onPick, onError }
+  latest.current = { places, located, mode, heatWeight, hidden, selectedKey, insets, onSelectPlace, onPick, onError, onHover }
 
   // Buat peta sekali.
   useEffect(() => {
@@ -254,6 +254,37 @@ export default function MapCanvas({
     for (const id of CLICKABLE) {
       map.on('mouseenter', id, () => { map.getCanvas().style.cursor = 'pointer' })
       map.on('mouseleave', id, () => { map.getCanvas().style.cursor = '' })
+    }
+
+    // Tooltip saat kursor di atas titik (hanya perangkat dengan hover; di layar sentuh ketuk = rincian).
+    // Dikirim ke halaman sebagai target + posisi titik di layar; isi tooltip dirender halaman.
+    if (window.matchMedia('(hover: hover)').matches) {
+      let last = null
+      const leave = () => { last = null; latest.current.onHover?.(null) }
+      const hover = (e) => {
+        const f = e.features?.[0]
+        if (!f) return
+        const p = f.properties
+        const id = p.cluster ? `c:${p.cluster_id}` : p.id ? `t:${p.id}` : `p:${p.key}`
+        if (id === last) return
+        last = id
+        const pt = map.project(f.geometry.coordinates)
+        const at = { x: pt.x, y: pt.y }
+        if (p.cluster) {
+          const done = (leaves) => { if (last === id) latest.current.onHover?.({ kind: 'places', keys: leaves.map((l) => l.properties.key), at }) }
+          const r = map.getSource('clusters').getClusterLeaves(p.cluster_id, 1000, 0, (err, leaves) => { if (!err) done(leaves) })
+          if (r && typeof r.then === 'function') r.then(done).catch(() => {})
+        } else if (p.id) {
+          latest.current.onHover?.({ kind: 'tx', id: p.id, at })
+        } else {
+          latest.current.onHover?.({ kind: 'places', keys: [p.key], at })
+        }
+      }
+      for (const id of CLICKABLE) {
+        map.on('mousemove', id, hover)
+        map.on('mouseleave', id, leave)
+      }
+      map.on('movestart', leave) // posisi tooltip tidak ikut bergeser, jadi disembunyikan saat peta bergerak
     }
 
     return () => { map.remove(); mapRef.current = null }
