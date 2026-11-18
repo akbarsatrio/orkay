@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, ArrowLeftRight, Wallet, TrendingUp, Repeat, Target, FileBarChart, Settings, LogOut, Plus,
+  LayoutDashboard, ArrowLeftRight, Wallet, TrendingUp, Repeat, Target, FileBarChart, MapPinned, Settings, LogOut, Plus,
 } from 'lucide-react'
 import { clearToken } from '../../lib/api.js'
 
@@ -16,6 +16,7 @@ const groups = [
     { to: '/recurring', label: 'Tagihan Rutin', icon: Repeat },
     { to: '/budgets', label: 'Anggaran', icon: Target },
     { to: '/reports', label: 'Laporan', icon: FileBarChart },
+    { to: '/peta', label: 'Peta Transaksi', icon: MapPinned },
     { to: '/settings', label: 'Pengaturan', icon: Settings },
   ],
 ]

@@ -190,6 +190,7 @@ Buka `http://localhost:5173` → muncul layar PIN → masukkan `APP_PIN`.
 | `DB_PASSWORD` | — | Password MySQL |
 | `DB_NAME` | `economic_analytic` | Nama database |
 | `CLIENT_DIST` | `../client/dist` | Folder hasil build React yang diserve saat production |
+| `MAPBOX_TOKEN` | — | Token publik Mapbox (`pk.…`) untuk menu **Peta Transaksi**. Dikirim ke app hanya setelah login PIN. Batasi URL token ke domain app di akun Mapbox. Tanpa token, menu Peta menampilkan pesan "Token Mapbox belum diatur". |
 
 Generate `AUTH_SECRET`:
 

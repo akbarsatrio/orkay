@@ -33,6 +33,9 @@ export const config = {
 
   // Folder hasil build React yang akan diserve saat production
   clientDist: resolvePath(process.env.CLIENT_DIST, '../client/dist'),
+
+  // Token publik Mapbox (pk.…) untuk peta di menu Peta Transaksi. Dikirim ke app hanya setelah login PIN.
+  mapboxToken: process.env.MAPBOX_TOKEN || '',
 }
 
 export default config
