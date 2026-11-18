@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Plus, TrendingUp, TrendingDown, Pencil, Trash2, ArrowDownLeft, ArrowUpRight } from 'lucide-react'
 import { Card, CardBody, Button, Empty } from '../components/ui/index.jsx'
 import Money from '../components/ui/Money.jsx'
+import SwipeRow, { editDeleteActions } from '../components/ui/SwipeRow.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import AccountForm from '../components/accounts/AccountForm.jsx'
 import SnapshotForm from '../components/investments/SnapshotForm.jsx'
@@ -147,8 +148,12 @@ export default function Investments() {
                     {series.map((s) => {
                       const isW = s.withdrawal > 0
                       const rn = s.returnNet || 0
+                      const editSnap = () => setSnapForm({ open: true, accountId: acc.id, editing: s })
+                      const label = `catatan ${formatDate(s.date, { short: true })}`
                       return (
-                        <div key={s.id} className="group flex items-center gap-2 sm:gap-3 py-2.5 text-[13px] sm:text-sm">
+                        // HP & tablet: ketuk = Ubah, geser = Ubah/Hapus; desktop: tombol saat kursor di atas baris.
+                        <SwipeRow key={s.id} onTap={editSnap} actions={editDeleteActions(label, editSnap, () => handleDeleteSnap(s))}>
+                        <div className="group flex items-center gap-2 sm:gap-3 py-2.5 text-[13px] sm:text-sm">
                           <div className={`h-8 w-8 shrink-0 flex items-center justify-center ${isW ? 'text-negative' : 'text-positive'}`}>
                             {isW ? <ArrowUpRight size={15} /> : <ArrowDownLeft size={15} />}
                           </div>
@@ -167,15 +172,16 @@ export default function Investments() {
                               <p className="text-xs text-muted tnum whitespace-nowrap">biaya {formatRupiah((s.fee || 0) + (s.tax || 0))}</p>
                             )}
                           </div>
-                          <div className="flex gap-0.5 shrink-0 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100 transition-opacity">
-                            <button onClick={() => setSnapForm({ open: true, accountId: acc.id, editing: s })} className="h-8 w-8 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2">
-                              <Pencil size={14} />
+                          <div className="hidden lg:flex gap-0.5 shrink-0 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 touch:opacity-100 transition-opacity">
+                            <button onClick={editSnap} aria-label={`Ubah ${label}`} title="Ubah" className="h-8 w-8 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2">
+                              <Pencil size={14} aria-hidden="true" />
                             </button>
-                            <button onClick={() => handleDeleteSnap(s)} className="h-8 w-8 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
-                              <Trash2 size={14} />
+                            <button onClick={() => handleDeleteSnap(s)} aria-label={`Hapus ${label}`} title="Hapus" className="h-8 w-8 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10">
+                              <Trash2 size={14} aria-hidden="true" />
                             </button>
                           </div>
                         </div>
+                        </SwipeRow>
                       )
                     })}
                   </div>
@@ -198,6 +204,7 @@ export default function Investments() {
         accountId={snapForm.accountId}
         editing={snapForm.editing}
         onClose={() => setSnapForm({ open: false, accountId: null, editing: null })}
+        onDelete={() => { const s = snapForm.editing; setSnapForm({ open: false, accountId: null, editing: null }); handleDeleteSnap(s) }}
       />
     </div>
   )

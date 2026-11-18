@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowRight, CreditCard, CheckCircle2 } from 'lucide-react'
-import { Modal, Button, Input, Select, Textarea, Segmented, Toggle } from '../ui/index.jsx'
+import { Modal, Button, Input, Select, Textarea, Segmented, Toggle, FormDeleteButton } from '../ui/index.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber, toISODate, formatRupiah } from '../../lib/format.js'
 import { load, save } from '../../lib/storage.js'
@@ -31,7 +31,7 @@ const empty = (type = 'expense') => ({
 
 const TENORS = [1, 3, 6, 9, 12, 24]
 
-export default function TransactionForm({ open, onClose, editing }) {
+export default function TransactionForm({ open, onClose, editing, onDelete }) {
   const { categories, accounts, incomeSources, addTransaction, updateTransaction, addInstallment } = useData()
   const [form, setForm] = useState(empty())
   const [amountStr, setAmountStr] = useState('')
@@ -234,6 +234,7 @@ export default function TransactionForm({ open, onClose, editing }) {
               Tetap di sini
             </label>
           )}
+          {editing && onDelete && <FormDeleteButton onClick={onDelete} disabled={saving} />}
           <Button variant="secondary" onClick={onClose} disabled={saving}>{savedCount > 0 ? 'Selesai' : 'Batal'}</Button>
           <Button onClick={handleSave} disabled={!canSave || saving}>
             {saving ? 'Menyimpan…' : editing ? 'Simpan Perubahan' : useInstallment ? 'Buat Cicilan' : 'Simpan'}

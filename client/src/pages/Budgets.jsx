@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Plus, Target, Trash2, AlertTriangle, Pencil } from 'lucide-react'
-import { Card, CardBody, CardHeader, Button, Progress, Empty, Modal, Select, Badge } from '../components/ui/index.jsx'
+import { Card, CardBody, CardHeader, Button, Progress, Empty, Modal, Select, Badge, FormDeleteButton } from '../components/ui/index.jsx'
+import SwipeRow, { editDeleteActions } from '../components/ui/SwipeRow.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { useConfirm } from '../context/ConfirmContext.jsx'
@@ -11,6 +12,12 @@ export default function Budgets() {
   const { budgets, categories, categoryMap, transactions, upsertBudget, deleteBudget } = useData()
   const [modal, setModal] = useState({ open: false, editing: null })
   const confirm = useConfirm()
+  const askDelete = (r) => confirm({
+    title: 'Hapus anggaran',
+    message: <>Hapus anggaran kategori <b>{r.cat.name}</b>?</>,
+    detail: 'Transaksi di kategori ini tidak terpengaruh.',
+    onConfirm: () => deleteBudget(r.id),
+  })
 
   const now = new Date()
   const spending = useMemo(
@@ -57,7 +64,7 @@ export default function Budgets() {
 
       <Card>
         <CardHeader title="Anggaran per Kategori" subtitle="Batas pengeluaran bulan ini. Bar berubah warna saat mendekati / melewati limit." />
-        <CardBody className="divide-y divide-border [&>*:last-child]:pb-0">
+        <CardBody className="divide-y divide-border pt-0">
           {rows.length === 0 ? (
             <Empty
               icon={Target}
@@ -67,7 +74,12 @@ export default function Budgets() {
             />
           ) : (
             rows.map((r) => (
-              <div key={r.id} className="group py-4 first:pt-0 last:pb-0">
+              <SwipeRow
+                key={r.id}
+                onTap={() => setModal({ open: true, editing: r })}
+                actions={editDeleteActions(`anggaran ${r.cat.name}`, () => setModal({ open: true, editing: r }), () => askDelete(r))}
+              >
+              <div className="group py-4">
                 <div className="flex items-center gap-3 mb-2">
                   <CategoryIcon name={r.cat.icon} color={r.cat.color} size={16} />
                   <span className="text-sm font-medium text-fg flex-1 min-w-0 truncate">{r.cat.name}</span>
@@ -76,19 +88,15 @@ export default function Budgets() {
                   ) : r.pct >= 85 ? (
                     <Badge className="text-warning border-warning/30 bg-warning/10">Hampir habis</Badge>
                   ) : null}
-                  <button onClick={() => setModal({ open: true, editing: r })} className="h-9 w-9 lg:h-6 lg:w-6 touch:h-11 touch:w-11 shrink-0 flex items-center justify-center rounded-md text-muted hover:text-fg active:bg-surface-2 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100">
-                    <Pencil size={15} className="lg:hidden" /><Pencil size={12} className="hidden lg:block" />
+                  <button onClick={() => setModal({ open: true, editing: r })} aria-label={`Ubah anggaran ${r.cat.name}`} className="hidden lg:flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 touch:opacity-100 touch:h-11 touch:w-11">
+                    <Pencil size={12} aria-hidden="true" />
                   </button>
                   <button
-                    onClick={() => confirm({
-                      title: 'Hapus anggaran',
-                      message: <>Hapus anggaran kategori <b>{r.cat.name}</b>?</>,
-                      detail: 'Transaksi di kategori ini tidak terpengaruh.',
-                      onConfirm: () => deleteBudget(r.id),
-                    })}
-                    className="h-9 w-9 lg:h-6 lg:w-6 touch:h-11 touch:w-11 shrink-0 flex items-center justify-center rounded-md text-muted hover:text-negative active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100"
+                    onClick={() => askDelete(r)}
+                    aria-label={`Hapus anggaran ${r.cat.name}`}
+                    className="hidden lg:flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 touch:opacity-100 touch:h-11 touch:w-11"
                   >
-                    <Trash2 size={15} className="lg:hidden" /><Trash2 size={12} className="hidden lg:block" />
+                    <Trash2 size={12} aria-hidden="true" />
                   </button>
                 </div>
                 <Progress value={r.spent} max={r.limit} />
@@ -99,6 +107,7 @@ export default function Budgets() {
                   </span>
                 </div>
               </div>
+              </SwipeRow>
             ))
           )}
         </CardBody>
@@ -108,6 +117,7 @@ export default function Budgets() {
         open={modal.open}
         editing={modal.editing}
         onClose={() => setModal({ open: false, editing: null })}
+        onDelete={() => { const r = modal.editing; setModal({ open: false, editing: null }); askDelete(r) }}
         categories={categories.filter((c) => c.type === 'expense')}
         existing={budgets}
         onSave={upsertBudget}
@@ -116,7 +126,7 @@ export default function Budgets() {
   )
 }
 
-function BudgetModal({ open, onClose, editing, categories, existing, onSave }) {
+function BudgetModal({ open, onClose, onDelete, editing, categories, existing, onSave }) {
   const [catId, setCatId] = useState('')
   const [limitStr, setLimitStr] = useState('')
 
@@ -139,6 +149,7 @@ function BudgetModal({ open, onClose, editing, categories, existing, onSave }) {
       title={editing ? 'Edit Anggaran' : 'Atur Anggaran'}
       footer={
         <>
+          {editing && onDelete && <FormDeleteButton onClick={onDelete} />}
           <Button variant="secondary" onClick={onClose}>Batal</Button>
           <Button disabled={!canSave} onClick={() => { onSave(catId, limit); onClose() }}>Simpan</Button>
         </>

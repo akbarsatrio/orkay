@@ -5,6 +5,7 @@ import {
 import { Card, CardHeader, CardBody, Button, Input, Badge, Empty, Modal, Toggle, Segmented } from '../components/ui/index.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import CategoryForm from '../components/settings/CategoryForm.jsx'
+import SwipeRow, { editDeleteActions } from '../components/ui/SwipeRow.jsx'
 import { useData } from '../context/DataContext.jsx'
 import { useUiVersion } from '../context/UiVersionContext.jsx'
 import { useTheme } from '../context/ThemeContext.jsx'
@@ -197,17 +198,33 @@ export default function Settings() {
           {incomeSources.length === 0 ? (
             <p className="text-xs text-muted">Belum ada sumber pemasukan.</p>
           ) : (
-            <div className="flex flex-wrap gap-2">
-              {incomeSources.map((s) => (
-                <div key={s.id} className="inline-flex items-center gap-2 pl-3 pr-1.5 h-8 rounded-md bg-surface-2 text-sm">
-                  <span className="h-2 w-2 rounded-full" style={{ background: s.color }} />
-                  {s.name}
-                  <button onClick={() => askDeleteSource(s)} aria-label={`Hapus ${s.name}`} className="h-5 w-5 touch:h-11 touch:w-11 touch:-my-1.5 flex items-center justify-center rounded-full text-muted hover:text-negative hover:bg-negative/10">
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              ))}
-            </div>
+            <>
+              {/* Desktop: chip dengan tombol hapus. HP & tablet: daftar baris, hapus lewat geser. */}
+              <div className="hidden lg:flex flex-wrap gap-2">
+                {incomeSources.map((s) => (
+                  <div key={s.id} className="inline-flex items-center gap-2 pl-3 pr-1.5 h-8 rounded-md bg-surface-2 text-sm">
+                    <span className="h-2 w-2 rounded-full" style={{ background: s.color }} aria-hidden="true" />
+                    {s.name}
+                    <button onClick={() => askDeleteSource(s)} aria-label={`Hapus ${s.name}`} className="h-5 w-5 touch:h-11 touch:w-11 touch:-my-1.5 flex items-center justify-center rounded-full text-muted hover:text-negative hover:bg-negative/10">
+                      <Trash2 size={12} aria-hidden="true" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="lg:hidden divide-y divide-border">
+                {incomeSources.map((s) => (
+                  <SwipeRow
+                    key={s.id}
+                    actions={[{ label: 'Hapus', ariaLabel: `Hapus ${s.name}`, icon: Trash2, onSelect: () => askDeleteSource(s), danger: true }]}
+                  >
+                    <div className="flex items-center gap-3 min-h-12 text-sm text-fg">
+                      <span className="h-2 w-2 rounded-full shrink-0" style={{ background: s.color }} aria-hidden="true" />
+                      <span className="truncate">{s.name}</span>
+                    </div>
+                  </SwipeRow>
+                ))}
+              </div>
+            </>
           )}
         </CardBody>
       </Card>
@@ -331,22 +348,34 @@ export default function Settings() {
         </div>
       </Modal>
 
-      <CategoryForm open={catForm.open} editing={catForm.editing} onClose={() => setCatForm({ open: false, editing: null })} />
+      <CategoryForm
+        open={catForm.open}
+        editing={catForm.editing}
+        onClose={() => setCatForm({ open: false, editing: null })}
+        onDelete={() => { const c = catForm.editing; setCatForm({ open: false, editing: null }); askDeleteCategory(c) }}
+      />
     </div>
   )
 }
 
+// HP & tablet: ketuk = Ubah, geser = Ubah/Hapus. Desktop: tombol muncul saat kursor di atas baris.
 function CategoryRow({ cat, onEdit, onDelete }) {
   return (
-    <div className="group flex items-center gap-2 min-h-12 border-t border-border first:border-t-0 sm:[&:nth-child(2)]:border-t-0 hover:bg-surface-2/50 transition-colors">
-      <CategoryIcon name={cat.icon} color={cat.color} size={16} />
-      <span className="text-sm text-fg flex-1 min-w-0 truncate">{cat.name}</span>
-      <button onClick={onEdit} className="h-9 w-9 lg:h-7 lg:w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 active:bg-border/50 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100 transition-opacity">
-        <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
-      </button>
-      <button onClick={onDelete} className="h-9 w-9 lg:h-7 lg:w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100 transition-opacity">
-        <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
-      </button>
-    </div>
+    <SwipeRow
+      onTap={onEdit}
+      actions={editDeleteActions(`kategori ${cat.name}`, onEdit, onDelete)}
+      className="border-t border-border first:border-t-0 sm:[&:nth-child(2)]:border-t-0"
+    >
+      <div className="group flex items-center gap-2 min-h-12 lg:hover:bg-surface-2/50 transition-colors">
+        <CategoryIcon name={cat.icon} color={cat.color} size={16} />
+        <span className="text-sm text-fg flex-1 min-w-0 truncate">{cat.name}</span>
+        <button onClick={onEdit} aria-label={`Ubah kategori ${cat.name}`} className="hidden lg:flex h-7 w-7 touch:h-11 touch:w-11 items-center justify-center rounded-md text-muted hover:text-fg hover:bg-border/50 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 touch:opacity-100 transition-opacity">
+          <Pencil size={13} aria-hidden="true" />
+        </button>
+        <button onClick={onDelete} aria-label={`Hapus kategori ${cat.name}`} className="hidden lg:flex h-7 w-7 touch:h-11 touch:w-11 items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 touch:opacity-100 transition-opacity">
+          <Trash2 size={13} aria-hidden="true" />
+        </button>
+      </div>
+    </SwipeRow>
   )
 }

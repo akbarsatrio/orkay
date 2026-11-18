@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, Button, Input, Select, Segmented } from '../ui/index.jsx'
+import { Modal, Button, Input, Select, Segmented, FormDeleteButton } from '../ui/index.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber } from '../../lib/format.js'
 
@@ -18,7 +18,7 @@ const emptyForm = () => ({
   creditLimit: 0, closingDay: 15, dueDay: 1, dueMonthOffset: 1, billingModel: 'statement',
 })
 
-export default function AccountForm({ open, onClose, editing }) {
+export default function AccountForm({ open, onClose, editing, onDelete }) {
   const { addAccount, updateAccount } = useData()
   const [form, setForm] = useState(emptyForm())
   const [balStr, setBalStr] = useState('')
@@ -84,6 +84,7 @@ export default function AccountForm({ open, onClose, editing }) {
       title={editing ? 'Edit Rekening' : 'Rekening Baru'}
       footer={
         <>
+          {editing && onDelete && <FormDeleteButton onClick={onDelete} />}
           <Button variant="secondary" onClick={onClose}>Batal</Button>
           <Button onClick={handleSave} disabled={!canSave}>Simpan</Button>
         </>

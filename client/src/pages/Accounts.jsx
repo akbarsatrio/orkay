@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Plus, Pencil, Trash2, Wallet, ArrowDownLeft, ArrowUpRight, TrendingUp, TrendingDown } from 'lucide-react'
 import { Card, Button, Empty, Progress } from '../components/ui/index.jsx'
 import Money from '../components/ui/Money.jsx'
+import SwipeRow, { editDeleteActions, useIsMobile } from '../components/ui/SwipeRow.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import AccountForm from '../components/accounts/AccountForm.jsx'
 import { useData } from '../context/DataContext.jsx'
@@ -17,6 +18,7 @@ export default function Accounts() {
   const { accounts, accountBalances, totalBalance, totalDebt, payLaterInfo, investmentSummary, transactions, deleteAccount } = useData()
   const { hidden } = useBalanceVisibility()
   const navigate = useNavigate()
+  const mobile = useIsMobile()
   const [form, setForm] = useState({ open: false, editing: null })
   const confirm = useConfirm()
 
@@ -81,13 +83,22 @@ export default function Accounts() {
       ) : (
         <div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-x-8 gap-y-6">
           {accounts.map((acc) => {
+            // HP & tablet: geser = Ubah/Hapus, ketuk = Ubah (rekening investasi: ketuk = buka halaman Investasi).
+            const swipe = (onTap, children) => (
+              <SwipeRow
+                onTap={onTap}
+                actions={editDeleteActions(acc.name, () => setForm({ open: true, editing: acc }), () => handleDelete(acc))}
+              >
+                {children}
+              </SwipeRow>
+            )
             const editBtns = (
-              <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100 transition-opacity">
-                <button onClick={(e) => { e.stopPropagation(); setForm({ open: true, editing: acc }) }} className="h-9 w-9 lg:h-7 lg:w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2 active:bg-surface-2">
-                  <Pencil size={15} className="lg:hidden" /><Pencil size={13} className="hidden lg:block" />
+              <div className="hidden lg:flex gap-1 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 touch:opacity-100 transition-opacity">
+                <button onClick={(e) => { e.stopPropagation(); setForm({ open: true, editing: acc }) }} aria-label={`Ubah ${acc.name}`} title="Ubah" className="h-7 w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-fg hover:bg-surface-2">
+                  <Pencil size={13} aria-hidden="true" />
                 </button>
-                <button onClick={(e) => { e.stopPropagation(); handleDelete(acc) }} className="h-9 w-9 lg:h-7 lg:w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10 active:bg-negative/10">
-                  <Trash2 size={15} className="lg:hidden" /><Trash2 size={13} className="hidden lg:block" />
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(acc) }} aria-label={`Hapus ${acc.name}`} title="Hapus" className="h-7 w-7 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted hover:text-negative hover:bg-negative/10">
+                  <Trash2 size={13} aria-hidden="true" />
                 </button>
               </div>
             )
@@ -112,10 +123,10 @@ export default function Accounts() {
               return (
                 <Card
                   key={acc.id}
-                  className="group relative pt-4 cursor-pointer"
-                  onClick={() => navigate('/investments')}
+                  className="group relative pt-4 lg:cursor-pointer"
+                  onClick={mobile ? undefined : () => navigate('/investments')}
                 >
-                  <div>
+                  {swipe(() => navigate('/investments'), <div>
                     {header}
                     <div className="mt-4">
                       <Money value={hidden ? 0 : sum.marketValue} hidden={hidden} className="text-2xl font-semibold text-fg" />
@@ -131,7 +142,7 @@ export default function Accounts() {
                       </div>
                     </div>
                     <p className="text-[13px] text-muted mt-2">Modal bersih <span className="tnum whitespace-nowrap">{maskRupiah(sum.netInvested || 0, hidden)}</span> · kelola di halaman Investasi</p>
-                  </div>
+                  </div>)}
                 </Card>
               )
             }
@@ -143,7 +154,7 @@ export default function Accounts() {
               const currentUnpaid = statements.filter((s) => s.unpaid > 0).sort((a, b) => a.dueDate.localeCompare(b.dueDate))[0]
               return (
                 <Card key={acc.id} className="group relative pt-4">
-                  <div>
+                  {swipe(() => setForm({ open: true, editing: acc }), <div>
                     {header}
                     <div className="mt-4">
                       <p className="text-[13px] font-medium text-muted">Sisa limit</p>
@@ -173,7 +184,7 @@ export default function Accounts() {
                           : `Closing tgl ${acc.closingDay} · jatuh tempo tgl ${acc.dueDay}`}
                       </p>
                     </div>
-                  </div>
+                  </div>)}
                 </Card>
               )
             }
@@ -182,7 +193,7 @@ export default function Accounts() {
             const { inc, exp } = flowFor(acc.id)
             return (
               <Card key={acc.id} className="group relative pt-4">
-                <div>
+                {swipe(() => setForm({ open: true, editing: acc }), <div>
                   {header}
                   <div className="mt-4">
                     <Money value={hidden ? 0 : balance} hidden={hidden} className={`text-2xl font-semibold ${balance < 0 ? 'text-negative' : 'text-fg'}`} />
@@ -199,14 +210,19 @@ export default function Accounts() {
                       <span className="font-medium text-fg tnum whitespace-nowrap">{formatRupiah(exp)}</span>
                     </div>
                   </div>
-                </div>
+                </div>)}
               </Card>
             )
           })}
         </div>
       )}
 
-      <AccountForm open={form.open} editing={form.editing} onClose={() => setForm({ open: false, editing: null })} />
+      <AccountForm
+        open={form.open}
+        editing={form.editing}
+        onClose={() => setForm({ open: false, editing: null })}
+        onDelete={() => { const acc = form.editing; setForm({ open: false, editing: null }); handleDelete(acc) }}
+      />
     </div>
   )
 }

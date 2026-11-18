@@ -163,6 +163,7 @@ export default function Dashboard({ onAddTransaction }) {
                       meta={formatDate(u.dueDate, { short: true })}
                       amount={u.recurring.amount}
                       actionLabel="Bayar"
+                      tapToAct
                       onAction={() => setConfirmItem({ recurring: u.recurring, dueDate: u.dueDate, period, isDue: u.daysAway === 0 })}
                     />
                   )
@@ -175,6 +176,7 @@ export default function Dashboard({ onAddTransaction }) {
                     meta={`Statement ${st.period} · jatuh tempo ${formatDate(st.dueDate, { short: true })}`}
                     amount={st.unpaid}
                     actionLabel="Bayar"
+                    tapToAct
                     onAction={() => setPayItem({ kind: 'statement', account: st.account, period: st.period, dueDate: st.dueDate, unpaid: st.unpaid })}
                   />
                 ))}
@@ -187,6 +189,7 @@ export default function Dashboard({ onAddTransaction }) {
                     meta={`${it.account?.name} · jatuh tempo ${formatDate(it.dueDate, { short: true })}`}
                     amount={it.amount}
                     actionLabel="Bayar"
+                    tapToAct
                     onAction={() => setPayItem({ kind: 'installment', installment: it.installment, account: it.account, termin: it.termin, dueDate: it.dueDate, amount: it.amount })}
                   />
                 ))}

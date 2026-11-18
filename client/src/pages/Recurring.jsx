@@ -6,6 +6,7 @@ import { Card, CardBody, CardHeader, Button, Badge, Empty, Progress, Toggle } fr
 import Money from '../components/ui/Money.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import BillRow, { BillIcon } from '../components/bills/BillRow.jsx'
+import SwipeRow, { editDeleteActions } from '../components/ui/SwipeRow.jsx'
 import RecurringForm from '../components/recurring/RecurringForm.jsx'
 import ConfirmRecurringModal from '../components/recurring/ConfirmRecurringModal.jsx'
 import PayBillModal from '../components/paylater/PayBillModal.jsx'
@@ -38,6 +39,12 @@ export default function Recurring() {
   const activeCount = recurring.filter((r) => r.active).length
   const thisPeriod = periodKey(now.getFullYear(), now.getMonth())
   const openNew = () => setForm({ open: true, editing: null })
+  const askDeleteRecurring = (r) => confirm({
+    title: 'Hapus tagihan rutin',
+    message: <>Hapus tagihan <b>{r.name}</b>?</>,
+    detail: 'Transaksi yang sudah dikonfirmasi tetap tersimpan.',
+    onConfirm: () => deleteRecurring(r.id),
+  })
 
   return (
     <div className="space-y-6">
@@ -86,6 +93,7 @@ export default function Recurring() {
                   actionLabel="Konfirmasi"
                   onAction={() => setConfirmItem(p)}
                   actionWidth={ACTION_WIDTH}
+                  tapToAct
                 />
               )
             })}
@@ -111,6 +119,7 @@ export default function Recurring() {
                 actionLabel="Bayar"
                 onAction={() => setPayItem({ kind: 'statement', account: st.account, period: st.period, dueDate: st.dueDate, unpaid: st.unpaid })}
                 actionWidth={ACTION_WIDTH}
+                  tapToAct
               />
             ))}
             {pendingInstallments.map((it) => (
@@ -127,6 +136,7 @@ export default function Recurring() {
                 actionLabel="Bayar"
                 onAction={() => setPayItem({ kind: 'installment', installment: it.installment, account: it.account, termin: it.termin, dueDate: it.dueDate, amount: it.amount })}
                 actionWidth={ACTION_WIDTH}
+                  tapToAct
               />
             ))}
           </CardBody>
@@ -150,11 +160,16 @@ export default function Recurring() {
                 const cat = categoryMap[r.categoryId]
                 const acc = accountMap[r.accountId]
                 const confirmed = (r.generatedPeriods || []).includes(thisPeriod)
+                const askDeleteRec = () => askDeleteRecurring(r)
                 return (
-                  // HP: baris 1 = ikon | nama | nominal, baris 2 = status + aksi.
-                  // Desktop: satu baris ikon | nama | status | nominal | aksi (urutan diatur dengan `order`).
-                  <div
+                  // HP & tablet: ketuk = Ubah, geser = Ubah/Hapus. HP: baris 1 = ikon | nama | nominal,
+                  // baris 2 = status + saklar. Desktop: satu baris ikon | nama | status | nominal | aksi (urutan lewat `order`).
+                  <SwipeRow
                     key={r.id}
+                    onTap={() => setForm({ open: true, editing: r })}
+                    actions={editDeleteActions(r.name, () => setForm({ open: true, editing: r }), askDeleteRec)}
+                  >
+                  <div
                     className="group grid grid-cols-[34px_minmax(0,1fr)_auto] md:grid-cols-[34px_minmax(0,1fr)_11rem_8rem_auto] items-center gap-x-3 md:gap-x-5 gap-y-2 py-3.5"
                   >
                     <span className={r.active ? '' : 'opacity-50'}>
@@ -190,7 +205,7 @@ export default function Recurring() {
                         )}
                       </div>
 
-                      <div className="flex items-center justify-end gap-1 shrink-0 md:order-5 md:w-32">
+                      <div className="flex items-center justify-end gap-1 shrink-0 md:order-5 lg:w-32">
                         <span className="inline-flex items-center justify-center h-9 w-12 touch:h-11">
                           <Toggle
                             checked={r.active}
@@ -202,26 +217,22 @@ export default function Recurring() {
                           onClick={() => setForm({ open: true, editing: r })}
                           aria-label={`Ubah ${r.name}`}
                           title="Ubah"
-                          className={`${iconBtn} hover:text-fg hover:bg-surface-2 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100`}
+                          className={`${iconBtn} hidden lg:flex hover:text-fg hover:bg-surface-2 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100`}
                         >
                           <Pencil size={15} aria-hidden="true" />
                         </button>
                         <button
-                          onClick={() => confirm({
-                            title: 'Hapus tagihan rutin',
-                            message: <>Hapus tagihan <b>{r.name}</b>?</>,
-                            detail: 'Transaksi yang sudah dikonfirmasi tetap tersimpan.',
-                            onConfirm: () => deleteRecurring(r.id),
-                          })}
+                          onClick={askDeleteRec}
                           aria-label={`Hapus ${r.name}`}
                           title="Hapus"
-                          className={`${iconBtn} hover:text-negative hover:bg-negative/10 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100`}
+                          className={`${iconBtn} hidden lg:flex hover:text-negative hover:bg-negative/10 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100`}
                         >
                           <Trash2 size={15} aria-hidden="true" />
                         </button>
                       </div>
                     </div>
                   </div>
+                  </SwipeRow>
                 )
               })}
             </div>
@@ -239,10 +250,20 @@ export default function Recurring() {
               const cat = categoryMap[inst.categoryId]
               const pct = (inst.paidCount / inst.tenor) * 100
               const remaining = Math.max(0, inst.tenor - inst.paidCount)
+              const askDeleteInst = () => confirm({
+                title: 'Hapus cicilan',
+                message: <>Hapus cicilan <b>{inst.name}</b>?</>,
+                detail: 'Transaksi terkait ikut terhapus.',
+                onConfirm: () => deleteInstallment(inst.id),
+              })
               return (
                 // HP: progres turun ke baris kedua; desktop: progres jadi kolom di kanan nama.
-                <div
+                // HP & tablet: hapus lewat geser (cicilan tidak punya form ubah).
+                <SwipeRow
                   key={inst.id}
+                  actions={[{ label: 'Hapus', ariaLabel: `Hapus cicilan ${inst.name}`, icon: Trash2, onSelect: askDeleteInst, danger: true }]}
+                >
+                <div
                   className="group grid grid-cols-[34px_minmax(0,1fr)_auto] md:grid-cols-[34px_minmax(0,1fr)_minmax(0,18rem)_auto] items-center gap-x-3 md:gap-x-5 gap-y-2 py-3.5"
                 >
                   <CategoryIcon name={cat?.icon || 'Layers'} color={cat?.color || '#71717a'} size={16} />
@@ -259,26 +280,27 @@ export default function Recurring() {
                     <p className="text-xs text-muted tnum mt-1.5">Sisa {remaining}x = {formatRupiah(remaining * inst.monthlyAmount)}</p>
                   </div>
                   <button
-                    onClick={() => confirm({
-                      title: 'Hapus cicilan',
-                      message: <>Hapus cicilan <b>{inst.name}</b>?</>,
-                      detail: 'Transaksi terkait ikut terhapus.',
-                      onConfirm: () => deleteInstallment(inst.id),
-                    })}
+                    onClick={askDeleteInst}
                     aria-label={`Hapus cicilan ${inst.name}`}
                     title="Hapus"
-                    className={`${iconBtn} shrink-0 hover:text-negative hover:bg-negative/10 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100`}
+                    className={`${iconBtn} hidden lg:flex shrink-0 hover:text-negative hover:bg-negative/10 lg:opacity-0 lg:group-hover:opacity-100 touch:opacity-100`}
                   >
                     <Trash2 size={15} aria-hidden="true" />
                   </button>
                 </div>
+                </SwipeRow>
               )
             })}
           </CardBody>
         </Card>
       )}
 
-      <RecurringForm open={form.open} editing={form.editing} onClose={() => setForm({ open: false, editing: null })} />
+      <RecurringForm
+        open={form.open}
+        editing={form.editing}
+        onClose={() => setForm({ open: false, editing: null })}
+        onDelete={() => { const r = form.editing; setForm({ open: false, editing: null }); askDeleteRecurring(r) }}
+      />
       <ConfirmRecurringModal open={!!confirmItem} item={confirmItem} onClose={() => setConfirmItem(null)} />
       <PayBillModal open={!!payItem} item={payItem} onClose={() => setPayItem(null)} />
     </div>

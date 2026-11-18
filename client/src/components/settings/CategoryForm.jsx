@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Modal, Button, Input, Segmented } from '../ui/index.jsx'
+import { Modal, Button, Input, Segmented, FormDeleteButton } from '../ui/index.jsx'
 import CategoryIcon from '../CategoryIcon.jsx'
 import { useData } from '../../context/DataContext.jsx'
 
@@ -14,7 +14,7 @@ const COLORS = [
   '#0ea5e9', '#4f46e5', '#8b5cf6', '#ec4899', '#71717a', '#0f766e',
 ]
 
-export default function CategoryForm({ open, onClose, editing }) {
+export default function CategoryForm({ open, onClose, editing, onDelete }) {
   const { addCategory, updateCategory } = useData()
   const [form, setForm] = useState({ name: '', type: 'expense', icon: 'ShoppingBag', color: '#4f46e5' })
 
@@ -42,6 +42,7 @@ export default function CategoryForm({ open, onClose, editing }) {
       title={editing ? 'Edit Kategori' : 'Kategori Baru'}
       footer={
         <>
+          {editing && onDelete && <FormDeleteButton onClick={onDelete} />}
           <Button variant="secondary" onClick={onClose}>Batal</Button>
           <Button onClick={handleSave} disabled={!canSave}>Simpan</Button>
         </>

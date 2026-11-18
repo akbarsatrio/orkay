@@ -73,6 +73,21 @@ export function Button({ variant = 'primary', size = 'md', className, children, 
   )
 }
 
+// Tombol Hapus di footer form edit (HP & tablet): alternatif satu ketukan untuk aksi hapus yang di layar daftar
+// hanya muncul lewat geser (SwipeRow). Di desktop hapus tetap lewat tombol di baris.
+export function FormDeleteButton({ onClick, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="lg:hidden mr-auto inline-flex items-center justify-center h-9 touch:h-11 px-3 -ml-3 rounded-md text-sm font-medium text-negative hover:bg-negative/10 disabled:opacity-50 transition-colors"
+    >
+      Hapus
+    </button>
+  )
+}
+
 // ---------- Input ----------
 // Field berisi abu muda dengan garis tipis; garis hitam muncul saat fokus. Dipakai juga oleh input mentah di halaman.
 export const fieldClass =

@@ -4,7 +4,7 @@ import {
 } from 'lucide-react'
 import { Button, Input, Select, Empty, Segmented, cx } from '../components/ui/index.jsx'
 import Money from '../components/ui/Money.jsx'
-import RowMenu from '../components/ui/RowMenu.jsx'
+import SwipeRow, { editDeleteActions } from '../components/ui/SwipeRow.jsx'
 import CategoryIcon from '../components/CategoryIcon.jsx'
 import { BillIcon } from '../components/bills/BillRow.jsx'
 import TransactionForm from '../components/transactions/TransactionForm.jsx'
@@ -175,15 +175,24 @@ export default function Transactions() {
                 </div>
                 <div className="divide-y divide-border">
                   {items.map((t) => (
-                    <TxRow
+                    <SwipeRow
                       key={t.id}
-                      tx={t}
-                      cat={categoryMap[t.categoryId]}
-                      acc={accountMap[t.accountId]}
-                      accountMap={accountMap}
-                      onEdit={() => setForm({ open: true, editing: t })}
-                      onDelete={() => askDelete(t)}
-                    />
+                      onTap={() => setForm({ open: true, editing: t })}
+                      actions={editDeleteActions(
+                        t.note || categoryMap[t.categoryId]?.name || 'transaksi',
+                        () => setForm({ open: true, editing: t }),
+                        () => askDelete(t),
+                      )}
+                    >
+                      <TxRow
+                        tx={t}
+                        cat={categoryMap[t.categoryId]}
+                        acc={accountMap[t.accountId]}
+                        accountMap={accountMap}
+                        onEdit={() => setForm({ open: true, editing: t })}
+                        onDelete={() => askDelete(t)}
+                      />
+                    </SwipeRow>
                   ))}
                 </div>
               </section>
@@ -192,7 +201,12 @@ export default function Transactions() {
         )}
       </section>
 
-      <TransactionForm open={form.open} editing={form.editing} onClose={() => setForm({ open: false, editing: null })} />
+      <TransactionForm
+        open={form.open}
+        editing={form.editing}
+        onClose={() => setForm({ open: false, editing: null })}
+        onDelete={() => { const t = form.editing; setForm({ open: false, editing: null }); askDelete(t) }}
+      />
     </div>
   )
 }
@@ -209,9 +223,9 @@ function AccountDot({ acc }) {
 const actionBtn =
   'h-9 w-9 touch:h-11 touch:w-11 flex items-center justify-center rounded-md text-muted transition-colors'
 
-// Kolom: ikon 34px | judul + keterangan (satu baris, terpotong rapi) | nominal rata kanan | aksi.
+// Kolom: ikon 34px | judul + keterangan (satu baris, terpotong rapi) | nominal rata kanan | aksi (desktop).
 // Desktop: ubah/hapus muncul saat kursor di atas baris, ruangnya tetap dipesan supaya nominal selalu lurus.
-// HP: ubah/hapus digabung di menu "⋯" supaya judul & keterangan tidak terpotong terlalu pendek.
+// HP & tablet: tidak ada tombol; ketuk baris = Ubah, geser ke kiri = Ubah/Hapus (SwipeRow).
 function TxRow({ tx, cat, acc, accountMap, onEdit, onDelete }) {
   const isTransfer = tx.type === 'transfer'
   const isIncome = tx.type === 'income'
@@ -219,7 +233,7 @@ function TxRow({ tx, cat, acc, accountMap, onEdit, onDelete }) {
   const toAcc = isTransfer ? accountMap[tx.toAccountId] : null
 
   return (
-    <div className="group grid grid-cols-[34px_minmax(0,1fr)_auto_auto] items-center gap-x-3 sm:gap-x-4 py-3">
+    <div className="group grid grid-cols-[34px_minmax(0,1fr)_auto] lg:grid-cols-[34px_minmax(0,1fr)_auto_auto] items-center gap-x-3 sm:gap-x-4 py-3">
       {isTransfer
         ? <BillIcon icon={ArrowLeftRight} />
         : <CategoryIcon name={cat?.icon || 'Circle'} color={cat?.color || '#71717a'} size={16} />}
@@ -263,7 +277,7 @@ function TxRow({ tx, cat, acc, accountMap, onEdit, onDelete }) {
         />
       )}
 
-      <div className="hidden sm:flex gap-1 shrink-0 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 touch:opacity-100 transition-opacity">
+      <div className="hidden lg:flex gap-1 shrink-0 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100 touch:opacity-100 transition-opacity">
         <button onClick={onEdit} aria-label="Ubah transaksi" title="Ubah" className={`${actionBtn} hover:text-fg hover:bg-surface-2`}>
           <Pencil size={15} aria-hidden="true" />
         </button>
@@ -271,14 +285,6 @@ function TxRow({ tx, cat, acc, accountMap, onEdit, onDelete }) {
           <Trash2 size={15} aria-hidden="true" />
         </button>
       </div>
-      <RowMenu
-        className="sm:hidden -mr-2"
-        label="Aksi transaksi"
-        items={[
-          { label: 'Ubah', icon: Pencil, onSelect: onEdit },
-          { label: 'Hapus', icon: Trash2, onSelect: onDelete, danger: true },
-        ]}
-      />
     </div>
   )
 }

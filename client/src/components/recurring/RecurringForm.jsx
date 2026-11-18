@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Modal, Button, Input, Select } from '../ui/index.jsx'
+import { Modal, Button, Input, Select, FormDeleteButton } from '../ui/index.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber } from '../../lib/format.js'
 
-export default function RecurringForm({ open, onClose, editing }) {
+export default function RecurringForm({ open, onClose, editing, onDelete }) {
   const { categories, accounts, addRecurring, updateRecurring } = useData()
   const expenseCats = categories.filter((c) => c.type === 'expense')
   const [form, setForm] = useState({ name: '', categoryId: '', accountId: '', amount: 0, dueDay: 1, active: true })
@@ -51,6 +51,7 @@ export default function RecurringForm({ open, onClose, editing }) {
       title={editing ? 'Edit Tagihan Rutin' : 'Tagihan Rutin Baru'}
       footer={
         <>
+          {editing && onDelete && <FormDeleteButton onClick={onDelete} />}
           <Button variant="secondary" onClick={onClose}>Batal</Button>
           <Button onClick={handleSave} disabled={!canSave}>Simpan</Button>
         </>

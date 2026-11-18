@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Modal, Button, Input, Select, Segmented, Toggle } from '../ui/index.jsx'
+import { Modal, Button, Input, Select, Segmented, Toggle, FormDeleteButton } from '../ui/index.jsx'
 import { useData } from '../../context/DataContext.jsx'
 import { formatNumber, parseNumber, formatRupiah, toISODate } from '../../lib/format.js'
 import { computeFee, computeTax, computeSnapshotSeries } from '../../lib/investment.js'
@@ -22,7 +22,7 @@ const emptyForm = () => ({
   taxBasis: 'gross',          // 'gross' | 'after_fee'
 })
 
-export default function SnapshotForm({ open, onClose, accountId, editing }) {
+export default function SnapshotForm({ open, onClose, accountId, editing, onDelete }) {
   const { accounts, investmentSnapshots, addInvestmentSnapshot, updateInvestmentSnapshot } = useData()
   const investAccounts = useMemo(() => accounts.filter((a) => a.kind === 'investment'), [accounts])
   const cashAccounts = useMemo(() => accounts.filter((a) => a.kind !== 'investment' && a.kind !== 'paylater'), [accounts])
@@ -186,6 +186,7 @@ export default function SnapshotForm({ open, onClose, accountId, editing }) {
       title={editing ? 'Edit Catatan Investasi' : 'Catat Periode Investasi'}
       footer={
         <>
+          {editing && onDelete && <FormDeleteButton onClick={onDelete} />}
           <Button variant="secondary" onClick={onClose}>Batal</Button>
           <Button onClick={handleSave} disabled={!canSave}>Simpan</Button>
         </>
