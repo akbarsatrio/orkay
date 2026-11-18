@@ -183,14 +183,19 @@ Aksen **tidak** dipakai di: angka, ikon (kecuali ikon menu aktif), garis, latar 
 
 Warna kategori dan rekening (chip ikon kategori/rekening) tetap boleh karena itu data milik user, bukan palet UI.
 
-**Logo & ikon aplikasi (permintaan owner):** bentuk dompet yang sama, warna mengikuti tampilan.
+**Logo & ikon aplikasi (revisi owner 2026-11-18):** logo disusun persis seperti angka raksasa (`ui/Money.jsx`): "Rp"
+kecil (0.42em, semibold, rata atas) lalu teks Instrument Sans Bold `wdth` 75. Ikon = **"Rp ok"** (duit aman, nyambung ke
+"aman sampai gajian?"); wordmark di dalam app = **"Rp orkay"**. Hitam pekat + putih, oranye hanya di "Rp" (satu aksen).
+Di dalam app wordmark berdiri tanpa kotak (`components/Wordmark.jsx`, path inline, warna lewat token `fg`/`accent`/`rail-*`):
+sidebar, layar kunci, layar memuat. Versi "ok" di kotak oranye penuh ditolak owner: template ikon generik, tanpa motif.
+Tampilan lama tetap pakai dompet indigo.
 
 | Aset | Tampilan baru | Tampilan lama |
 |---|---|---|
-| Logo / favicon | `public/wallet-new.svg` (dompet oranye bata `#C2410C` di kotak putih) | `public/wallet.svg` (indigo) |
-| Ikon PWA | `icon-192-new.png`, `icon-512-new.png` (dompet putih di latar oranye bata) | `icon-192.png`, `icon-512.png` |
+| Logo / favicon | `public/logo-new.svg` ("Rp ok" di kotak hitam `#0A0A0A` sudut membulat, "Rp" oranye `#F97316`) | `public/wallet.svg` (indigo) |
+| Ikon PWA | `icon-192-new.png`, `icon-512-new.png` (latar hitam penuh, mark 42/64 supaya masuk safe zone maskable) | `icon-192.png`, `icon-512.png` |
 | Ikon iOS | `apple-touch-icon-new.png` | `apple-touch-icon.png` |
-| Manifest | `manifest-new.webmanifest` (`theme_color` oranye bata) | `manifest.webmanifest` |
+| Manifest | `manifest-new.webmanifest` (`background_color` & `theme_color` hitam pekat, sama dengan ikon) | `manifest.webmanifest` |
 
 `index.html` memuat aset tampilan baru; `lib/brandAssets.js` menukar favicon, ikon iOS, dan manifest ke versi lama saat
 perangkat memilih tampilan lama. Ikon yang sudah ter-install di layar utama HP tidak berubah sampai app di-install ulang.

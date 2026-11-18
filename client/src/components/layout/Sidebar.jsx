@@ -3,6 +3,7 @@ import {
   LayoutDashboard, ArrowLeftRight, Wallet, TrendingUp, Repeat, Target, FileBarChart, Settings, LogOut, Plus,
 } from 'lucide-react'
 import { clearToken } from '../../lib/api.js'
+import Wordmark from '../Wordmark.jsx'
 
 // Menu dikelompokkan: harian (catat & cek uang) dan perencanaan/laporan. Urutan menu tetap sama.
 const groups = [
@@ -48,12 +49,9 @@ function NavItem({ item }) {
 export default function Sidebar({ onQuickAdd }) {
   return (
     <aside className="hidden lg:flex sticky top-0 z-20 h-screen w-64 shrink-0 bg-rail text-rail-fg flex-col px-4 pt-8 pb-6">
-      <div className="flex items-center gap-3 px-3">
-        <img src="/wallet-new.svg" alt="" className="h-9 w-9" />
-        <div>
-          <p className="text-[28px] font-bold leading-none">Orkay</p>
-          <p className="text-xs text-rail-muted mt-1">Money Tracker</p>
-        </div>
+      <div className="px-3">
+        <Wordmark className="h-9 w-auto text-rail-fg" rpClassName="text-rail-accent" />
+        <p className="text-xs text-rail-muted mt-2">Money Tracker</p>
       </div>
 
       <button
