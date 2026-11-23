@@ -170,9 +170,11 @@ export function Badge({ color, children, className, dot }) {
 
 // ---------- Progress ----------
 export function Progress({ value, max = 100, color }) {
-  const pct = Math.min(100, Math.max(0, (value / max) * 100))
-  // Warna status: normal = fg (aksen oranye hanya untuk Tambah Transaksi), >= 85% = warning, >= 100% = negative.
-  const barColor = color || (pct >= 100 ? 'rgb(var(--negative))' : pct >= 85 ? 'rgb(var(--warning))' : 'rgb(var(--fg))')
+  const ratio = (value / max) * 100
+  const pct = Math.min(100, Math.max(0, ratio))
+  // Warna status: normal = fg (aksen oranye hanya untuk Tambah Transaksi), >= 85% = warning, > 100% = negative.
+  // Tepat 100% (pas di limit) belum lewat, jadi tetap warning.
+  const barColor = color || (ratio > 100 ? 'rgb(var(--negative))' : ratio >= 85 ? 'rgb(var(--warning))' : 'rgb(var(--fg))')
   return (
     <div className="h-2 w-full rounded-full bg-surface-2 overflow-hidden">
       <div
