@@ -32,7 +32,7 @@ export default function Budgets() {
 
   const totalLimit = rows.reduce((s, r) => s + r.limit, 0)
   const totalSpent = rows.reduce((s, r) => s + r.spent, 0)
-  const overCount = rows.filter((r) => r.pct >= 100).length
+  const overCount = rows.filter((r) => r.remaining < 0).length
 
   return (
     <div className="space-y-6">
@@ -71,8 +71,10 @@ export default function Budgets() {
                 <div className="flex items-center gap-3 mb-2">
                   <CategoryIcon name={r.cat.icon} color={r.cat.color} size={16} />
                   <span className="text-sm font-medium text-fg flex-1">{r.cat.name}</span>
-                  {r.pct >= 100 ? (
+                  {r.remaining < 0 ? (
                     <Badge className="text-negative border-negative/30 bg-negative/10"><AlertTriangle size={11} /> Lewat</Badge>
+                  ) : r.remaining === 0 ? (
+                    <Badge className="text-positive border-positive/30 bg-positive/10">Pas!</Badge>
                   ) : r.pct >= 85 ? (
                     <Badge className="text-warning border-warning/30 bg-warning/10">Hampir habis</Badge>
                   ) : null}
